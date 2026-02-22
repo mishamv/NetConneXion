@@ -1,0 +1,8 @@
+# Основные зависимости
+customtkinter>=5.2
+typing_extensions>=4.0
+
+# Phase 1 (опциональные, нужны для трея и уведомлений)
+# pystray>=0.19
+# pillow>=10.0
+# winotify>=1.1

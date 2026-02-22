@@ -1,0 +1,60 @@
+# ──────────────────────────────────────────────────────────────
+#  Quick-IP-change  —  .gitignore
+# ──────────────────────────────────────────────────────────────
+
+# ── Пользовательские данные (data/) ───────────────────────────
+# Игнорируем все JSON-файлы в data/, но сохраняем локали и ассеты
+
+data/profiles.json
+data/history.json
+data/settings.json
+data/network_mappings.json
+data/wifi_profiles.json
+data/wifi_options.json
+data/tools_settings.json
+
+# Логи
+data/logs/
+
+# Временные файлы атомарной записи
+data/*.tmp
+
+# ── Исключения: ассеты которые должны быть в репо ─────────────
+!data/locales/
+!data/locales/**
+!data/Full_logo.png
+
+# ── Python ────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# ── Виртуальное окружение ─────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ── Портативный режим — флаг (опционально, раскомментируй если не нужен в репо)
+# portable.flag
+
+# ── IDE ───────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# ── OS ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Прочее ────────────────────────────────────────────────────
+*.log
+nul
