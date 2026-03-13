@@ -146,46 +146,42 @@ class ProfileRowWidget(QWidget):
         self._selected = False
         self.setObjectName("ProfileRow")
         lay = QHBoxLayout(self)
-        lay.setContentsMargins(12, 8, 12, 8)
+        lay.setContentsMargins(14, 10, 14, 10)
         lay.setSpacing(10)
 
-        self.icon = QLabel("◈")
+        self.icon = QLabel("⬡")
         self.icon.setObjectName("ProfileIcon")
         lay.addWidget(self.icon)
 
         text_col = QVBoxLayout()
-        text_col.setSpacing(2)
+        text_col.setSpacing(1)
 
-        top = QHBoxLayout()
-        top.setSpacing(8)
+        self.title = QLabel(f"{item.name} • {item.mode_badge}")
+        self.title.setObjectName("ProfileTitle")
+        text_col.addWidget(self.title)
 
-        self.name = QLabel(item.name)
-        self.name.setObjectName("ProfileName")
-        top.addWidget(self.name)
-
-        self.mode_badge = QLabel(item.mode_badge)
-        self.mode_badge.setObjectName("ModeBadge")
-        top.addWidget(self.mode_badge)
-        top.addStretch(1)
-
-        text_col.addLayout(top)
-
-        self.meta = QLabel(item.adapter or "-")
+        self.meta = QLabel(f"• {item.adapter or '-'}")
         self.meta.setObjectName("ProfileMeta")
         text_col.addWidget(self.meta)
 
         lay.addLayout(text_col, 1)
 
+        self.status = QLabel("●")
+        self.status.setObjectName("ProfileStatus")
+        self.status.setVisible(False)
+        lay.addWidget(self.status, 0, Qt.AlignRight | Qt.AlignVCenter)
+
     def set_selected(self, selected: bool) -> None:
         self._selected = selected
+        self.status.setVisible(selected)
         self.setProperty("selected", selected)
         self.style().unpolish(self)
         self.style().polish(self)
         if selected:
             lift = QGraphicsDropShadowEffect(self)
-            lift.setBlurRadius(22)
+            lift.setBlurRadius(24)
             lift.setOffset(0, 6)
-            lift.setColor(QColor(42, 100, 210, 82))
+            lift.setColor(QColor(45, 120, 220, 88))
             self.setGraphicsEffect(lift)
         else:
             self.setGraphicsEffect(None)
@@ -383,7 +379,7 @@ class ProfilesPage(QWidget):
                 continue
             row_item = QListWidgetItem()
             row_item.setData(Qt.UserRole, p.name)
-            row_item.setSizeHint(QRect(0, 0, 0, 62).size())
+            row_item.setSizeHint(QRect(0, 0, 0, 74).size())
             self.list.addItem(row_item)
             row = ProfileRowWidget(p)
             is_selected = p.name == getattr(self, "_selected_profile_name", "")

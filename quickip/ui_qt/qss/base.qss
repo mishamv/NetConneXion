@@ -181,28 +181,23 @@ QListWidget#ProfilesList {
 QListWidget#ProfilesList::item { border: none; margin: 5px 4px; }
 
 QWidget#ProfileRow {
-  background: rgba(255,255,255,0.86);
-  border: 1px solid rgba(183,202,236,0.78);
-  border-radius: 14px;
+  background: rgba(255,255,255,0.88);
+  border: 1px solid rgba(173,196,232,0.72);
+  border-radius: 18px;
 }
-QWidget#ProfileRow:hover { background: rgba(45,125,255,0.21); border-color: rgba(74,141,255,0.82); }
+QWidget#ProfileRow:hover {
+  background: rgba(214,229,252,0.82);
+  border-color: rgba(109,157,233,0.86);
+}
 QWidget#ProfileRow[selected="true"] {
-  background: rgba(219,235,255,1.0);
-  border: 1px solid rgba(53,126,255,0.98);
+  background: rgba(201,221,251,0.90);
+  border: 1px solid rgba(85,143,232,0.96);
 }
 
-QLabel#ProfileIcon { color: #2F6ECC; font-size: 18px; }
-QLabel#ProfileName { color: #12305B; font-size: 18px; font-weight: 700; }
-QLabel#ModeBadge {
-  background: rgba(76,141,255,0.14);
-  color: #2F7BFF;
-  border: 1px solid rgba(76,141,255,0.34);
-  border-radius: 12px;
-  padding: 2px 8px;
-  font-size: 11px;
-  font-weight: 700;
-}
-QLabel#ProfileMeta { color: #47679A; font-size: 14px; font-weight: 600; }
+QLabel#ProfileIcon { color: rgba(26,56,102,0.86); font-size: 26px; }
+QLabel#ProfileTitle { color: rgba(21,47,93,0.96); font-size: 18px; font-weight: 700; }
+QLabel#ProfileMeta { color: rgba(58,93,146,0.90); font-size: 15px; font-weight: 600; }
+QLabel#ProfileStatus { color: #25B46A; font-size: 24px; font-weight: 700; }
 
 QPushButton[class="primary"],
 QPushButton[role="primary"] {

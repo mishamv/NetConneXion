@@ -73,26 +73,24 @@ QListWidget#ProfilesList {
 }
 
 QWidget#ProfileRow {
-  background: rgba(251,253,255,0.90);
-  border-color: rgba(165,191,230,0.68);
+  background: rgba(255,255,255,0.88);
+  border: 1px solid rgba(173,196,232,0.72);
+  border-radius: 18px;
 }
 QWidget#ProfileRow:hover {
-  background: rgba(199,222,255,0.74);
-  border-color: rgba(108,154,232,0.90);
+  background: rgba(214,229,252,0.82);
+  border-color: rgba(109,157,233,0.86);
 }
 QWidget#ProfileRow[selected="true"] {
-  background: rgba(180,210,252,0.88);
-  border-color: rgba(80,140,236,0.98);
+  background: rgba(201,221,251,0.90);
+  border: 1px solid rgba(85,143,232,0.96);
 }
-
-QLabel#ProfileName,
+QLabel#ProfileTitle,
 QLabel#ProfileMeta,
 QLabel#ProfileIcon { color: rgba(26,52,94,0.96); }
 
-QLabel#ModeBadge {
-  background: rgba(92,150,245,0.18);
-  color: rgba(48,102,191,0.98);
-  border-color: rgba(96,153,246,0.46);
+QLabel#ProfileStatus {
+  color: #25B46A;
 }
 
 QPushButton[class="nav"],
