@@ -198,8 +198,8 @@ class MainWindow(_BASE):  # type: ignore[misc]
                 height=56,
                 fg_color="transparent",
                 hover_color=self.colors["hover"],
-                text_color="#FFFFFF",
-                corner_radius=0,
+                text_color=self.colors.get("sidebar_text", "#FFFFFF"),
+                corner_radius=12,
                 command=lambda s=key: self._switch_section(s),
                 font=ctk.CTkFont(size=22),
             )
@@ -220,7 +220,12 @@ class MainWindow(_BASE):  # type: ignore[misc]
 
     def _update_nav_state(self, active: str) -> None:
         for key, btn in self.nav_buttons.items():
-            btn.configure(fg_color=self.colors["hover"] if key == active else "transparent")
+            btn.configure(
+                fg_color=self.colors["hover"] if key == active else "transparent",
+                hover_color=self.colors["hover"],
+                text_color=self.colors.get("sidebar_text", "#FFFFFF"),
+                corner_radius=12,
+            )
 
     # ── Theme ─────────────────────────────────────────────────────────────────
 
@@ -235,13 +240,25 @@ class MainWindow(_BASE):  # type: ignore[misc]
         c = self.colors
         self.configure(fg_color=c["bg"])
         self.content.configure(fg_color=c["bg"])
-        self.sidebar.configure(fg_color=c["primary"])
-        self.topbar.configure(fg_color=c["primary"])
+        self.sidebar.configure(fg_color=c.get("sidebar_bg", c["primary"]))
+        self.topbar.configure(fg_color=c.get("header_bg", c["primary"]))
 
         # Update section frame backgrounds
-        self.section_frames["network"].configure(fg_color=c["bg"])
+        self.section_frames["network"].configure(
+            fg_color=c["card"],
+            border_width=1,
+            border_color=c.get("card_border", c["border"]),
+            corner_radius=int(c.get("card_radius", 8)),
+        )
         for key in ("wifi", "history", "tools", "settings"):
-            self.section_frames[key].configure(fg_color=c["card"])
+            self.section_frames[key].configure(
+                fg_color=c["card"],
+                border_width=1,
+                border_color=c.get("card_border", c["border"]),
+                corner_radius=int(c.get("card_radius", 8)),
+            )
+
+        self.section_title.configure(text_color=c.get("header_text", "#FFFFFF"))
 
         # Propagate to views that support color updates
         for view in (self.profiles_view, self.history_view,

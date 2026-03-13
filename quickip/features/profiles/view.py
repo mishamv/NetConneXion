@@ -34,7 +34,20 @@ class ProfilesView(ctk.CTkFrame):
         self.colors = get_palette(mode)
 
         # Root card frame
-        self._root_frame = ctk.CTkFrame(self, fg_color=self.colors["card"], corner_radius=8)
+        self._shadow_frame = ctk.CTkFrame(
+            self,
+            fg_color=self.colors.get("card_shadow", self.colors["bg"]),
+            corner_radius=int(self.colors.get("card_radius", 16)),
+        )
+        self._shadow_frame.pack(fill="both", expand=True, padx=(1, 0), pady=(1, 0))
+
+        self._root_frame = ctk.CTkFrame(
+            self._shadow_frame,
+            fg_color=self.colors["card"],
+            corner_radius=int(self.colors.get("card_radius", 16)),
+            border_width=1,
+            border_color=self.colors.get("card_border", self.colors["border"]),
+        )
         self._root_frame.pack(fill="both", expand=True)
         self._root_frame.grid_columnconfigure(1, weight=1)
         self._root_frame.grid_rowconfigure(0, weight=1)
@@ -94,7 +107,15 @@ class ProfilesView(ctk.CTkFrame):
     def update_colors(self, colors: dict) -> None:
         self.colors = colors
         try:
-            self._root_frame.configure(fg_color=colors["card"])
+            self._shadow_frame.configure(
+                fg_color=colors.get("card_shadow", colors["bg"]),
+                corner_radius=int(colors.get("card_radius", 16)),
+            )
+            self._root_frame.configure(
+                fg_color=colors["card"],
+                corner_radius=int(colors.get("card_radius", 16)),
+                border_color=colors.get("card_border", colors["border"]),
+            )
         except Exception:
             pass
         self._list.update_colors(colors)

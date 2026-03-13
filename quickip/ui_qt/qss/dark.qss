@@ -1,0 +1,176 @@
+#RootWindow { background: transparent; }
+
+QWidget { color: rgba(233,241,255,0.94); }
+
+QFrame[class="sidebar"],
+#Sidebar {
+  background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
+    stop:0 rgba(6,19,46,0.88),
+    stop:1 rgba(7,23,52,0.84));
+  border-color: rgba(176,202,244,0.18);
+  border-top-color: rgba(198,220,255,0.24);
+}
+
+QFrame[class="topbar"],
+#Header {
+  background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
+    stop:0 rgba(196,214,248,0.34),
+    stop:1 rgba(146,172,222,0.24));
+  border-color: rgba(190,210,245,0.26);
+  border-top-color: rgba(224,236,255,0.34);
+}
+
+QFrame[class="card"],
+#Card {
+  background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
+    stop:0 rgba(233,239,252,0.84),
+    stop:0.52 rgba(217,228,247,0.80),
+    stop:1 rgba(201,216,239,0.76));
+  border-color: rgba(170,192,228,0.32);
+  border-top-color: rgba(255,255,255,0.42);
+}
+
+#CardTitle,
+#EditorSubtitle,
+#Card QLabel,
+QFrame#SavedActions QLabel {
+  color: rgba(24,48,92,0.96);
+}
+
+#SearchField,
+#ProfilesSearch,
+QLineEdit,
+QComboBox {
+  background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
+    stop:0 rgba(248,251,255,0.94),
+    stop:1 rgba(236,243,252,0.88));
+  color: rgba(20,44,85,0.95);
+  border-color: rgba(166,190,228,0.52);
+  placeholder-text-color: rgba(116,142,186,0.78);
+}
+
+QComboBox::drop-down {
+  width: 32px;
+  border-left: 1px solid rgba(166,190,228,0.52);
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+  background: rgba(216,228,246,0.58);
+}
+QComboBox::down-arrow {
+  width: 10px;
+  height: 10px;
+}
+
+QCheckBox { color: rgba(36,66,113,0.92); }
+QCheckBox::indicator {
+  border-color: rgba(123,156,210,0.86);
+  background: rgba(236,244,255,0.94);
+}
+
+QListWidget#ProfilesList {
+  background: rgba(242,247,255,0.70);
+  border-color: rgba(158,186,228,0.66);
+}
+
+QWidget#ProfileRow {
+  background: rgba(251,253,255,0.90);
+  border-color: rgba(165,191,230,0.68);
+}
+QWidget#ProfileRow:hover {
+  background: rgba(199,222,255,0.74);
+  border-color: rgba(108,154,232,0.90);
+}
+QWidget#ProfileRow[selected="true"] {
+  background: rgba(180,210,252,0.88);
+  border-color: rgba(80,140,236,0.98);
+}
+
+QLabel#ProfileName,
+QLabel#ProfileMeta,
+QLabel#ProfileIcon { color: rgba(26,52,94,0.96); }
+
+QLabel#ModeBadge {
+  background: rgba(92,150,245,0.18);
+  color: rgba(48,102,191,0.98);
+  border-color: rgba(96,153,246,0.46);
+}
+
+QPushButton[class="nav"],
+QPushButton[nav="true"] {
+  color: rgba(228,238,255,0.96);
+}
+QPushButton[class="nav"]:hover,
+QPushButton[nav="true"]:hover {
+  background: rgba(166,201,255,0.14);
+  border-color: rgba(176,214,255,0.30);
+}
+QPushButton[class="nav"][active="true"],
+QPushButton[nav="true"][active="true"] {
+  background: rgba(183,214,255,0.20);
+  border-color: rgba(186,226,255,0.62);
+}
+
+QPushButton[class="primary"],
+QPushButton[role="primary"] {
+  background: qlineargradient(x1:0,y1:0,x2:1,y2:0, stop:0 #2D7DFF, stop:1 #1C58FF);
+  border-color: rgba(174,217,255,0.74);
+  border-top-color: rgba(255,255,255,0.38);
+}
+QPushButton[class="primary"]:hover,
+QPushButton[role="primary"]:hover {
+  background: qlineargradient(x1:0,y1:0,x2:1,y2:0, stop:0 #56A1FF, stop:1 #3276FF);
+}
+
+QPushButton[class="secondary"],
+QPushButton[role="secondary"] {
+  background: rgba(88,108,144,0.62);
+  border-color: rgba(198,214,240,0.34);
+  color: rgba(236,244,255,0.96);
+}
+QPushButton[class="secondary"]:hover,
+QPushButton[role="secondary"]:hover {
+  background: rgba(108,130,170,0.66);
+  border-color: rgba(218,232,252,0.44);
+}
+
+QPushButton[role="soft_blue"] {
+  background: rgba(218,232,252,0.94);
+  border-color: rgba(128,174,245,0.72);
+  color: rgba(39,95,194,0.96);
+}
+QPushButton[role="soft_purple"] {
+  background: rgba(229,222,252,0.94);
+  border-color: rgba(175,146,248,0.76);
+  color: rgba(109,74,198,0.95);
+}
+QPushButton[class="danger"],
+QPushButton[role="danger"] {
+  background: rgba(250,224,230,0.94);
+  border-color: rgba(241,162,179,0.82);
+  color: rgba(188,72,95,0.96);
+}
+
+QScrollBar:vertical {
+  background: transparent;
+  width: 11px;
+  margin: 2px 0 2px 0;
+}
+QScrollBar::handle:vertical {
+  background: rgba(226,232,240,0.42);
+  min-height: 28px;
+  border-radius: 999px;
+}
+QScrollBar::handle:vertical:hover { background: rgba(226,232,240,0.60); }
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: transparent; }
+
+#DnsSectionLabel {
+  color: rgba(98,126,173,0.80);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+QFrame#SavedActions {
+  background: rgba(108,130,170,0.22);
+  border-color: rgba(178,204,242,0.30);
+}

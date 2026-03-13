@@ -159,12 +159,14 @@ class FormPanel(ctk.CTkFrame):
             text_color="#FFFFFF", command=self._on_save_click,
         )
         self._btn_save.grid(row=0, column=2)
+        self._style_action_buttons()
 
         # Profile form card
         self._form_frame = ctk.CTkFrame(
             self,
             fg_color=c.get("card_inner", c["input_bg"]),
-            corner_radius=8, border_width=1, border_color=c["border"],
+            corner_radius=int(c.get("card_radius", 16)), border_width=1,
+            border_color=c.get("card_border", c["border"]),
         )
         self._form_frame.grid_columnconfigure(1, weight=1)
         self._form_frame.grid(row=1, column=0, sticky="nsew")
@@ -179,9 +181,11 @@ class FormPanel(ctk.CTkFrame):
                                 text_color=c["text"], anchor="w", width=160)
 
         def entry(**kw) -> ctk.CTkEntry:
-            return ctk.CTkEntry(parent, height=38, corner_radius=6, font=_f(14),
+            return ctk.CTkEntry(parent, height=38, corner_radius=int(c.get("input_radius", 10)), font=_f(14),
                                 border_color=c["border"], fg_color=c["input_bg"],
-                                text_color=c["text"], **kw)
+                                text_color=c["text"],
+                                placeholder_text_color=c.get("input_placeholder", c.get("text_secondary", c["text"])),
+                                **kw)
 
         def sep() -> None:
             nonlocal row
@@ -201,7 +205,7 @@ class FormPanel(ctk.CTkFrame):
         lbl("Адаптер").grid(row=row, column=0, sticky="w", padx=(14, 8), pady=10)
         self.adapter_combo = ctk.CTkComboBox(
             parent, state="readonly", values=["Ethernet", "Wi-Fi"],
-            height=38, font=_f(14), corner_radius=6,
+            height=38, font=_f(14), corner_radius=int(c.get("input_radius", 10)),
             border_color=c["border"], fg_color=c["input_bg"],
             button_color=c["combo_button"], button_hover_color=c["combo_button_hover"],
             dropdown_fg_color=c["card"], dropdown_text_color=c["text"],
@@ -232,6 +236,7 @@ class FormPanel(ctk.CTkFrame):
             bind_entry_menu(e, c)
             setattr(self, attr, e)
             row += 1
+
         sep()
 
         # DHCP DNS
@@ -253,6 +258,23 @@ class FormPanel(ctk.CTkFrame):
             bind_entry_menu(e, c)
             setattr(self, attr, e)
             row += 1
+
+    def _style_action_buttons(self) -> None:
+        c = self._colors
+        self._btn_apply.configure(
+            fg_color=c.get("btn_primary_bg", c["accent"]),
+            hover_color=c.get("btn_primary_hover", c["hover"]),
+            text_color=c.get("btn_primary_text", "#FFFFFF"),
+            corner_radius=10,
+        )
+        self._btn_save.configure(
+            fg_color=c.get("btn_outline_bg", c["input_bg"]),
+            hover_color=c["bg"],
+            text_color=c.get("btn_outline_text", c["text"]),
+            border_width=1,
+            border_color=c.get("btn_outline_border", c["border"]),
+            corner_radius=10,
+        )
 
     # ── Dirty state ───────────────────────────────────────────────
 
@@ -398,9 +420,18 @@ class FormPanel(ctk.CTkFrame):
                 pass
 
         _cfg(self._form_frame,
-             fg_color=c.get("card_inner", c["input_bg"]), border_color=c["border"])
+             fg_color=c.get("card_inner", c["input_bg"]),
+             border_color=c.get("card_border", c["border"]),
+             corner_radius=int(c.get("card_radius", 16)))
 
-        entry_kw = dict(fg_color=c["input_bg"], border_color=c["border"], text_color=c["text"])
+        entry_kw = dict(
+            fg_color=c["input_bg"],
+            border_color=c["border"],
+            text_color=c["text"],
+            border_width=1,
+            corner_radius=int(c.get("input_radius", 10)),
+            placeholder_text_color=c.get("input_placeholder", c.get("text_secondary", c["text"])),
+        )
         for e in (self.name_entry, self.ip_entry, self.mask_entry,
                   self.gw_entry, self.dns1_entry, self.dns2_entry):
             _cfg(e, **entry_kw)
@@ -409,7 +440,10 @@ class FormPanel(ctk.CTkFrame):
              fg_color=c["input_bg"], border_color=c["border"],
              button_color=c["combo_button"], button_hover_color=c["combo_button_hover"],
              dropdown_fg_color=c["card"], dropdown_text_color=c["text"],
-             text_color=c["text"], text_color_disabled=c["text"])
+             text_color=c["text"], text_color_disabled=c["text"],
+             corner_radius=int(c.get("input_radius", 10)))
 
         for cb in (self._dhcp_ip_cb, self._dhcp_dns_cb):
             _cfg(cb, text_color=c["text"])
+
+        self._style_action_buttons()

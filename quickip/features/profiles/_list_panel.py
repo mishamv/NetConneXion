@@ -25,8 +25,9 @@ class _ProfileRow(ctk.CTkFrame):
         selected: bool,
         on_click: Callable[[str, bool], None],
     ) -> None:
-        bg = colors["sidebar_selected"] if selected else "transparent"
-        super().__init__(parent, fg_color=bg, corner_radius=6, cursor="hand2")
+        bg = colors.get("panel_row_selected", colors["sidebar_selected"]) if selected else colors.get("panel_row_bg", colors["card"])
+        super().__init__(parent, fg_color=bg, corner_radius=10, cursor="hand2", border_width=1,
+                         border_color=colors.get("card_border", colors["border"]))
         self.grid_columnconfigure(1, weight=1)
         self._colors = colors
         self._name = name
@@ -55,17 +56,27 @@ class _ProfileRow(ctk.CTkFrame):
 
     def set_selected(self, selected: bool) -> None:
         self._selected = selected
-        self.configure(fg_color=self._colors["sidebar_selected"] if selected else "transparent")
+        self.configure(
+            fg_color=self._colors.get("panel_row_selected", self._colors["sidebar_selected"]) if selected
+            else self._colors.get("panel_row_bg", self._colors["card"])
+        )
         self._name_lbl.configure(font=_f(13, "bold" if selected else "normal"))
 
     def update_colors(self, colors: dict) -> None:
         self._colors = colors
         try:
-            self.configure(fg_color=colors["sidebar_selected"] if self._selected else "transparent")
+            self.configure(
+                fg_color=colors.get("panel_row_selected", colors["sidebar_selected"]) if self._selected
+                else colors.get("panel_row_bg", colors["card"])
+            )
         except Exception:
             pass
         try:
             self._icon_lbl.configure(text_color=colors["accent"])
+        except Exception:
+            pass
+        try:
+            self.configure(border_color=colors.get("card_border", colors["border"]))
         except Exception:
             pass
         try:
@@ -89,8 +100,14 @@ class ListPanel(ctk.CTkFrame):
         on_import: Callable[[], None],
         on_search: Callable[[], None],
     ) -> None:
-        super().__init__(parent, fg_color=colors.get("sidebar_bg", colors["input_bg"]),
-                         width=280, corner_radius=0)
+        super().__init__(
+            parent,
+            fg_color=colors.get("panel_bg", colors["card"]),
+            width=280,
+            corner_radius=int(colors.get("card_radius", 16)),
+            border_width=1,
+            border_color=colors.get("card_border", colors["border"]),
+        )
         self.grid_propagate(False)
         self.grid_rowconfigure(2, weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -114,7 +131,7 @@ class ListPanel(ctk.CTkFrame):
 
         # Search bar: icon + entry in a single styled frame
         self._search_bar = ctk.CTkFrame(
-            self, fg_color=c["input_bg"], corner_radius=6,
+            self, fg_color=c["input_bg"], corner_radius=int(c.get("input_radius", 10)),
             border_width=1, border_color=c["border"],
         )
         self._search_bar.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 6))
@@ -132,6 +149,7 @@ class ListPanel(ctk.CTkFrame):
             placeholder_text="Поиск...",
             height=32, corner_radius=0, font=_f(13),
             border_width=0, fg_color="transparent", text_color=c["text"],
+            placeholder_text_color=c.get("input_placeholder", c.get("text_secondary", c["text"])),
         )
         self._search.grid(row=0, column=1, sticky="ew", padx=(0, 6), pady=1)
         self._search.bind("<KeyRelease>", lambda _: self._on_search())
@@ -140,7 +158,7 @@ class ListPanel(ctk.CTkFrame):
         self._filter_combo = ctk.CTkComboBox(
             self, state="readonly", values=["Все адаптеры"],
             variable=self._filter_var,
-            height=34, font=_f(13), corner_radius=6,
+            height=34, font=_f(13), corner_radius=int(c.get("input_radius", 10)),
             border_color=c["border"], fg_color=c["input_bg"],
             button_color=c["combo_button"], button_hover_color=c["combo_button_hover"],
             dropdown_fg_color=c["card"], dropdown_text_color=c["text"],
@@ -151,8 +169,8 @@ class ListPanel(ctk.CTkFrame):
 
         # Card frame around the scrollable list
         self._list_card = ctk.CTkFrame(
-            self, fg_color="transparent", corner_radius=8,
-            border_width=1, border_color=c["border"],
+            self, fg_color=c["bg"], corner_radius=12,
+            border_width=1, border_color=c.get("card_border", c["border"]),
         )
         self._list_card.grid(row=2, column=0, sticky="nsew", padx=8, pady=(0, 6))
         self._list_card.grid_columnconfigure(0, weight=1)
@@ -171,24 +189,71 @@ class ListPanel(ctk.CTkFrame):
         btns = ctk.CTkFrame(self, fg_color="transparent")
         btns.grid(row=4, column=0, sticky="ew", padx=10, pady=10)
         btns.grid_columnconfigure(0, weight=1)
-        for i, (text, cmd) in enumerate([
-            ("✚  Новый",      on_create),
-            ("⊕  Копировать", on_duplicate),
-            ("↑  Экспорт",    on_export),
-            ("↓  Импорт",     on_import),
-        ]):
-            ctk.CTkButton(btns, text=text, height=36, font=_f(13),
-                          text_color="#FFFFFF", command=cmd).grid(
-                row=i, column=0, sticky="ew", pady=2)
+        self._btn_create = ctk.CTkButton(
+            btns, text="✚  Новый", height=40, font=_f(13, "bold"), command=on_create,
+        )
+        self._btn_create.grid(row=0, column=0, sticky="ew", pady=2)
 
-        # Delete — red background, white text (danger action)
-        ctk.CTkButton(
-            btns, text="✖  Удалить", height=36, font=_f(13),
-            text_color="#FFFFFF",
-            fg_color="#C0392B",
-            hover_color="#992222",
-            command=on_delete,
-        ).grid(row=4, column=0, sticky="ew", pady=2)
+        self._btn_duplicate = ctk.CTkButton(
+            btns, text="⊕  Копировать", height=36, font=_f(13), command=on_duplicate,
+        )
+        self._btn_duplicate.grid(row=1, column=0, sticky="ew", pady=2)
+
+        self._btn_export = ctk.CTkButton(
+            btns, text="↑  Экспорт", height=36, font=_f(13), command=on_export,
+        )
+        self._btn_export.grid(row=2, column=0, sticky="ew", pady=2)
+
+        self._btn_import = ctk.CTkButton(
+            btns, text="↓  Импорт", height=36, font=_f(13), command=on_import,
+        )
+        self._btn_import.grid(row=3, column=0, sticky="ew", pady=2)
+
+        self._btn_delete = ctk.CTkButton(
+            btns, text="✖  Удалить", height=36, font=_f(13), command=on_delete,
+        )
+        self._btn_delete.grid(row=4, column=0, sticky="ew", pady=2)
+
+        self._style_action_buttons()
+
+    def _style_action_buttons(self) -> None:
+        c = self._colors
+        self._btn_create.configure(
+            fg_color=c.get("btn_primary_bg", c["accent"]),
+            hover_color=c.get("btn_primary_hover", c["hover"]),
+            text_color=c.get("btn_primary_text", "#FFFFFF"),
+            corner_radius=10,
+        )
+        self._btn_duplicate.configure(
+            fg_color=c.get("btn_outline_bg", c["input_bg"]),
+            hover_color=c["bg"],
+            text_color=c.get("btn_outline_text", c["text"]),
+            border_width=1,
+            border_color=c.get("btn_outline_border", c["border"]),
+            corner_radius=10,
+        )
+        self._btn_export.configure(
+            fg_color=c.get("btn_soft_bg", c["bg"]),
+            hover_color="#E2ECFF",
+            text_color=c.get("btn_soft_text_blue", c["accent"]),
+            corner_radius=10,
+            border_width=0,
+        )
+        self._btn_import.configure(
+            fg_color=c.get("btn_soft_bg_purple", c.get("btn_soft_bg", c["bg"])),
+            hover_color="#ECE3FF",
+            text_color=c.get("btn_soft_text_purple", c.get("btn_soft_text_blue", c["accent"])),
+            corner_radius=10,
+            border_width=0,
+        )
+        self._btn_delete.configure(
+            fg_color=c.get("btn_danger_bg", "#FFF1F1"),
+            hover_color="#FFE6E6",
+            text_color=c.get("btn_danger_text", "#E05252"),
+            border_width=1,
+            border_color=c.get("btn_danger_border", "#FFD0D0"),
+            corner_radius=10,
+        )
 
     # ── Public interface ──────────────────────────────────────────
 
@@ -232,21 +297,25 @@ class ListPanel(ctk.CTkFrame):
         self._colors = colors
         c = colors
         try:
-            self.configure(fg_color=c.get("sidebar_bg", c["input_bg"]))
-        except Exception:
-            pass
-        try:
-            self._scroll.configure(fg_color=c.get("sidebar_bg", c["input_bg"]))
-        except Exception:
-            pass
-        try:
-            self._list_card.configure(border_color=c["border"])
+            self.configure(
+                fg_color=c.get("panel_bg", c["card"]),
+                border_color=c.get("card_border", c["border"]),
+                corner_radius=int(c.get("card_radius", 16)),
+            )
+            self._scroll.configure(fg_color="transparent")
+            self._list_card.configure(
+                fg_color=c["bg"],
+                border_color=c.get("card_border", c["border"]),
+            )
         except Exception:
             pass
         try:
             self._search_bar.configure(fg_color=c["input_bg"], border_color=c["border"])
             self._search_icon.configure(text_color=c.get("text_secondary", c["text"]))
-            self._search.configure(text_color=c["text"])
+            self._search.configure(
+                text_color=c["text"],
+                placeholder_text_color=c.get("input_placeholder", c.get("text_secondary", c["text"])),
+            )
         except Exception:
             pass
         try:
@@ -259,6 +328,7 @@ class ListPanel(ctk.CTkFrame):
             pass
         for row in self._rows.values():
             row.update_colors(c)
+        self._style_action_buttons()
 
     # ── Internals ─────────────────────────────────────────────────
 

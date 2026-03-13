@@ -1,0 +1,306 @@
+QWidget {
+  color: #EAF1FF;
+  font-family: "Segoe UI";
+  font-size: 12px;
+  background: transparent;
+}
+
+#RootWindow { background: transparent; }
+
+QFrame[class="sidebar"],
+#Sidebar {
+  background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
+    stop:0 rgba(8,18,40,0.88),
+    stop:1 rgba(11,26,54,0.84));
+  border: 1px solid rgba(255,255,255,0.12);
+  border-top-color: rgba(255,255,255,0.20);
+  border-radius: 20px;
+}
+
+QFrame[class="topbar"],
+#Header {
+  background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
+    stop:0 rgba(255,255,255,0.20),
+    stop:1 rgba(255,255,255,0.12));
+  border: 1px solid rgba(255,255,255,0.15);
+  border-top-color: rgba(255,255,255,0.28);
+  border-radius: 20px;
+  min-height: 50px;
+}
+
+#LogoMark { color: #78D2FF; font-size: 24px; }
+
+#AppTitle {
+  color: #F5F9FF;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+#SearchField,
+#ProfilesSearch {
+  background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
+    stop:0 rgba(255,255,255,0.16),
+    stop:1 rgba(255,255,255,0.11));
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 12px;
+  color: #EEF4FF;
+  padding: 8px 12px;
+  selection-background-color: rgba(87,147,255,0.5);
+  placeholder-text-color: rgba(224,236,255,0.72);
+}
+
+#SearchField:focus,
+#ProfilesSearch:focus {
+  border: 1px solid #66A4FF;
+  background: rgba(255,255,255,0.16);
+}
+
+
+QWidget#HeaderActionsWrap { background: transparent; }
+
+QPushButton[compact="true"] {
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: 9px;
+}
+QPushButton[class="nav"],
+QPushButton[nav="true"] {
+  background: transparent;
+  border: 1px solid transparent;
+  border-left: 4px solid transparent;
+  color: #D8E6FF;
+  text-align: left;
+  padding: 11px 14px;
+  border-radius: 16px;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+QPushButton[class="nav"]:hover,
+QPushButton[nav="true"]:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(170,204,255,0.20);
+}
+
+QPushButton[class="nav"][active="true"],
+QPushButton[nav="true"][active="true"] {
+  background: rgba(255,255,255,0.13);
+  border-color: rgba(174,217,255,0.42);
+  border-left: 4px solid #2D7DFF;
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+QFrame[class="card"],
+#Card {
+  background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
+    stop:0 rgba(255,255,255,0.22),
+    stop:0.16 rgba(255,255,255,0.15),
+    stop:1 rgba(255,255,255,0.08));
+  border: 1px solid rgba(0,0,0,0.07);
+  border-top-color: rgba(255,255,255,0.28);
+  border-radius: 20px;
+}
+
+#CardTitle { color: #0D254B; font-size: 22px; font-weight: 700; }
+#EditorSubtitle { color: #143562; font-size: 18px; font-weight: 600; }
+
+#EditorTabs::pane {
+  border: 1px solid rgba(176,197,236,0.84);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.68);
+  padding: 6px;
+}
+
+#EditorTabs QTabBar::tab {
+  background: rgba(223,234,251,0.72);
+  color: #2E4C7E;
+  border: 1px solid rgba(164,187,228,0.74);
+  border-radius: 999px;
+  padding: 8px 18px;
+  margin: 0 6px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+#EditorTabs QTabBar::tab:selected {
+  background: qlineargradient(x1:0,y1:0,x2:1,y2:0, stop:0 #2D7DFF, stop:1 #1E5EFF);
+  color: #FFFFFF;
+  border-color: rgba(76,141,255,0.98);
+}
+
+QLabel { color: #12315D; font-size: 18px; font-weight: 600; }
+
+QLineEdit, QComboBox {
+  background: rgba(255,255,255,0.92);
+  border: 1px solid #C9D8F2;
+  border-radius: 12px;
+  color: #0F2B55;
+  padding: 7px 10px;
+  padding-right: 34px;
+  min-height: 34px;
+  font-size: 16px;
+}
+
+QLineEdit:focus, QComboBox:focus { border: 1px solid #4C8DFF; }
+
+
+QComboBox::drop-down {
+  width: 32px;
+  subcontrol-origin: padding;
+  subcontrol-position: top right;
+  border-left: 1px solid rgba(148,169,208,0.55);
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+  background: rgba(255,255,255,0.20);
+}
+QComboBox::down-arrow {
+  width: 10px;
+  height: 10px;
+}
+
+
+QComboBox#AdapterFilter {
+  border-radius: 10px;
+}
+QCheckBox { color: #163B6C; font-size: 18px; }
+QCheckBox::indicator {
+  width: 16px; height: 16px; border-radius: 5px;
+  border: 1px solid #8EAFE6; background: rgba(255,255,255,0.75);
+}
+QCheckBox::indicator:checked { background: #2F7BFF; border-color: #2F7BFF; }
+
+QListWidget#ProfilesList {
+  background: rgba(246,250,255,0.72);
+  border: 1px solid rgba(176,196,230,0.70);
+  border-radius: 12px;
+  outline: none;
+}
+
+QListWidget#ProfilesList::item { border: none; margin: 5px 4px; }
+
+QWidget#ProfileRow {
+  background: rgba(255,255,255,0.86);
+  border: 1px solid rgba(183,202,236,0.78);
+  border-radius: 14px;
+}
+QWidget#ProfileRow:hover { background: rgba(45,125,255,0.21); border-color: rgba(74,141,255,0.82); }
+QWidget#ProfileRow[selected="true"] {
+  background: rgba(219,235,255,1.0);
+  border: 1px solid rgba(53,126,255,0.98);
+}
+
+QLabel#ProfileIcon { color: #2F6ECC; font-size: 18px; }
+QLabel#ProfileName { color: #12305B; font-size: 18px; font-weight: 700; }
+QLabel#ModeBadge {
+  background: rgba(76,141,255,0.14);
+  color: #2F7BFF;
+  border: 1px solid rgba(76,141,255,0.34);
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+QLabel#ProfileMeta { color: #47679A; font-size: 14px; font-weight: 600; }
+
+QPushButton[class="primary"],
+QPushButton[role="primary"] {
+  background: qlineargradient(x1:0,y1:0,x2:1,y2:0, stop:0 #2D7DFF, stop:1 #1E5EFF);
+  border: 1px solid rgba(164,212,255,0.62);
+  border-top-color: rgba(255,255,255,0.28);
+  color: #FFFFFF;
+  border-radius: 11px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 700;
+}
+QPushButton[class="primary"]:hover,
+QPushButton[role="primary"]:hover {
+  background: qlineargradient(x1:0,y1:0,x2:1,y2:0, stop:0 #4A95FF, stop:1 #2D6FFF);
+}
+QPushButton[class="primary"]:pressed,
+QPushButton[role="primary"]:pressed { background: #1A5FD2; }
+
+QPushButton[class="secondary"],
+QPushButton[role="secondary"] {
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.16);
+  color: #EEF4FF;
+  border-radius: 11px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 700;
+}
+QPushButton[class="secondary"]:hover,
+QPushButton[role="secondary"]:hover { background: rgba(255,255,255,0.16); border-color: rgba(255,255,255,0.24); }
+
+QPushButton[role="soft_blue"] {
+  background: rgba(238,244,255,0.96);
+  border: 1px solid rgba(184,208,255,0.88);
+  color: #2F7BFF;
+  border-radius: 11px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 700;
+}
+QPushButton[role="soft_blue"]:hover { background: rgba(224,236,255,1); }
+
+QPushButton[role="soft_purple"] {
+  background: rgba(243,239,255,0.97);
+  border: 1px solid rgba(207,191,255,0.92);
+  color: #7B4CFF;
+  border-radius: 11px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 700;
+}
+QPushButton[role="soft_purple"]:hover { background: rgba(235,227,255,1); }
+
+QPushButton[class="danger"],
+QPushButton[role="danger"] {
+  background: rgba(255,236,238,0.98);
+  border: 1px solid rgba(255,191,197,0.92);
+  color: #DE626F;
+  border-radius: 11px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 700;
+}
+QPushButton[class="danger"]:hover,
+QPushButton[role="danger"]:hover { background: rgba(255,231,231,1); }
+
+QPushButton:disabled {
+  color: rgba(133,147,173,0.75);
+  border-color: rgba(190,198,220,0.4);
+}
+
+QScrollBar:vertical {
+  background: transparent;
+  width: 11px;
+  margin: 2px 0 2px 0;
+}
+QScrollBar::handle:vertical {
+  background: rgba(15,23,42,0.30);
+  min-height: 28px;
+  border-radius: 999px;
+}
+QScrollBar::handle:vertical:hover { background: rgba(15,23,42,0.46); }
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: transparent; }
+
+QLabel#Placeholder { color: rgba(236,244,255,0.88); font-size: 24px; font-weight: 600; }
+
+
+#DnsSectionLabel {
+  color: rgba(89,108,141,0.90);
+  font-size: 12px;
+  font-weight: 700;
+  padding-top: 2px;
+}
+
+QFrame#SavedActions {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 12px;
+}
