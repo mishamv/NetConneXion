@@ -112,6 +112,3 @@ pyinstaller --noconfirm --windowed --onefile ^
 
 Then run Inno Setup on the generated spec for a proper Windows installer.
 
-## License
-
-MIT
