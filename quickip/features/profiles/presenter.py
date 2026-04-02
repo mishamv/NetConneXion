@@ -9,7 +9,7 @@ import uuid
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Protocol
 
 from quickip.core.models import Profile, IPMode, DNSMode
-from quickip.core.paths import get_profiles_file
+from quickip.shared.paths import get_profiles_file
 from quickip.core.events.types import (
     ProfileCreated, ProfileUpdated, ProfileDeleted, ProfilesChanged,
 )
@@ -50,7 +50,7 @@ class ProfilesPresenter:
         self._container = container
         self._repo = ProfileRepository(get_profiles_file())
         self._service = ProfileService(container)
-        self._import_export = ImportExportService(self._repo, container.event_bus)
+        self._import_export = ImportExportService(self._repo, container.event_bus)  # type: ignore[arg-type]
         self._view: Optional[ProfilesViewProtocol] = None
         self._profiles: Dict[str, Profile] = {}   # keyed by name
         self._current_key: Optional[str] = None
@@ -137,7 +137,7 @@ class ProfilesPresenter:
         )
         self._profiles[name] = profile
         self._save_all()
-        self._container.event_bus.publish(ProfileCreated(profile=profile))
+        self._container.event_bus.publish(ProfileCreated(profile=profile))  # type: ignore[arg-type]
         self._publish_profiles_changed()
         self.refresh_list(select=name)
 
@@ -166,7 +166,7 @@ class ProfilesPresenter:
         for name in to_delete:
             profile = self._profiles.pop(name)
             self._repo.delete(profile.id)
-            self._container.event_bus.publish(
+            self._container.event_bus.publish(  # type: ignore[arg-type]
                 ProfileDeleted(profile_id=profile.id, profile_name=profile.name)
             )
         self._publish_profiles_changed()
@@ -178,11 +178,20 @@ class ProfilesPresenter:
         if source_name not in self._profiles:
             return
         src = self._profiles[source_name]
+        MAX_LEN = 30  # максимальная длина имени профиля
         idx = 2
-        new_name = f"{src.name} ({idx})"
+
+        def _make_name(base: str, n: int) -> str:
+            suffix = f" ({n})"
+            # Если базовое имя + суффикс не влезают — обрезаем базу
+            if len(base) + len(suffix) > MAX_LEN:
+                base = base[:MAX_LEN - len(suffix)]
+            return f"{base}{suffix}"
+
+        new_name = _make_name(src.name, idx)
         while new_name in self._profiles:
             idx += 1
-            new_name = f"{src.name} ({idx})"
+            new_name = _make_name(src.name, idx)
 
         dup = Profile(
             id=str(uuid.uuid4()),
@@ -226,7 +235,7 @@ class ProfilesPresenter:
 
             self._profiles[profile.name] = profile
             self._save_all()
-            self._container.event_bus.publish(ProfileUpdated(profile=profile, old_name=self._current_key))
+            self._container.event_bus.publish(ProfileUpdated(profile=profile, old_name=self._current_key))  # type: ignore[arg-type]
             self._publish_profiles_changed()
             self.refresh_list(select=profile.name)
         except Exception as exc:
@@ -261,7 +270,7 @@ class ProfilesPresenter:
             )
             self._profiles[name] = profile
             self._save_all()
-            self._container.event_bus.publish(ProfileCreated(profile=profile))
+            self._container.event_bus.publish(ProfileCreated(profile=profile))  # type: ignore[arg-type]
             self._publish_profiles_changed()
             self.refresh_list(select=name)
         except Exception as exc:
@@ -389,7 +398,7 @@ class ProfilesPresenter:
             self._view.load_profile_form(profile, focus=focus)
 
     def _publish_profiles_changed(self) -> None:
-        self._container.event_bus.publish(
+        self._container.event_bus.publish(  # type: ignore[arg-type]
             ProfilesChanged(profile_names=list(self._profiles.keys()))
         )
 
@@ -413,6 +422,8 @@ class ProfilesPresenter:
     def _validate(profile: Profile) -> None:
         if not profile.name.strip():
             raise ValueError("Введите имя профиля.")
+        if len(profile.name) > 30:
+            raise ValueError("Имя профиля не может быть длиннее 30 символов.")
         if not profile.adapter.strip():
             raise ValueError("Выберите сетевой адаптер.")
 
@@ -435,3 +446,5 @@ class ProfilesPresenter:
                 _ip(profile.dns_primary, "DNS основной")
             if profile.dns_secondary:
                 _ip(profile.dns_secondary, "DNS альтернативный")
+                if profile.dns_secondary == profile.dns_primary:
+                    raise ValueError("DNS альтернативный не должен совпадать с основным.")

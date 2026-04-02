@@ -170,16 +170,3 @@ class ProcessRunner:
                 duration_ms=duration_ms,
                 command=command_str
             )
-
-    def run_shell(self, command: str, timeout: Optional[int] = 30) -> CommandResult:
-        """
-        Execute shell command as string.
-        
-        Args:
-            command: Shell command string
-            timeout: Timeout in seconds
-            
-        Returns:
-            CommandResult
-        """
-        return self.run([command], timeout=timeout, shell=True)

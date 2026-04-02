@@ -6,7 +6,7 @@ import logging
 from typing import TYPE_CHECKING, List, Optional, Protocol
 
 from quickip.core.models import ProfileHistoryEntry, HistoryStats
-from quickip.core.paths import get_history_file
+from quickip.shared.paths import get_history_file
 from quickip.core.events.types import ProfileApplied, ProfileApplyFailed
 from quickip.features.history.repository import HistoryRepository
 
@@ -42,8 +42,8 @@ class HistoryPresenter:
 
         # Auto-refresh when a profile apply result arrives
         bus = container.event_bus
-        bus.subscribe(ProfileApplied, self._on_applied)
-        bus.subscribe(ProfileApplyFailed, self._on_applied)
+        bus.subscribe(ProfileApplied, self._on_applied)  # type: ignore[arg-type]
+        bus.subscribe(ProfileApplyFailed, self._on_applied)  # type: ignore[arg-type]
 
     def bind_view(self, view: HistoryViewProtocol) -> None:
         self._view = view

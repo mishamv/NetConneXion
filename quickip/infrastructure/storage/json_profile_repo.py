@@ -45,7 +45,7 @@ class JsonProfileRepository(ProfileRepository):
                 profile = self._deserialize(item)
                 self._profiles[profile.id] = profile
 
-            logger.info(f"Loaded {len(self._profiles)} profiles from {self.file_path}")
+            logger.debug(f"Loaded {len(self._profiles)} profiles from {self.file_path}")
 
         except Exception as e:
             logger.error(f"Error loading profiles: {e}", exc_info=True)

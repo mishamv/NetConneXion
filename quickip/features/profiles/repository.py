@@ -38,7 +38,7 @@ class ProfileRepository(BaseJsonRepository, _ProfileRepositoryABC):
                 self._cache[p.id] = p
             except Exception as exc:
                 logger.warning("Skipping corrupt profile row: %s", exc)
-        logger.info("Loaded %d profiles from %s", len(self._cache), self._path)
+        logger.debug("Loaded %d profiles from %s", len(self._cache), self._path)
 
     def _flush(self) -> None:
         """Atomically write all cached profiles to disk."""

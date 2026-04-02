@@ -1,8 +1,11 @@
-# Основные зависимости
-customtkinter>=5.2
+# Core UI
+PySide6>=6.5
+
+# System/typing
 typing_extensions>=4.0
 
-# Phase 1 (опциональные, нужны для трея и уведомлений)
-# pystray>=0.19
-# pillow>=10.0
+# Windows DPAPI (password encryption)
+pywin32>=306
+
+# Phase 1 (notifications - optional)
 # winotify>=1.1

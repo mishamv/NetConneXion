@@ -132,16 +132,52 @@ class NetshClient:
 
         return config
 
+    # Символы запрещённые в имени адаптера — защита от command injection в netsh
+    _ADAPTER_FORBIDDEN = set('"\'&|;<>(){}$`\\\n\r\t')
+    _ADAPTER_MAX_LEN = 64
+
+    @classmethod
+    def _validate_adapter_name(cls, adapter: str) -> str:
+        """Валидирует имя адаптера перед передачей в netsh.
+
+        Разрешает только безопасные символы — буквы, цифры, пробелы,
+        дефис, подчёркивание, точка, скобки [] (нужны для ZeroTier и др.).
+        Raises ValueError если имя содержит потенциально опасные символы.
+        """
+        if not adapter or not adapter.strip():
+            raise ValueError("Имя адаптера не может быть пустым.")
+        if len(adapter) > cls._ADAPTER_MAX_LEN:
+            raise ValueError(f"Имя адаптера слишком длинное (>{cls._ADAPTER_MAX_LEN} символов).")
+        forbidden = cls._ADAPTER_FORBIDDEN.intersection(adapter)
+        if forbidden:
+            bad = ''.join(sorted(forbidden))
+            raise ValueError(f"Имя адаптера содержит запрещённые символы: {bad!r}")
+        return adapter
+
     def apply_profile(self, profile: Profile) -> CommandResult:
         """
         Apply network profile configuration.
-        
+
         Args:
             profile: Profile to apply
-            
+
         Returns:
             CommandResult with execution details
         """
+        # C2: валидируем имя адаптера до формирования команд
+        try:
+            self._validate_adapter_name(profile.adapter)
+        except ValueError as e:
+            msg = f"Недопустимое имя адаптера: {e}"
+            logger.error(msg)
+            return CommandResult(
+                success=False,
+                stdout="",
+                stderr=msg,
+                exit_code=-1,
+                duration_ms=0,
+                command="",
+            )
         commands = self._build_commands(profile)
         all_output = []
         all_errors = []
@@ -150,16 +186,21 @@ class NetshClient:
         for cmd in commands:
             result = self.runner.run(cmd)
             total_duration += result.duration_ms
-            
+
             if result.stdout:
                 all_output.append(result.stdout)
             if result.stderr:
                 all_errors.append(result.stderr)
-            
+
             if not result.success:
-                error_msg = f"Command failed: {' '.join(cmd)}\n{result.stderr}"
+                # Команда delete dnsservers может упасть если DNS не настроен — игнорируем
+                if "delete" in cmd and "dnsservers" in cmd:
+                    logger.debug(f"Ignored non-critical DNS delete failure: {result.stdout}")
+                    continue
+
+                error_msg = f"Command failed: {' '.join(cmd)}\nstdout: {result.stdout}\nstderr: {result.stderr}\nexit_code: {result.exit_code}"
                 logger.error(error_msg)
-                
+
                 return CommandResult(
                     success=False,
                     stdout='\n'.join(all_output),
@@ -197,7 +238,6 @@ class NetshClient:
                     f"address={profile.ipv4}",
                     f"mask={profile.mask}",
                     f"gateway={profile.gateway}",
-                    "gwmetric=1"
                 ])
             else:
                 commands.append([
@@ -216,14 +256,20 @@ class NetshClient:
             ])
         else:
             if profile.dns_primary:
+                # Сбрасываем DNS через DHCP — гарантированно очищает список
+                commands.append([
+                    "netsh", "interface", "ipv4", "set", "dnsservers",
+                    f'name="{adapter}"', "source=dhcp"
+                ])
+                # Ставим первичный DNS статически
                 commands.append([
                     "netsh", "interface", "ipv4", "set", "dnsservers",
                     f'name="{adapter}"', "source=static",
                     f"address={profile.dns_primary}",
                     "register=primary", "validate=no"
                 ])
-                
-                if profile.dns_secondary:
+                # Добавляем вторичный только если он отличается от первичного
+                if profile.dns_secondary and profile.dns_secondary != profile.dns_primary:
                     commands.append([
                         "netsh", "interface", "ipv4", "add", "dnsservers",
                         f'name="{adapter}"',

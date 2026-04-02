@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from quickip.domain.models import Profile, ApplyResult, ProfileHistoryEntry
+from quickip.domain.models import IPMode, Profile, ApplyResult, ProfileHistoryEntry
 from quickip.domain.interfaces import ProfileRepository, HistoryRepository
 from quickip.infrastructure.system.netsh_client import NetshClient
 from quickip.events.bus import EventBus
@@ -187,7 +187,7 @@ class ProfileApplyService:
             id=str(uuid.uuid4()),
             name=f"Rollback from {entry.profile_name}",
             adapter=entry.adapter,
-            ip_mode="dhcp" if prev.dhcp_enabled else "static",
+            ip_mode=IPMode.DHCP if prev.dhcp_enabled else IPMode.STATIC,
             ipv4=prev.ip,
             mask=prev.mask,
             gateway=prev.gateway,

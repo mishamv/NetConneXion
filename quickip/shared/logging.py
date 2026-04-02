@@ -27,13 +27,13 @@ class StructuredFormatter(logging.Formatter):
 
         # Add extra fields from record
         if hasattr(record, "correlation_id"):
-            log_data["correlation_id"] = record.correlation_id
+            log_data["correlation_id"] = getattr(record, "correlation_id")
 
         if hasattr(record, "profile_id"):
-            log_data["profile_id"] = record.profile_id
+            log_data["profile_id"] = getattr(record, "profile_id")
 
         if hasattr(record, "adapter"):
-            log_data["adapter"] = record.adapter
+            log_data["adapter"] = getattr(record, "adapter")
 
         return json.dumps(log_data, ensure_ascii=False)
 
@@ -77,15 +77,19 @@ def setup_logging(
         console_handler.setFormatter(console_formatter)
         root_logger.addHandler(console_handler)
 
-    # File handler with rotation
+    # File handler — ротация по дням, максимум 7 файлов
     if enable_file and log_dir:
-        log_file = log_dir / "quickip.log"
-        file_handler = logging.handlers.RotatingFileHandler(
+        log_file = log_dir / "netconnexion.log"
+        file_handler = logging.handlers.TimedRotatingFileHandler(
             log_file,
-            maxBytes=10 * 1024 * 1024,  # 10 MB
-            backupCount=5,
-            encoding='utf-8'
+            when="midnight",      # ротация в полночь
+            interval=1,
+            backupCount=7,        # хранить 7 дней
+            encoding="utf-8",
+            utc=False,
         )
+        # Устанавливаем суффикс формата даты для архивных файлов
+        file_handler.suffix = "%Y-%m-%d"
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(StructuredFormatter())
         root_logger.addHandler(file_handler)

@@ -1,7 +1,7 @@
 """Event types for application event bus."""
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 from quickip.domain.models import (
     NetworkFingerprint,
     ApplyResult,
@@ -82,7 +82,7 @@ class ThemeChanged(AppEvent):
 class SettingsChanged(AppEvent):
     """Application settings changed."""
     key: str
-    value: any
+    value: Any
 
 
 @dataclass

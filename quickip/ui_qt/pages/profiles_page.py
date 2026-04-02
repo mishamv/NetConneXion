@@ -1,0 +1,669 @@
+"""Profiles page — list + editor for network profiles."""
+
+from __future__ import annotations
+
+from typing import Dict, List
+
+from PySide6.QtCore import Qt, QSize, QTimer
+from PySide6.QtGui import QColor, QFont, QPainter, QPen
+from PySide6.QtWidgets import (
+    QAbstractItemView, QComboBox, QFileDialog, QFrame,
+    QGridLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget,
+    QListWidgetItem, QPushButton, QScrollArea, QSizePolicy,
+    QVBoxLayout, QWidget,
+)
+
+from quickip.ui_qt.adapters.profiles_facade import ProfilesFacade, ProfileListItem
+from quickip.ui_qt.widgets.elide_label import ElideLabel
+from quickip.ui_qt.widgets.toggle_switch import ToggleSwitch
+
+
+class ProfileRowWidget(QWidget):
+    """Строка профиля в списке: иконка сети + имя + адаптер/режим."""
+
+    _WIFI_KEYWORDS = {"wi-fi", "wifi", "wireless", "беспровод", "wlan", "802.11"}
+
+    def __init__(self, item: ProfileListItem, dark_mode: bool = True) -> None:
+        super().__init__()
+        self._selected = False
+        self._dark_mode = dark_mode
+        self.setObjectName("ProfileRow")
+
+        adapter_lower = (item.adapter or "").lower()
+        self._is_wifi = any(k in adapter_lower for k in self._WIFI_KEYWORDS)
+
+        # Отступ слева = 10 (иконка x) + 34 (иконка w) + 10 (gap) = 54
+        lay = QHBoxLayout(self)
+        lay.setContentsMargins(54, 10, 12, 10)
+        lay.setSpacing(0)
+
+        col = QVBoxLayout()
+        col.setSpacing(2)
+        col.setContentsMargins(0, 0, 0, 0)
+
+        self.name_lbl = ElideLabel(item.name)
+        self.name_lbl.setObjectName("ProfileName")
+        col.addWidget(self.name_lbl)
+
+        mode = item.mode_badge.upper()
+        adapter = item.adapter or "—"
+        self.meta_lbl = QLabel(f"{adapter}  ·  {mode}")
+        self.meta_lbl.setObjectName(
+            "ProfileMetaDhcp" if mode == "DHCP" else "ProfileMetaStatic"
+        )
+        col.addWidget(self.meta_lbl)
+        lay.addLayout(col, 1)
+
+    def set_selected(self, selected: bool, dark_mode: bool = True) -> None:
+        self._selected = selected
+        self._dark_mode = dark_mode
+        self.update()
+
+    def paintEvent(self, _event) -> None:  # noqa: N802
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        r = self.rect().adjusted(1, 1, -1, -1)
+
+        # Фон при выделении
+        if self._selected:
+            if self._dark_mode:
+                painter.setPen(Qt.PenStyle.NoPen)
+                painter.setBrush(QColor(99, 102, 241, 22))
+                painter.drawRoundedRect(r, 9, 9)
+                painter.setPen(QPen(QColor(99, 102, 241, 70), 1))
+                painter.setBrush(Qt.BrushStyle.NoBrush)
+                painter.drawRoundedRect(r, 9, 9)
+            else:
+                painter.setPen(Qt.PenStyle.NoPen)
+                painter.setBrush(QColor("#F0F4FF"))
+                painter.drawRoundedRect(r, 9, 9)
+                painter.setPen(QPen(QColor("#C7D2FE"), 1.5))
+                painter.setBrush(Qt.BrushStyle.NoBrush)
+                painter.drawRoundedRect(r, 9, 9)
+
+        # Плашка иконки — фиксированные координаты (не зависят от height() при первой отрисовке)
+        margin = 10   # совпадает с contentsMargins top/bottom
+        ix, iy, iw, ih = 10, margin, 34, 34
+        bg = (
+            QColor(99, 102, 241, 40 if self._selected else 28)
+            if self._dark_mode
+            else QColor(238, 242, 255)
+        )
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(bg)
+        painter.drawRoundedRect(ix, iy, iw, ih, 9, 9)
+
+        ic = (
+            QColor(165, 180, 252, 210 if self._selected else 160)
+            if self._dark_mode
+            else QColor(79, 70, 229, 210 if self._selected else 170)
+        )
+        cx, cy = ix + iw // 2, iy + ih // 2
+        if self._is_wifi:
+            self._draw_wifi(painter, cx, cy, ic)
+        else:
+            self._draw_ethernet(painter, cx, cy, ic)
+
+    def _draw_ethernet(self, p: QPainter, cx: int, cy: int, c: QColor) -> None:
+        pen = QPen(c, 1.4)
+        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        p.setPen(pen)
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        p.drawLine(cx, cy - 4, cx, cy + 1)
+        p.drawLine(cx - 5, cy + 1, cx + 5, cy + 1)
+        p.drawLine(cx - 5, cy + 1, cx - 5, cy + 5)
+        p.drawLine(cx + 5, cy + 1, cx + 5, cy + 5)
+        p.setBrush(c)
+        p.setPen(Qt.PenStyle.NoPen)
+        p.drawRoundedRect(cx - 3, cy - 8, 6, 4, 1, 1)
+        p.drawRoundedRect(cx - 8, cy + 5, 6, 4, 1, 1)
+        p.drawRoundedRect(cx + 2, cy + 5, 6, 4, 1, 1)
+
+    def _draw_wifi(self, p: QPainter, cx: int, cy: int, c: QColor) -> None:
+        from PySide6.QtCore import QRectF
+        pen = QPen(c, 1.6)
+        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        p.setPen(pen)
+        p.setBrush(Qt.BrushStyle.NoBrush)
+
+        # Все дуги центрированы от одной точки внизу — классический Wi-Fi
+        dot_y = cy + 6   # точка внизу
+        for r in (10, 7, 4):
+            # Дуга: верхние 120° (от 30° до 150°)
+            p.drawArc(
+                QRectF(cx - r, dot_y - r, r * 2, r * 2),
+                30 * 16, 120 * 16
+            )
+
+        # Точка
+        p.setBrush(c)
+        p.setPen(Qt.PenStyle.NoPen)
+        p.drawEllipse(cx - 2, dot_y - 2, 4, 4)
+
+
+class ProfilesPage(QWidget):
+    """Страница профилей: список слева + редактор справа."""
+
+    def __init__(self, facade: ProfilesFacade) -> None:
+        super().__init__()
+        self.facade = facade
+        self._dark_mode = True
+        self._all_items: List[ProfileListItem] = []
+        self._selected_profile_name = ""
+        self._loaded_profile_name = ""  # имя профиля загруженного в форму
+        self._form_dirty = False
+        self._initialized = False  # True только после первой загрузки формы
+
+        root = QHBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+
+        self._left = QFrame()
+        self._left.setObjectName("LeftPanel")
+        self._left.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
+        self._left.setFixedWidth(280)
+
+        self._right = QFrame()
+        self._right.setObjectName("RightPanel")
+        self._right.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+        root.addWidget(self._left)
+        root.addWidget(self._right, 1)
+
+        self._build_left()
+        self._build_right()
+
+        self.facade.profiles_changed.connect(self._render_profiles)
+        self.facade.form_loaded.connect(self._load_form)
+        self.facade.adapter_values_changed.connect(self._set_adapter_values)
+
+    # ── Left panel ────────────────────────────────────────────────────
+
+    def _build_left(self) -> None:
+        lay = QVBoxLayout(self._left)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(0)
+
+        # Header
+        hdr = QFrame()
+        hdr.setObjectName("PanelHeader")
+        hdr_lay = QHBoxLayout(hdr)
+        hdr_lay.setContentsMargins(13, 10, 13, 8)
+        lbl = QLabel("Saved profiles")
+        lbl.setObjectName("PanelTitle")
+        hdr_lay.addWidget(lbl)
+        hdr_lay.addStretch(1)
+        self._count_pill = QLabel("0")
+        self._count_pill.setObjectName("CountPill")
+        hdr_lay.addWidget(self._count_pill)
+        lay.addWidget(hdr)
+
+        # Search
+        sw = QFrame()
+        sw.setObjectName("SearchWrap")
+        sw_lay = QHBoxLayout(sw)
+        sw_lay.setContentsMargins(10, 8, 10, 0)
+        self.search = QLineEdit()
+        self.search.setObjectName("ProfilesSearch")
+        self.search.setPlaceholderText("Search...")
+        self.search.textChanged.connect(self.facade.set_search_query)
+        sw_lay.addWidget(self.search)
+        lay.addWidget(sw)
+
+        # Adapter filter
+        af = QFrame()
+        af.setObjectName("SearchWrap")
+        af_lay = QHBoxLayout(af)
+        af_lay.setContentsMargins(10, 6, 10, 0)
+        self.adapter_filter = QComboBox()
+        self.adapter_filter.setObjectName("AdapterFilter")
+        self.adapter_filter.addItem("All adapters")
+        self.adapter_filter.currentTextChanged.connect(self._apply_profile_filters)
+        af_lay.addWidget(self.adapter_filter)
+        lay.addWidget(af)
+
+        # Profile list — ExtendedSelection: Ctrl+Click несколько, Shift+Click диапазон
+        self.list = QListWidget()
+        self.list.setObjectName("ProfilesList")
+        self.list.setSpacing(0)
+        self.list.setUniformItemSizes(True)
+        self.list.setVerticalScrollMode(QAbstractItemView.ScrollMode.ScrollPerItem)
+        self.list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.list.itemSelectionChanged.connect(self._on_profile_selected)
+        lay.addWidget(self.list, 1)
+
+        # Actions block — 2+2+1
+        actions = QFrame()
+        actions.setObjectName("ActionsBlock")
+        a_lay = QVBoxLayout(actions)
+        a_lay.setContentsMargins(10, 8, 10, 14)
+        a_lay.setSpacing(5)
+
+        # Шрифт кнопок блока задан здесь явно (font-size=10pt).
+        # Не зависит от QSS и от кнопок Save/Apply.
+        _btn_font = QFont("Segoe UI", 10)
+        _btn_font.setWeight(QFont.Weight.DemiBold)
+
+        row1 = QHBoxLayout()
+        row1.setSpacing(5)
+        self.btn_new  = QPushButton("\u2795  Новый")
+        self.btn_copy = QPushButton("\u29C9  Копировать")
+        self.btn_new.setProperty("role", "primary")
+        self.btn_copy.setProperty("role", "action")
+        for b in (self.btn_new, self.btn_copy):
+            b.setFixedHeight(28)
+            b.setFont(_btn_font)
+            row1.addWidget(b)
+        a_lay.addLayout(row1)
+
+        row2 = QHBoxLayout()
+        row2.setSpacing(5)
+        self.btn_export = QPushButton("\u2191  Экспорт")
+        self.btn_import = QPushButton("\u2193  Импорт")
+        self.btn_export.setProperty("role", "action")
+        self.btn_import.setProperty("role", "action")
+        for b in (self.btn_export, self.btn_import):
+            b.setFixedHeight(28)
+            b.setFont(_btn_font)
+            row2.addWidget(b)
+        a_lay.addLayout(row2)
+
+        self.btn_delete = QPushButton("\u2715  Удалить")
+        self.btn_delete.setProperty("role", "delete")
+        self.btn_delete.setFixedHeight(28)
+        self.btn_delete.setFont(_btn_font)
+        a_lay.addWidget(self.btn_delete)
+
+        lay.addWidget(actions)
+
+        self.btn_new.clicked.connect(self.facade.create_profile)
+        self.btn_copy.clicked.connect(lambda: self.facade.duplicate_profile(self._selected_name()))
+        self.btn_import.clicked.connect(self._on_import)
+        self.btn_export.clicked.connect(self._on_export)
+        self.btn_delete.clicked.connect(self._on_delete)
+
+    # ── Right panel ───────────────────────────────────────────────────
+
+    def _build_right(self) -> None:
+        lay = QVBoxLayout(self._right)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(0)
+
+        # Editor header
+        # Высота и ширина кнопок Save/Apply управляются через setFixedSize().
+        # Шрифт — в base.qss QPushButton#BtnSave / #BtnApply.
+        # min-height: 0 в QSS снимает глобальное ограничение QPushButton { min-height: 30px }.
+        eh = QFrame()
+        eh.setObjectName("EditorHeader")
+        eh_lay = QHBoxLayout(eh)
+        eh_lay.setContentsMargins(18, 0, 14, 0)
+        eh_lay.setSpacing(10)
+        eh_lay.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        eh.setFixedHeight(52)
+
+        eh_lay.addStretch(1)
+
+        self.btn_save = QPushButton("\u2713  Save")
+        self.btn_save.setProperty("role", "action")
+        self.btn_save.setObjectName("BtnSave")
+        self.btn_save.setFixedSize(75, 28)   # ширина=75, высота=28
+        eh_lay.addWidget(self.btn_save)
+
+        self.btn_apply = QPushButton("\u25B6  Apply Profile")
+        self.btn_apply.setProperty("role", "primary")
+        self.btn_apply.setObjectName("BtnApply")
+        self.btn_apply.setFixedSize(115, 28)  # ширина=115, высота=28
+        eh_lay.addWidget(self.btn_apply)
+        lay.addWidget(eh)
+
+        # Feedback bar — результат apply
+        self._feedback_bar = QLabel("")
+        self._feedback_bar.setObjectName("ProfileFeedbackBar")
+        self._feedback_bar.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._feedback_bar.setFixedHeight(28)
+        self._feedback_bar.setVisible(False)
+        lay.addWidget(self._feedback_bar)
+
+        # Scrollable editor body
+        scroll = QScrollArea()
+        scroll.setObjectName("EditorScroll")
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+        body = QWidget()
+        body.setObjectName("EditorBody")
+        body_lay = QVBoxLayout(body)
+        body_lay.setContentsMargins(16, 16, 16, 16)
+        body_lay.setSpacing(12)
+
+        # General section
+        self.name_edit = QLineEdit()
+        self.name_edit.setObjectName("EditorField")
+        self.name_edit.setMaxLength(30)
+        self.adapter_combo = QComboBox()
+        self.adapter_combo.setObjectName("EditorCombo")
+        body_lay.addWidget(self._section(
+            "General",
+            [("Name", self.name_edit), ("Adapter", self.adapter_combo)],
+        ))
+
+        # Network section
+        self.dhcp_ip_cb = ToggleSwitch("Use DHCP for IP")
+        self.dhcp_ip_cb.setObjectName("DhcpCheck")
+        self.ip_edit = QLineEdit()
+        self.ip_edit.setObjectName("EditorField")
+        self.mask_edit = QLineEdit()
+        self.mask_edit.setObjectName("EditorField")
+        self.gw_edit = QLineEdit()
+        self.gw_edit.setObjectName("EditorField")
+        body_lay.addWidget(self._section(
+            "Network",
+            [("IP address", self.ip_edit), ("Subnet mask", self.mask_edit), ("Gateway", self.gw_edit)],
+            top_widget=self.dhcp_ip_cb,
+        ))
+
+        # DNS section
+        self.dhcp_dns_cb = ToggleSwitch("Use DHCP for DNS")
+        self.dhcp_dns_cb.setObjectName("DhcpCheck")
+        self.dns1_edit = QLineEdit()
+        self.dns1_edit.setObjectName("EditorField")
+        self.dns2_edit = QLineEdit()
+        self.dns2_edit.setObjectName("EditorField")
+        body_lay.addWidget(self._section(
+            "DNS",
+            [("Primary DNS", self.dns1_edit), ("Secondary DNS", self.dns2_edit)],
+            top_widget=self.dhcp_dns_cb,
+        ))
+
+        body_lay.addStretch(1)
+        scroll.setWidget(body)
+        lay.addWidget(scroll, 1)
+
+
+        self.dhcp_ip_cb.toggled.connect(self._apply_dhcp_state)
+        self.dhcp_dns_cb.toggled.connect(self._apply_dhcp_state)
+
+        # Отслеживаем изменения в форме
+        for field in (self.name_edit, self.ip_edit, self.mask_edit,
+                      self.gw_edit, self.dns1_edit, self.dns2_edit):
+            field.textChanged.connect(self._mark_dirty)
+        self.adapter_combo.currentTextChanged.connect(self._mark_dirty)
+        self.dhcp_ip_cb.toggled.connect(self._mark_dirty)
+        self.dhcp_dns_cb.toggled.connect(self._mark_dirty)
+
+    def _section(self, title: str, fields: list, top_widget: QWidget | None = None) -> QFrame:
+        sec = QFrame()
+        sec.setObjectName("SectionCard")
+        lay = QVBoxLayout(sec)
+        lay.setContentsMargins(18, 14, 18, 16)
+        lay.setSpacing(10)
+
+        tr = QHBoxLayout()
+        tr.setSpacing(8)
+        t = QLabel(title.upper())
+        t.setObjectName("SectionTitle")
+        tr.addWidget(t)
+        line = QFrame()
+        line.setObjectName("SectionLine")
+        line.setFrameShape(QFrame.Shape.HLine)
+        tr.addWidget(line, 1)
+        lay.addLayout(tr)
+
+        if top_widget:
+            lay.addWidget(top_widget)
+
+        grid = QGridLayout()
+        grid.setHorizontalSpacing(14)
+        grid.setVerticalSpacing(9)
+        grid.setColumnMinimumWidth(0, 110)
+        grid.setColumnStretch(1, 1)
+        for i, (lbl_text, widget) in enumerate(fields):
+            lbl = QLabel(lbl_text)
+            lbl.setObjectName("FieldLabel")
+            grid.addWidget(lbl, i, 0)
+            grid.addWidget(widget, i, 1)
+        lay.addLayout(grid)
+        return sec
+
+    # ── Slots ─────────────────────────────────────────────────────────
+
+    def _render_profiles(self, items: List[ProfileListItem], selected: str) -> None:
+        self._all_items = items
+        self._selected_profile_name = selected
+        self._count_pill.setText(str(len(items)))
+        self._apply_profile_filters()
+
+    def _apply_profile_filters(self) -> None:
+        sel_adapter = self.adapter_filter.currentText()
+        search_q = self.search.text().strip().lower()
+        self.list.clear()
+        for p in self._all_items:
+            if sel_adapter and sel_adapter != "All adapters" and p.adapter != sel_adapter:
+                continue
+            if search_q and search_q not in p.name.lower():
+                continue
+            li = QListWidgetItem()
+            li.setData(Qt.ItemDataRole.UserRole, p.name)
+            li.setSizeHint(QSize(0, 70))
+            self.list.addItem(li)
+            row = ProfileRowWidget(p, self._dark_mode)
+            row.set_selected(p.name == self._selected_profile_name, self._dark_mode)
+            self.list.setItemWidget(li, row)
+            if p.name == self._selected_profile_name:
+                li.setSelected(True)
+                self.list.setCurrentItem(li)
+
+    def _load_form(self, data: Dict) -> None:
+        # Блокируем сигналы чтобы загрузка данных не помечала форму как грязную
+        self._form_dirty = False
+        for field in (self.name_edit, self.ip_edit, self.mask_edit,
+                      self.gw_edit, self.dns1_edit, self.dns2_edit):
+            field.blockSignals(True)
+        self.adapter_combo.blockSignals(True)
+        self.dhcp_ip_cb.blockSignals(True)
+        self.dhcp_dns_cb.blockSignals(True)
+        is_dhcp = data.get("dhcp_ip", False)
+        self.name_edit.setText(data.get("name", ""))
+        adapter = data.get("adapter", "")
+        # Не подставляем служебные значения в поле адаптера
+        if adapter not in ("Все адаптеры", "All adapters"):
+            self._set_combo(self.adapter_combo, adapter)
+        self.dhcp_ip_cb.setChecked(bool(is_dhcp))
+        self.ip_edit.setText(data.get("ip", ""))
+        self.mask_edit.setText(data.get("mask", ""))
+        self.gw_edit.setText(data.get("gateway", ""))
+        self.dhcp_dns_cb.setChecked(bool(data.get("dhcp_dns", False)))
+        self.dns1_edit.setText(data.get("dns_primary", ""))
+        self.dns2_edit.setText(data.get("dns_secondary", ""))
+        self._apply_dhcp_state()
+
+        # Разблокируем сигналы и сбрасываем флаг
+        for field in (self.name_edit, self.ip_edit, self.mask_edit,
+                      self.gw_edit, self.dns1_edit, self.dns2_edit):
+            field.blockSignals(False)
+        self.adapter_combo.blockSignals(False)
+        self.dhcp_ip_cb.blockSignals(False)
+        self.dhcp_dns_cb.blockSignals(False)
+        self._loaded_profile_name = data.get("name", "")  # фиксируем какой профиль загружен
+        self._form_dirty = False
+        self._initialized = True  # с этого момента изменения формы считаются dirty
+
+    def _set_adapter_values(self, values: List[str]) -> None:
+        cur = self.adapter_combo.currentText()
+        self.adapter_combo.clear()
+        self.adapter_combo.addItems([
+            v for v in values
+            if v and v not in ("All adapters", "Все адаптеры")
+        ])
+        # Восстанавливаем выбор только если значение есть в списке
+        idx = self.adapter_combo.findText(cur)
+        if idx >= 0:
+            self.adapter_combo.setCurrentIndex(idx)
+
+        cur_f = self.adapter_filter.currentText()
+        self.adapter_filter.blockSignals(True)
+        self.adapter_filter.clear()
+        self.adapter_filter.addItem("All adapters")
+        for v in values:
+            if v and v not in ("All adapters", "Все адаптеры"):
+                self.adapter_filter.addItem(v)
+        # Восстанавливаем выбор только если значение есть в списке
+        idx = self.adapter_filter.findText(cur_f)
+        self.adapter_filter.setCurrentIndex(idx if idx >= 0 else 0)
+        self.adapter_filter.blockSignals(False)
+
+    def _set_combo(self, combo: QComboBox, value: str) -> None:
+        idx = combo.findText(value)
+        if idx >= 0:
+            combo.setCurrentIndex(idx)
+        elif value:
+            combo.addItem(value)
+            combo.setCurrentText(value)
+
+    def _selected_name(self) -> str:
+        """Возвращает имя первого выделенного профиля (для Copy/Edit)."""
+        item = self.list.currentItem()
+        return item.data(Qt.ItemDataRole.UserRole) if item else ""
+
+    def _selected_names(self) -> List[str]:
+        """Возвращает имена всех выделенных профилей."""
+        return [
+            self.list.item(i).data(Qt.ItemDataRole.UserRole)
+            for i in range(self.list.count())
+            if self.list.item(i).isSelected()
+        ]
+
+    def _on_profile_selected(self) -> None:
+        selected = self.list.selectedItems()
+        if not selected:
+            return
+
+        # При одиночном выборе — имя кликнутого профиля
+        name = selected[0].data(Qt.ItemDataRole.UserRole) if len(selected) == 1 else self._selected_name()
+
+        # Проверяем dirty: форма изменена И переходим на другой профиль
+        # _loaded_profile_name — имя профиля реально загруженного в форму
+        is_switching = name != self._loaded_profile_name
+        if is_switching and self._form_dirty:
+            if not self._confirm_discard():
+                self._restore_selection()
+                # Синхронизируем _selected_profile_name с реально загруженным профилем
+                self._selected_profile_name = self._loaded_profile_name
+                return
+
+        self._form_dirty = False
+        if name:
+            self.facade.select_profile(name)
+        for i in range(self.list.count()):
+            li = self.list.item(i)
+            w = self.list.itemWidget(li)
+            if isinstance(w, ProfileRowWidget):
+                w.set_selected(li.isSelected(), self._dark_mode)
+
+    def _confirm_discard(self) -> bool:
+        """Диалог подтверждения потери несохранённых изменений."""
+        from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Несохранённые изменения")
+        from PySide6.QtCore import Qt
+        dlg.setWindowFlags(dlg.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
+        lay = QVBoxLayout(dlg)
+        lay.setContentsMargins(24, 20, 24, 16)
+        lay.setSpacing(16)
+        lbl = QLabel("Профиль был изменён.\nУдалить изменения?")
+        lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lbl.setWordWrap(True)
+        lay.addWidget(lbl)
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(8)
+        btn_row.addStretch(1)
+        btn_no = QPushButton("Нет")
+        btn_no.setProperty("role", "action")
+        btn_no.setFixedSize(90, 32)
+        btn_no.clicked.connect(dlg.reject)
+        btn_yes = QPushButton("Да")
+        btn_yes.setProperty("role", "primary")
+        btn_yes.setFixedSize(90, 32)
+        btn_yes.clicked.connect(dlg.accept)
+        btn_row.addWidget(btn_yes)
+        btn_row.addWidget(btn_no)
+        lay.addLayout(btn_row)
+        dlg.setFixedSize(380, 130)
+        return dlg.exec() == QDialog.DialogCode.Accepted
+
+    def _restore_selection(self) -> None:
+        """Восстанавливает выделение на профиль реально загруженный в форму."""
+        self.list.blockSignals(True)
+        for i in range(self.list.count()):
+            li = self.list.item(i)
+            is_cur = li.data(Qt.ItemDataRole.UserRole) == self._loaded_profile_name
+            li.setSelected(is_cur)
+            if is_cur:
+                self.list.setCurrentItem(li)
+        self.list.blockSignals(False)
+
+    def _mark_dirty(self, *_) -> None:
+        """Помечает форму как изменённую — только после первой инициализации."""
+        if self._initialized:
+            self._form_dirty = True
+
+    def _on_delete(self) -> None:
+        """Удаляет один или несколько выделенных профилей."""
+        names = self._selected_names()
+        if not names:
+            return
+        self.facade.delete_profiles(names)
+
+    def _on_export(self) -> None:
+        path, _ = QFileDialog.getSaveFileName(self, "Export profiles", "", "JSON (*.json)")
+        if path:
+            self.facade.export_profiles(path)
+
+    def _on_import(self) -> None:
+        path, _ = QFileDialog.getOpenFileName(self, "Import profiles", "", "JSON (*.json)")
+        if path:
+            self.facade.import_profiles(path)
+
+    def _apply_dhcp_state(self) -> None:
+        ip = self.dhcp_ip_cb.isChecked()
+        for w in (self.ip_edit, self.mask_edit, self.gw_edit):
+            w.setEnabled(not ip)
+        dns = self.dhcp_dns_cb.isChecked()
+        for w in (self.dns1_edit, self.dns2_edit):
+            w.setEnabled(not dns)
+
+    def show_apply_result(self, success: bool, profile_name: str, duration_ms: int = 0) -> None:
+        """Показывает результат применения профиля в feedback bar."""
+        if success:
+            dur = f"  ({duration_ms} ms)" if duration_ms else ""
+            text = f"✓  {profile_name} applied{dur}"
+            color = "#22C55E"
+        else:
+            text = f"✕  Failed to apply {profile_name}"
+            color = "#EF4444"
+        self._feedback_bar.setText(text)
+        self._feedback_bar.setStyleSheet(
+            f"color: {color}; font-size: 13px; font-weight: 500; background: transparent;"
+        )
+        self._feedback_bar.setVisible(True)
+        QTimer.singleShot(5000, lambda: self._feedback_bar.setVisible(False))
+
+    def collect_form_data(self) -> Dict:
+        return {
+            "name": self.name_edit.text(),
+            "adapter": self.adapter_combo.currentText(),
+            "dhcp_ip": self.dhcp_ip_cb.isChecked(),
+            "ip": self.ip_edit.text(),
+            "mask": self.mask_edit.text(),
+            "gateway": self.gw_edit.text(),
+            "dhcp_dns": self.dhcp_dns_cb.isChecked(),
+            "dns_primary": self.dns1_edit.text(),
+            "dns_secondary": self.dns2_edit.text(),
+        }
+
+    def refresh_theme(self, dark_mode: bool) -> None:
+        self._dark_mode = dark_mode
+        self._apply_profile_filters()
+        self.dhcp_ip_cb.set_dark_mode(dark_mode)
+        self.dhcp_dns_cb.set_dark_mode(dark_mode)

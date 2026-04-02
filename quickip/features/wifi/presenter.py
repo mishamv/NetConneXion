@@ -52,7 +52,7 @@ class WifiPresenter:
         def _work() -> None:
             try:
                 networks = self._service.scan_networks()
-                self._container.event_bus.publish(
+                self._container.event_bus.publish(  # type: ignore[arg-type]
                     WifiNetworksUpdated(network_count=len(networks))
                 )
                 if callback:
@@ -87,7 +87,7 @@ class WifiPresenter:
         # ── Deliver any result queued by the previous worker (main thread) ──
         try:
             status = self._status_queue.get_nowait()
-            self._container.event_bus.publish(
+            self._container.event_bus.publish(  # type: ignore[arg-type]
                 WifiStatusUpdated(
                     adapter=status.get("name", ""),
                     ssid=status.get("ssid", ""),
@@ -185,13 +185,13 @@ class WifiPresenter:
             is_adhoc=is_adhoc,
         )
         self._profile_repo.save(p)
-        self._container.event_bus.publish(WifiProfileSaved(profile_id=pid, ssid=ssid))
+        self._container.event_bus.publish(WifiProfileSaved(profile_id=pid, ssid=ssid))  # type: ignore[arg-type]
 
     def delete_profile(self, profile_id: str) -> None:
         p = self._profile_repo.get(profile_id)
         self._profile_repo.delete(profile_id)
         if p:
-            self._container.event_bus.publish(WifiProfileDeleted(profile_id=profile_id))
+            self._container.event_bus.publish(WifiProfileDeleted(profile_id=profile_id))  # type: ignore[arg-type]
 
     def get_system_profiles(self) -> List[str]:
         return self._service.get_saved_netsh_profiles()

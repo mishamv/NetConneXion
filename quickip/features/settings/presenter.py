@@ -7,8 +7,6 @@ import os
 import sys
 from typing import TYPE_CHECKING, Optional, Protocol
 
-import customtkinter as ctk
-
 from quickip.core.events.types import ThemeChanged
 from quickip.features.settings.repository import SettingsRepository
 
@@ -79,6 +77,5 @@ class SettingsPresenter:
             return
         mode = "dark" if theme == "dark" else "light"
         self._repo.set_theme(mode)
-        ctk.set_appearance_mode(mode)
-        self._container.event_bus.publish(ThemeChanged(theme=mode))
+        self._container.event_bus.publish(ThemeChanged(theme=mode))  # type: ignore[arg-type]
         logger.info("Theme changed to '%s'", mode)

@@ -53,7 +53,7 @@ class JsonSettingsRepository(SettingsRepository):
             self._settings = self.DEFAULT_SETTINGS.copy()
             self._settings.update(data)
 
-            logger.info(f"Loaded settings from {self.file_path}")
+            logger.debug(f"Loaded settings from {self.file_path}")
 
         except Exception as e:
             logger.error(f"Error loading settings: {e}, using defaults", exc_info=True)

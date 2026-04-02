@@ -47,6 +47,22 @@ class WifiService:
             ["netsh", "wlan", "show", "networks", "mode=bssid"],
             timeout=15,
         )
+        if result.stdout:
+            # Логируем строки со скоростями для диагностики
+            import re as _re
+            rate_lines = [l for l in result.stdout.splitlines()
+                         if _re.search(r"скорост|rates", l, _re.IGNORECASE)]
+            if rate_lines:
+                logger.info("Rate lines sample: %s", rate_lines[:6])
+            else:
+                logger.warning("No rate lines found in netsh output!")
+            import tempfile, os
+            tmp = os.path.join(tempfile.gettempdir(), "netsh_wifi_debug.txt")
+            try:
+                with open(tmp, "w", encoding="utf-8") as f:
+                    f.write(result.stdout)
+            except Exception:
+                pass
         return parse_networks(result.stdout) if result.stdout else []
 
     def get_interface_status(self) -> dict:
@@ -73,19 +89,55 @@ class WifiService:
         password was encrypted on a different machine/user.
         """
         password = ""
-        if profile.key_protected and self._vault_available:
-            from quickip.core.security.vault import unprotect_text
-            password = unprotect_text(profile.key_protected)
-        elif profile.key_protected and not self._vault_available:
-            logger.warning("Vault unavailable — connecting without password for %s", ssid)
+        if profile.key_protected:
+            if profile.key_protected.startswith("b64:"):
+                import base64
+                password = base64.b64decode(profile.key_protected[4:]).decode()
+            elif self._vault_available:
+                from quickip.core.security.vault import unprotect_text
+                password = unprotect_text(profile.key_protected)
+            else:
+                logger.warning("Vault unavailable for %s — trying Windows profile", ssid)
+
+        # Если пароль не удалось получить — не трогаем Windows-профиль,
+        # просто пробуем подключиться к существующему
+        if not password and self._windows_profile_exists(ssid):
+            logger.info("No password decrypted — using existing Windows profile for %s", ssid)
+            return self._connect_by_name(ssid)
 
         add_result = self._add_profile_xml(ssid, profile, password)
         if not add_result.success:
             return add_result
         return self._connect_by_name(ssid)
 
+    def connect_with_password(
+        self, ssid: str, password: str,
+        auth: str = "WPA2-Personal", cipher: str = "AES"
+    ) -> ConnectResult:
+        """Connect using a plaintext password — bypasses vault.
+        Used when vault (pywin32) is unavailable or for one-off connections.
+        """
+        if len(password) < 8:
+            return ConnectResult(
+                success=False,
+                message="Wi-Fi password must be at least 8 characters."
+            )
+        fake = WifiProfile(
+            id="", ssid=ssid, auth=auth, cipher=cipher,
+            key_protected="",
+        )
+        add_result = self._add_profile_xml(ssid, fake, password)
+        if not add_result.success:
+            return add_result
+        return self._connect_by_name(ssid)
+
     def connect_open(self, ssid: str) -> ConnectResult:
-        """Connect to an open (password-free) network."""
+        """Connect to an open (password-free) network.
+        Если Windows уже знает этот профиль — просто подключаемся, не перезаписываем.
+        """
+        if self._windows_profile_exists(ssid):
+            logger.info("Windows profile exists for %s — skipping XML add", ssid)
+            return self._connect_by_name(ssid)
         fake = WifiProfile(id="", ssid=ssid, auth="Open", cipher="None",
                            key_protected="")
         add_result = self._add_profile_xml(ssid, fake, "")
@@ -126,6 +178,12 @@ class WifiService:
             with os.fdopen(fd, "w", encoding="utf-8") as f:
                 f.write(xml_content)
 
+            # Удаляем существующий профиль чтобы наш XML точно применился
+            self._runner.run(
+                ["netsh", "wlan", "delete", "profile", f"name={ssid}"],
+                timeout=10,
+            )
+
             result = self._runner.run(
                 ["netsh", "wlan", "add", "profile",
                  f"filename={tmp_path}", "user=all"],
@@ -143,13 +201,39 @@ class WifiService:
                 except OSError:
                     pass
 
-        ok = result.success or "profile" in result.stdout.lower()
+        ok = result.success or "profile" in result.stdout.lower() or "профиль" in result.stdout.lower()
+        if not ok:
+            logger.error(f"add profile failed: stdout={result.stdout!r} stderr={result.stderr!r}")
+        else:
+            logger.info(f"Profile added for SSID={ssid!r}")
         return ConnectResult(success=ok, message=result.stdout.strip())
 
-    def _connect_by_name(self, ssid: str) -> ConnectResult:
+    def _windows_profile_exists(self, ssid: str) -> bool:
+        """Проверяет есть ли профиль для SSID в системе Windows."""
         result = self._runner.run(
-            ["netsh", "wlan", "connect", f"name={ssid}", f"ssid={ssid}"],
-            timeout=15,
+            ["netsh", "wlan", "show", "profile", f"name={ssid}"],
+            timeout=10,
         )
-        ok = result.success or "successfully" in result.stdout.lower()
+        return result.success or "profile" in result.stdout.lower() or "профиль" in result.stdout.lower()
+
+    def _connect_by_name(self, ssid: str) -> ConnectResult:
+        cmd = ["netsh", "wlan", "connect", f"name={ssid}", f"ssid={ssid}"]
+        iface = self._get_wifi_interface()
+        if iface:
+            cmd.append(f"interface={iface}")
+        logger.info(f"Connect cmd: {' '.join(cmd)}")
+        result = self._runner.run(cmd, timeout=15)
+        ok = result.success or "successfully" in result.stdout.lower() or "успешно" in result.stdout.lower()
         return ConnectResult(success=ok, message=result.stdout.strip())
+
+    def _get_wifi_interface(self) -> str:
+        """Возвращает имя первого активного Wi-Fi адаптера."""
+        result = self._runner.run(["netsh", "wlan", "show", "interfaces"], timeout=10)
+        if not result.stdout:
+            return ""
+        import re
+        for line in result.stdout.splitlines():
+            m = re.match(r"^\s*(?:Name|Имя)\s*:\s*(.+)$", line.strip(), re.IGNORECASE)
+            if m:
+                return m.group(1).strip()
+        return ""

@@ -1,10 +1,8 @@
 # ──────────────────────────────────────────────────────────────
-#  Quick-IP-change  —  .gitignore
+#  NetConneXion — .gitignore
 # ──────────────────────────────────────────────────────────────
 
 # ── Пользовательские данные (data/) ───────────────────────────
-# Игнорируем все JSON-файлы в data/, но сохраняем локали и ассеты
-
 data/profiles.json
 data/history.json
 data/settings.json
@@ -13,16 +11,33 @@ data/wifi_profiles.json
 data/wifi_options.json
 data/tools_settings.json
 
-# Логи
+# Логи и временные файлы
 data/logs/
-
-# Временные файлы атомарной записи
+data/*.log
 data/*.tmp
+data/*.bak
 
-# ── Исключения: ассеты которые должны быть в репо ─────────────
-!data/locales/
-!data/locales/**
-!data/Full_logo.png
+# Пользовательские данные любых других форматов
+data/*.db
+data/*.sqlite
+
+# ── Claude Code / AI ──────────────────────────────────────────
+.claude/
+.claude/**
+
+# ── Переменные окружения и секреты ────────────────────────────
+.env
+.env.*
+*.env
+secrets.json
+secrets.yaml
+secrets.toml
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
 
 # ── Python ────────────────────────────────────────────────────
 __pycache__/
@@ -34,27 +49,54 @@ __pycache__/
 dist/
 build/
 .eggs/
+*.spec
 
 # ── Виртуальное окружение ─────────────────────────────────────
 .venv/
 venv/
 env/
 ENV/
+.python-version
 
-# ── Портативный режим — флаг (опционально, раскомментируй если не нужен в репо)
-# portable.flag
+# ── Логи (в корне и везде) ────────────────────────────────────
+*.log
+logs/
 
 # ── IDE ───────────────────────────────────────────────────────
 .vscode/
 .idea/
 *.sublime-project
 *.sublime-workspace
+*.swp
+*.swo
+*~
 
 # ── OS ────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 desktop.ini
+ehthumbs.db
+$RECYCLE.BIN/
+
+# ── Сборка / дистрибутив ──────────────────────────────────────
+*.exe
+*.msi
+*.zip
+*.tar.gz
+Output/
+installer/Output/
 
 # ── Прочее ────────────────────────────────────────────────────
-*.log
 nul
+*.tmp
+*.bak
+*.bkp
+*.orig
+*.rej
+
+# ── Исключения: файлы которые ДОЛЖНЫ быть в репо ──────────────
+!data/locales/
+!data/locales/**
+!data/Full_logo.png
+!data/logo_dark.png
+!data/logo_light.png

@@ -50,7 +50,7 @@ class JsonHistoryRepository(HistoryRepository):
                 self._entries = self._entries[-self.max_entries:]
                 self._save()  # Persist trimmed list
 
-            logger.info(f"Loaded {len(self._entries)} history entries")
+            logger.debug(f"Loaded {len(self._entries)} history entries")
 
         except Exception as e:
             logger.error(f"Error loading history: {e}", exc_info=True)
@@ -149,7 +149,7 @@ class JsonHistoryRepository(HistoryRepository):
             self._entries = self._entries[-self.max_entries:]
 
         self._save()
-        logger.info(f"Added history entry: {entry.profile_name} on {entry.adapter}")
+        logger.debug(f"Added history entry: {entry.profile_name} on {entry.adapter}")
 
     def list(
         self,

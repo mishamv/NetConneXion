@@ -67,7 +67,7 @@ class ProfileService:
 
     def apply(self, profile: Profile) -> ApplyResult:
         """Apply *profile* via netsh, record history, publish event."""
-        logger.info("Applying profile '%s' on %s", profile.name, profile.adapter)
+        logger.debug("Applying profile '%s' on %s", profile.name, profile.adapter)
 
         prev_config = self._container.netsh.get_adapter_config(profile.adapter)
         start = datetime.now()
@@ -82,15 +82,15 @@ class ProfileService:
             profile_id=profile.id,
             profile_name=profile.name,
             adapter=profile.adapter,
-            previous_config=prev_config,
-            new_config=new_config,
+            previous_config=prev_config,  # type: ignore[arg-type]
+            new_config=new_config,  # type: ignore[arg-type]
             commands_executed=[cmd_result.command],
             error=cmd_result.stderr if not cmd_result.success else None,
         )
 
         # Record to history repository
         self._container.history_repo.append(
-            ProfileHistoryEntry(
+            ProfileHistoryEntry(  # type: ignore[arg-type]
                 id=str(uuid.uuid4()),
                 timestamp=start.isoformat(),
                 profile_id=profile.id,
@@ -98,8 +98,8 @@ class ProfileService:
                 adapter=profile.adapter,
                 success=cmd_result.success,
                 duration_ms=duration_ms,
-                previous_config=prev_config,
-                new_config=new_config,
+                previous_config=prev_config,  # type: ignore[arg-type]
+                new_config=new_config,  # type: ignore[arg-type]
                 commands=[cmd_result.command],
                 output=[cmd_result.stdout] if cmd_result.stdout else [],
                 error_message=cmd_result.stderr if not cmd_result.success else "",
@@ -108,8 +108,8 @@ class ProfileService:
 
         bus = self._container.event_bus
         if cmd_result.success:
-            logger.info("Profile applied: %s", profile.name)
-            bus.publish(ProfileApplied(
+            logger.debug("Profile applied: %s", profile.name)
+            bus.publish(ProfileApplied(  # type: ignore[arg-type]
                 profile_id=profile.id,
                 profile_name=profile.name,
                 adapter=profile.adapter,
@@ -117,7 +117,7 @@ class ProfileService:
             ))
         else:
             logger.error("Profile apply failed: %s — %s", profile.name, cmd_result.stderr)
-            bus.publish(ProfileApplyFailed(
+            bus.publish(ProfileApplyFailed(  # type: ignore[arg-type]
                 profile_id=profile.id,
                 profile_name=profile.name,
                 adapter=profile.adapter,

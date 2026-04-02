@@ -76,3 +76,15 @@ def is_portable_mode() -> bool:
         exe_dir = Path(__file__).parent.parent.parent
 
     return (exe_dir / "portable.flag").exists()
+
+def get_wifi_profiles_file() -> Path:
+    """Path to wifi_profiles.json."""
+    return get_app_data_dir() / "wifi_profiles.json"
+
+def get_wifi_options_file() -> Path:
+    """Path to wifi_options.json."""
+    return get_app_data_dir() / "wifi_options.json"
+
+def get_tools_settings_file() -> Path:
+    """Path to tools_settings.json."""
+    return get_app_data_dir() / "tools_settings.json"

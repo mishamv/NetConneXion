@@ -48,17 +48,38 @@ def _int(value: str, default: int = 0) -> int:
 
 
 def _extract_mbps(raw_block: str) -> int:
-    """Extract max Mbps from 'Basic rates' and 'Other rates' lines."""
-    rates: List[int] = []
+    """Extract max Mbps — prefer 'Other rates' (high speed) over 'Basic rates' (legacy)."""
+    basic: List[int] = []
+    other: List[int] = []
+    pattern_basic = re.compile(
+        r"^(?:Basic rates|Основные скорости)\s*\([^)]*\)\s*:\s*([\d\s\.]+)",
+        re.IGNORECASE
+    )
+    pattern_other = re.compile(
+        r"^(?:Other rates|Другие скорости)\s*\([^)]*\)\s*:\s*([\d\s\.]+)",
+        re.IGNORECASE
+    )
     for line in raw_block.splitlines():
-        m = re.match(r".*rates.*:\s*([\d\s\.]+)", line, re.IGNORECASE)
+        s = line.strip()
+        m = pattern_other.match(s)
         if m:
             for token in re.split(r"[\s;,]+", m.group(1)):
                 try:
-                    rates.append(int(float(token)))
+                    other.append(int(float(token)))
                 except ValueError:
                     pass
-    return max(rates) if rates else 0
+            continue
+        m = pattern_basic.match(s)
+        if m:
+            for token in re.split(r"[\s;,]+", m.group(1)):
+                try:
+                    basic.append(int(float(token)))
+                except ValueError:
+                    pass
+    # Если есть "Другие скорости" — берём максимум оттуда (это реальные HT/VHT скорости)
+    if other:
+        return max(other)
+    return max(basic) if basic else 0
 
 
 # ── Network parser ────────────────────────────────────────────────────────────
@@ -80,6 +101,22 @@ def parse_networks(raw: str) -> List[WifiNetworkSnapshot]:
             return
         ch = _int(current.get("channel", "0"))
         mbps = _extract_mbps("\n".join(block_lines))
+        protocol = current.get("radio_type", "")
+        # Если скорость из netsh ≤ 54 (только legacy rates) — используем fallback по протоколу
+        # netsh wlan show networks не возвращает реальные HT/VHT скорости
+        if protocol:
+            proto_lower = protocol.lower()
+            proto_mbps = 0
+            if "ax" in proto_lower or "wi-fi 6" in proto_lower:
+                proto_mbps = 1200
+            elif "ac" in proto_lower or "wi-fi 5" in proto_lower:
+                proto_mbps = 867
+            elif "n" in proto_lower:
+                proto_mbps = 300
+            elif "g" in proto_lower or "a" in proto_lower:
+                proto_mbps = 54
+            if proto_mbps > mbps:
+                mbps = proto_mbps
         networks.append(WifiNetworkSnapshot(
             ssid=current.get("ssid", ""),
             bssid=current.get("bssid", ""),
@@ -89,7 +126,7 @@ def parse_networks(raw: str) -> List[WifiNetworkSnapshot]:
             channel=ch,
             freq_ghz=channel_to_freq(ch),
             mbps=mbps,
-            protocol=current.get("radio_type", ""),
+            protocol=protocol,
         ))
 
     for line in raw.splitlines():

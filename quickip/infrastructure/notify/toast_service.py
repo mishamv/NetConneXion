@@ -79,13 +79,13 @@ class ToastService:
             logger.debug("Toast skipped (winotify unavailable): %s", title)
             return
         try:
-            toast = Notification(
+            toast = Notification(  # type: ignore[possibly-undefined]
                 app_id=self.APP_ID,
                 title=title,
                 msg=body,
                 icon=self._icon or "",
             )
-            toast.set_audio(audio.Default, loop=False)
+            toast.set_audio(audio.Default, loop=False)  # type: ignore[possibly-undefined]
             toast.show()
             logger.debug("Toast shown: %s", title)
         except Exception as exc:

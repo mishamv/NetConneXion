@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from quickip.core.paths import get_tools_settings_file
+from quickip.shared.paths import get_tools_settings_file
 from quickip.core.storage.base_repo import BaseJsonRepository
 
 logger = logging.getLogger(__name__)

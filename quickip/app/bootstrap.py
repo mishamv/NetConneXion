@@ -7,25 +7,20 @@ from typing import Optional
 
 from quickip.events.bus import EventBus, get_event_bus
 from quickip.shared.logging import setup_logging
-from quickip.shared.paths import get_log_dir, get_profiles_file, get_history_file, get_settings_file, get_mappings_file
+from quickip.shared.paths import get_log_dir, get_profiles_file, get_history_file, get_settings_file
 
 # Repositories
 from quickip.infrastructure.storage.json_profile_repo import JsonProfileRepository
 from quickip.infrastructure.storage.json_history_repo import JsonHistoryRepository
 from quickip.infrastructure.storage.json_settings_repo import JsonSettingsRepository
-from quickip.infrastructure.storage.json_network_mapping_repo import JsonNetworkMappingRepository
 
 # Infrastructure services
 from quickip.infrastructure.system.process_runner import ProcessRunner
 from quickip.infrastructure.system.netsh_client import NetshClient
-from quickip.infrastructure.system.network_probe import NetworkProbe
 from quickip.infrastructure.notify.toast_service import ToastService
-from quickip.infrastructure.update.github_updater import GitHubUpdater
 
 # Domain services
 from quickip.domain.services.profile_apply_service import ProfileApplyService
-from quickip.domain.services.profile_match_service import ProfileMatchService
-from quickip.domain.services.import_export_service import ImportExportService
 from quickip.domain.services.diagnostics_service import DiagnosticsService, ConflictCheckService
 from quickip.infrastructure.services.i18n_service import I18nService
 
@@ -48,29 +43,17 @@ class ServiceContainer:
         self.profile_repo = JsonProfileRepository(get_profiles_file())
         self.history_repo = JsonHistoryRepository(get_history_file())
         self.settings_repo = JsonSettingsRepository(get_settings_file())
-        self.mapping_repo = JsonNetworkMappingRepository(get_mappings_file())
 
         # ── Infrastructure ───────────────────────────────────────
         self.process_runner = ProcessRunner()
         self.netsh = NetshClient(self.process_runner)
-        self.network_probe = NetworkProbe(self.process_runner)
         self.toast = ToastService(icon_path=icon_path)
-        self.updater = GitHubUpdater()
 
         # ── Domain services ──────────────────────────────────────
         self.profile_apply = ProfileApplyService(
             profile_repo=self.profile_repo,
             history_repo=self.history_repo,
             netsh_client=self.netsh,
-            event_bus=self.event_bus,
-        )
-        self.profile_match = ProfileMatchService(
-            profile_repo=self.profile_repo,
-            mapping_repo=self.mapping_repo,
-            network_probe=self.network_probe,
-        )
-        self.import_export = ImportExportService(
-            profile_repo=self.profile_repo,
             event_bus=self.event_bus,
         )
         self.diagnostics = DiagnosticsService(self.process_runner)
@@ -88,7 +71,7 @@ class ServiceContainer:
         except ImportError:
             self.vault_available = False
 
-        logger.info("ServiceContainer initialised")
+        logger.debug("ServiceContainer initialised")
 
     def get_adapters(self):
         """Convenience: return current adapter list."""

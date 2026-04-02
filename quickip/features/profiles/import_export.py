@@ -129,7 +129,7 @@ class ImportExportService:
         """Check which profiles would conflict without applying changes."""
         return [
             ImportConflict(
-                existing_profile=self._repo.find_by_name(p.name),
+                existing_profile=self._repo.find_by_name(p.name),  # type: ignore[arg-type]
                 imported_profile=p,
                 conflict_type="name",
             )
@@ -143,6 +143,12 @@ class ImportExportService:
         src = Path(path)
         if not src.exists():
             raise FileNotFoundError(f"Import file not found: {src}")
+
+        # C3: ограничиваем размер файла — защита от DoS через огромный JSON
+        max_size = 10 * 1024 * 1024  # 10 MB
+        if src.stat().st_size > max_size:
+            raise ValueError("Import file too large (max 10 MB).")
+
         payload = json.loads(src.read_text(encoding="utf-8"))
         if isinstance(payload, list):
             profile_list = payload
@@ -150,7 +156,60 @@ class ImportExportService:
             profile_list = payload.get("profiles", [])
         else:
             raise ValueError("Unrecognised import file format")
-        return [self._deserialize(item) for item in profile_list]
+
+        if not isinstance(profile_list, list):
+            raise ValueError("Import file format error: 'profiles' must be a list.")
+
+        # C3: десериализуем и валидируем каждый профиль
+        profiles = []
+        for i, item in enumerate(profile_list):
+            if not isinstance(item, dict):
+                logger.warning(f"Import: skipping item {i} — not a dict")
+                continue
+            try:
+                profile = self._deserialize(item)
+                self._validate_imported(profile)
+                profiles.append(profile)
+            except (KeyError, ValueError) as e:
+                logger.warning(f"Import: skipping item {i} — {e}")
+                continue
+        return profiles
+
+    @staticmethod
+    def _validate_imported(profile: Profile) -> None:
+        """C3: валидирует профиль из внешнего файла перед добавлением в хранилище."""
+        import ipaddress
+
+        # Имя
+        if not profile.name or not profile.name.strip():
+            raise ValueError("Profile name is empty.")
+        if len(profile.name) > 30:
+            raise ValueError(f"Profile name too long: {profile.name!r}")
+
+        # Адаптер — те же правила что в NetshClient._validate_adapter_name
+        forbidden = set('"\'&|;<>(){}$`\\\n\r\t')
+        if forbidden.intersection(profile.adapter or ""):
+            raise ValueError(f"Adapter name contains forbidden characters: {profile.adapter!r}")
+
+        # IP-поля — проверяем только если статический режим
+        def _check_ip(value: str, field: str) -> None:
+            if value:
+                try:
+                    ipaddress.IPv4Address(value)
+                except ValueError:
+                    raise ValueError(f"Invalid {field}: {value!r}")
+
+        if not profile.is_dhcp_ip:
+            _check_ip(profile.ipv4, "IP address")
+            _check_ip(profile.mask, "subnet mask")
+            _check_ip(profile.gateway, "gateway")
+
+        if not profile.is_dhcp_dns:
+            _check_ip(profile.dns_primary, "primary DNS")
+            _check_ip(profile.dns_secondary, "secondary DNS")
+            if (profile.dns_primary and profile.dns_secondary
+                    and profile.dns_primary == profile.dns_secondary):
+                raise ValueError("Primary and secondary DNS are identical.")
 
     def _unique_name(self, base: str) -> str:
         name = f"{base} (imported)"

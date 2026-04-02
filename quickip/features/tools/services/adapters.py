@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from typing import List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from quickip.core.system.process_runner import ProcessRunner
+    from quickip.infrastructure.system.process_runner import ProcessRunner
 
 logger = logging.getLogger(__name__)
 
