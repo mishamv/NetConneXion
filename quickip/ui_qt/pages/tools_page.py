@@ -24,6 +24,33 @@ if TYPE_CHECKING:
     from quickip.app.bootstrap import ServiceContainer
 
 
+_TREE_SS_LIGHT = """
+QTreeWidget::item:hover {
+    background: #E0E7FF;
+    color: #1E293B;
+}
+QTreeWidget::item:selected,
+QTreeWidget::item:selected:active,
+QTreeWidget::item:selected:!active {
+    background: #6366F1;
+    color: #FFFFFF;
+}
+"""
+
+_TREE_SS_DARK = """
+QTreeWidget::item:hover {
+    background: rgba(99,102,241,0.18);
+    color: #E2E8F0;
+}
+QTreeWidget::item:selected,
+QTreeWidget::item:selected:active,
+QTreeWidget::item:selected:!active {
+    background: #4F46E5;
+    color: #FFFFFF;
+}
+"""
+
+
 class _Bridge(QObject):
     output        = Signal(str, bool)
     finished      = Signal(bool, str)
@@ -391,120 +418,58 @@ function prefix2mask($n) {
     return "{0}.{1}.{2}.{3}" -f ([byte](($m -shr 24) -band 255)),([byte](($m -shr 16) -band 255)),([byte](($m -shr 8) -band 255)),([byte]($m -band 255))
 }
 
-$allAdapters  = Get-NetAdapter | Sort-Object InterfaceIndex
-$allCfg       = Get-NetIPConfiguration -Detailed -EA SilentlyContinue
-$allDns       = Get-DnsClientServerAddress -EA SilentlyContinue
-$allIf        = Get-NetIPInterface -EA SilentlyContinue
-$allBindings  = Get-NetAdapterBinding -EA SilentlyContinue
-$allDnsClient = Get-DnsClient -EA SilentlyContinue
-$allWmi       = Get-CimInstance -ClassName Win32_NetworkAdapterConfiguration -EA SilentlyContinue
+$allAdapters = Get-NetAdapter | Sort-Object InterfaceIndex
+$allIPs      = Get-NetIPAddress      -EA SilentlyContinue
+$allIfs      = Get-NetIPInterface    -EA SilentlyContinue
+$allRoutes   = Get-NetRoute          -EA SilentlyContinue | Where-Object { $_.DestinationPrefix -in @('0.0.0.0/0','::0/0') }
+$allDns      = Get-DnsClientServerAddress -EA SilentlyContinue
 
 foreach ($a in $allAdapters) {
-    $idx  = $a.ifIndex
-    $cfg  = $allCfg       | Where-Object { $_.InterfaceIndex -eq $idx } | Select-Object -First 1
-    $dns4 = $allDns       | Where-Object { $_.InterfaceIndex -eq $idx -and $_.AddressFamily -eq 2  } | Select-Object -First 1
-    $dns6 = $allDns       | Where-Object { $_.InterfaceIndex -eq $idx -and $_.AddressFamily -eq 23 } | Select-Object -First 1
-    $if4  = $allIf        | Where-Object { $_.InterfaceIndex -eq $idx -and $_.AddressFamily -eq 'IPv4' } | Select-Object -First 1
-    $if6  = $allIf        | Where-Object { $_.InterfaceIndex -eq $idx -and $_.AddressFamily -eq 'IPv6' } | Select-Object -First 1
-    $wmi  = $allWmi       | Where-Object { $_.InterfaceIndex -eq $idx } | Select-Object -First 1
-    $dnsC = $allDnsClient | Where-Object { $_.InterfaceIndex -eq $idx } | Select-Object -First 1
-
-    Write-Output "ADAPTER_START:$($a.Name)"
-    Write-Output "Description=$($a.InterfaceDescription)"
-    Write-Output "LUID=$($a.InterfaceGuid)"
-    Write-Output "MAC=$($a.MacAddress)"
-
-    $pnpId = $a.PnPDeviceID
-    $busType = if ($pnpId -match '^([^\\\\]+)\\\\') { $matches[1] } else { "" }
-    Write-Output "Bus Type=$busType"
+    $idx = $a.ifIndex
+    $if4 = $allIfs | Where-Object { $_.InterfaceIndex -eq $idx -and $_.AddressFamily -eq 'IPv4' } | Select-Object -First 1
+    $if6 = $allIfs | Where-Object { $_.InterfaceIndex -eq $idx -and $_.AddressFamily -eq 'IPv6' } | Select-Object -First 1
 
     $medium = "$($a.NdisPhysicalMediumType)"
-    $ifType = if ($medium -match 'NativeWifi|WirelessLan|802\\.11') { "Wireless" } `
-              elseif ($medium -match '802\\.3|Ethernet') { "Ethernet" } `
+    $ifType = if ($medium -match 'NativeWifi|WirelessLan|802\.11') { "Wireless" } `
+              elseif ($medium -match '802\.3|Ethernet') { "Ethernet" } `
               elseif ($a.InterfaceType -eq 71) { "Wireless" } `
               elseif ($a.InterfaceType -eq 6)  { "Ethernet" } `
               else { $medium }
-    Write-Output "Interface Type=$ifType"
 
+    Write-Output "ADAPTER_START:$($a.Name)"
+    Write-Output "Description=$($a.InterfaceDescription)"
+    Write-Output "MAC=$($a.MacAddress)"
+    Write-Output "Interface Type=$ifType"
     Write-Output "Enabled=$($a.AdminStatus -eq 'Up')"
     Write-Output "Connected=$($a.MediaConnectionState -eq 'Connected')"
     Write-Output "Speed=$($a.LinkSpeed)"
-
-    $mtu = if ($if4) { "$($if4.NlMtu)" } else { "" }
-    Write-Output "MTU=$mtu"
-
-    $suffix = if ($dnsC -and $dnsC.ConnectionSpecificSuffix) { $dnsC.ConnectionSpecificSuffix } else { "" }
-    Write-Output "DNS Suffix=$suffix"
-
-    $nb = $allBindings | Where-Object { $_.Name -eq $a.Name -and $_.ComponentID -eq 'ms_netbios' } | Select-Object -First 1
-    Write-Output "NetBIOS=$(if ($nb) { $nb.Enabled } else { '' })"
-
     Write-Output "Interface Index=$idx"
-    Write-Output "NetLuid Index=$($a.InterfaceIndex)"
+    Write-Output "MTU=$(if ($if4) { $if4.NlMtu } else { '' })"
 
-    if ($pnpId) {
-        Write-Output "Driver - ID=$pnpId"
-        try {
-            $dp = Get-PnpDeviceProperty -InstanceId $pnpId -EA SilentlyContinue
-            $dd = ($dp | Where-Object KeyName -eq 'DEVPKEY_Device_DriverDate').Data
-            $dv = ($dp | Where-Object KeyName -eq 'DEVPKEY_Device_DriverVersion').Data
-            Write-Output "Driver - Date=$(if ($dd) { $dd.ToString('M-d-yyyy') } else { '' })"
-            Write-Output "Driver - Version=$(if ($dv) { $dv } else { '' })"
-        } catch {
-            Write-Output "Driver - Date="
-            Write-Output "Driver - Version="
-        }
-    }
-
-    $b4 = $allBindings | Where-Object { $_.Name -eq $a.Name -and $_.ComponentID -eq 'ms_tcpip'  } | Select-Object -First 1
-    $b6 = $allBindings | Where-Object { $_.Name -eq $a.Name -and $_.ComponentID -eq 'ms_tcpip6' } | Select-Object -First 1
-    Write-Output "IPv4/IPv6 Protocol=$(if (($b4 -and $b4.Enabled) -or ($b6 -and $b6.Enabled)) { 'True' } else { 'False' })"
-
+    # IPv4
+    $ips4 = @($allIPs | Where-Object { $_.InterfaceIndex -eq $idx -and $_.AddressFamily -eq 'IPv4' })
     Write-Output "IPv4 - Enabled=$(if ($if4) { 'True' } else { 'False' })"
-    if ($wmi) {
-        Write-Output "IPv4 - DHCP - Enabled=$($wmi.DHCPEnabled)"
-        Write-Output "IPv4 - DHCP - Server=$(if ($wmi.DHCPServer) { $wmi.DHCPServer } else { '' })"
-        $obt = if ($wmi.DHCPLeaseObtained) { try { $wmi.DHCPLeaseObtained.ToLocalTime().ToString('yyyy-MM-dd HH:mm:ss') } catch { '' } } else { '' }
-        $exp = if ($wmi.DHCPLeaseExpires)  { try { $wmi.DHCPLeaseExpires.ToLocalTime().ToString('yyyy-MM-dd HH:mm:ss')  } catch { '' } } else { '' }
-        Write-Output "IPv4 - DHCP - Obtained=$obt"
-        Write-Output "IPv4 - DHCP - Expires=$exp"
-    } else {
-        Write-Output "IPv4 - DHCP - Enabled="
-        Write-Output "IPv4 - DHCP - Server="
-        Write-Output "IPv4 - DHCP - Obtained="
-        Write-Output "IPv4 - DHCP - Expires="
+    Write-Output "IPv4 - DHCP=$(if ($if4) { $if4.Dhcp } else { '' })"
+    foreach ($ip in $ips4) {
+        Write-Output "IPv4 - IP=$($ip.IPAddress) : $(prefix2mask([int]$ip.PrefixLength))"
     }
-    if ($cfg) {
-        foreach ($addr in $cfg.IPv4Address) {
-            $mask = prefix2mask([int]$addr.PrefixLength)
-            Write-Output "IPv4 - IP=$($addr.IPAddress) : $mask"
-        }
-        $gw4 = if ($cfg.IPv4DefaultGateway) { ($cfg.IPv4DefaultGateway | Select-Object -First 1).NextHop } else { "" }
-        Write-Output "IPv4 - Gateway=$gw4"
-    }
-    $dns4str = if ($dns4 -and $dns4.ServerAddresses) { $dns4.ServerAddresses -join ', ' } else { "" }
-    Write-Output "IPv4 - DNS=$dns4str"
-    $wins = ""
-    if ($wmi -and ($wmi.WINSPrimaryServer -or $wmi.WINSSecondaryServer)) {
-        $wins = (@($wmi.WINSPrimaryServer,$wmi.WINSSecondaryServer) | Where-Object { $_ }) -join ', '
-    }
-    Write-Output "IPv4 - WINS=$wins"
-    Write-Output "IPv4 - Interface Metric=$(if ($if4) { $if4.InterfaceMetric } else { '' })"
+    $gw4 = ($allRoutes | Where-Object { $_.InterfaceIndex -eq $idx -and $_.DestinationPrefix -eq '0.0.0.0/0' } | Select-Object -First 1).NextHop
+    Write-Output "IPv4 - Gateway=$(if ($gw4) { $gw4 } else { '' })"
+    $dns4 = $allDns | Where-Object { $_.InterfaceIndex -eq $idx -and $_.AddressFamily -eq 2 } | Select-Object -First 1
+    Write-Output "IPv4 - DNS=$(if ($dns4 -and $dns4.ServerAddresses) { $dns4.ServerAddresses -join ', ' } else { '' })"
+    Write-Output "IPv4 - Metric=$(if ($if4) { $if4.InterfaceMetric } else { '' })"
 
+    # IPv6
+    $ips6 = @($allIPs | Where-Object { $_.InterfaceIndex -eq $idx -and $_.AddressFamily -eq 'IPv6' })
     Write-Output "IPv6 - Enabled=$(if ($if6) { 'True' } else { 'False' })"
-    Write-Output "IPv6 - DHCP - Enabled=$(if ($if6) { $if6.Dhcp -eq 'Enabled' } else { '' })"
-    Write-Output "IPv6 - DHCP - Server="
-    Write-Output "IPv6 - DHCP - IAID="
-    Write-Output "IPv6 - DHCP - Client-DUID="
-    if ($cfg) {
-        $v6 = ($cfg.IPv6Address | ForEach-Object { "$($_.IPAddress)/$($_.PrefixLength)" }) -join '; '
-        Write-Output "IPv6 - IP=$v6"
-        $gw6 = if ($cfg.IPv6DefaultGateway) { ($cfg.IPv6DefaultGateway | Select-Object -First 1).NextHop } else { "" }
-        Write-Output "IPv6 - Gateway=$gw6"
-    }
-    $dns6str = if ($dns6 -and $dns6.ServerAddresses) { $dns6.ServerAddresses -join ', ' } else { "" }
-    Write-Output "IPv6 - DNS=$dns6str"
-    Write-Output "IPv6 - Interface Metric=$(if ($if6) { $if6.InterfaceMetric } else { '' })"
+    Write-Output "IPv6 - DHCP=$(if ($if6) { $if6.Dhcp } else { '' })"
+    $v6 = ($ips6 | ForEach-Object { "$($_.IPAddress)/$($_.PrefixLength)" }) -join '; '
+    Write-Output "IPv6 - IP=$v6"
+    $gw6 = ($allRoutes | Where-Object { $_.InterfaceIndex -eq $idx -and $_.DestinationPrefix -eq '::0/0' } | Select-Object -First 1).NextHop
+    Write-Output "IPv6 - Gateway=$(if ($gw6) { $gw6 } else { '' })"
+    $dns6 = $allDns | Where-Object { $_.InterfaceIndex -eq $idx -and $_.AddressFamily -eq 23 } | Select-Object -First 1
+    Write-Output "IPv6 - DNS=$(if ($dns6 -and $dns6.ServerAddresses) { $dns6.ServerAddresses -join ', ' } else { '' })"
+    Write-Output "IPv6 - Metric=$(if ($if6) { $if6.InterfaceMetric } else { '' })"
 
     Write-Output "ADAPTER_END"
 }
@@ -830,6 +795,8 @@ class _NetstatPanel(QWidget):
 
         self._table = QTreeWidget()
         self._table.setObjectName("NetstatTable")
+        self._table.setStyle(QStyleFactory.create("Fusion"))
+        self._table.setStyleSheet(_TREE_SS_LIGHT if not dark else _TREE_SS_DARK)
         self._table.setRootIsDecorated(False)
         self._table.setAlternatingRowColors(True)
         self._table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
@@ -911,6 +878,7 @@ class _NetstatPanel(QWidget):
 
     def refresh_theme(self, dark: bool) -> None:
         self._dark = dark
+        self._table.setStyleSheet(_TREE_SS_LIGHT if not dark else _TREE_SS_DARK)
 
 
 class _ArpPanel(_ToolPanel):
@@ -1168,6 +1136,8 @@ class _RouteTablePanel(QWidget):
 
         self._table = QTreeWidget()
         self._table.setObjectName("NetstatTable")
+        self._table.setStyle(QStyleFactory.create("Fusion"))
+        self._table.setStyleSheet(_TREE_SS_LIGHT if not dark else _TREE_SS_DARK)
         self._table.setRootIsDecorated(False)
         self._table.setAlternatingRowColors(True)
         self._table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
@@ -1283,6 +1253,7 @@ class _RouteTablePanel(QWidget):
 
     def refresh_theme(self, dark: bool) -> None:
         self._dark = dark
+        self._table.setStyleSheet(_TREE_SS_LIGHT if not dark else _TREE_SS_DARK)
 
 
 class _SignalGraph(QWidget):
@@ -1313,7 +1284,7 @@ class _SignalGraph(QWidget):
             p.setRenderHint(QPainter.RenderHint.Antialiasing)
             w, h = self.width(), self.height()
 
-            bg = QColor("#1E293B") if self._dark else QColor("#F1F5F9")
+            bg = QColor("#1E293B") if self._dark else QColor("#FFFFFF")
             p.fillRect(0, 0, w, h, bg)
 
             dbm_min, dbm_max = -100.0, -40.0
@@ -1684,20 +1655,486 @@ class _SignalMonitorPanel(QWidget):
         self._graph.set_dark(dark)
 
 
+class _SubnetCalcPanel(QWidget):
+    def __init__(self, dark: bool = True) -> None:
+        super().__init__()
+        self._dark = dark
+        root = QVBoxLayout(self)
+        root.setContentsMargins(16, 14, 16, 14)
+        root.setSpacing(10)
+
+        hdr = QLabel("Subnet Calculator")
+        hdr.setObjectName("ToolPanelTitle")
+        root.addWidget(hdr)
+
+        form = QHBoxLayout()
+        form.setSpacing(8)
+        self._cidr = QLineEdit()
+        self._cidr.setObjectName("ToolInput")
+        self._cidr.setPlaceholderText("192.168.1.0/24  или  10.0.0.5/255.255.0.0")
+        self._cidr.setFixedHeight(28)
+        self._cidr.returnPressed.connect(self._calc)
+        form.addWidget(self._cidr, 1)
+        _f = QFont("Segoe UI", 10)
+        _f.setWeight(QFont.Weight.DemiBold)
+        btn = QPushButton("\u22b9  Calculate")
+        btn.setProperty("role", "primary")
+        btn.setObjectName("ToolBtn")
+        btn.setFixedSize(110, 28)
+        btn.setFont(_f)
+        btn.clicked.connect(self._calc)
+        form.addWidget(btn)
+        root.addLayout(form)
+
+        self._grid_w = QWidget()
+        gl = QGridLayout(self._grid_w)
+        gl.setSpacing(6)
+        gl.setContentsMargins(0, 4, 0, 4)
+        gl.setColumnStretch(1, 1)
+        self._fields: dict = {}
+        _rows = [
+            ("CIDR нотация",   "cidr"),
+            ("Сетевой адрес",  "network"),
+            ("Маска подсети",  "mask"),
+            ("Wildcard маска", "wildcard"),
+            ("Broadcast",      "broadcast"),
+            ("Первый хост",    "first"),
+            ("Последний хост", "last"),
+            ("Кол-во хостов",  "hosts"),
+            ("Класс адреса",   "cls"),
+        ]
+        for row, (text, key) in enumerate(_rows):
+            lbl = QLabel(text + ":")
+            lbl.setObjectName("SubnetLabel")
+            val = QLabel("\u2014")
+            val.setObjectName("SubnetValue")
+            val.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+            gl.addWidget(lbl, row, 0)
+            gl.addWidget(val, row, 1)
+            self._fields[key] = val
+        self._grid_w.setVisible(False)
+        root.addWidget(self._grid_w)
+
+        self._status = QLabel("")
+        self._status.setObjectName("ToolStatus")
+        root.addWidget(self._status)
+        root.addStretch(1)
+
+    def _calc(self) -> None:
+        import ipaddress
+        text = self._cidr.text().strip()
+        if not text:
+            self._status.setText("Введите адрес")
+            return
+        try:
+            if "/" in text:
+                ip_part, mask_part = text.split("/", 1)
+                if "." in mask_part:
+                    prefix = bin(int(ipaddress.IPv4Address(mask_part))).count("1")
+                    text = f"{ip_part}/{prefix}"
+            net = ipaddress.IPv4Network(text, strict=False)
+            first_octet = int(str(net.network_address).split(".")[0])
+            if first_octet < 128:
+                cls = "A"
+            elif first_octet < 192:
+                cls = "B"
+            elif first_octet < 224:
+                cls = "C"
+            elif first_octet < 240:
+                cls = "D (Multicast)"
+            else:
+                cls = "E (Reserved)"
+            hosts = max(0, net.num_addresses - 2) if net.prefixlen < 31 else net.num_addresses
+            first = str(net.network_address + 1) if net.prefixlen < 31 else str(net.network_address)
+            last  = str(net.broadcast_address - 1) if net.prefixlen < 31 else str(net.broadcast_address)
+            self._fields["cidr"].setText(str(net))
+            self._fields["network"].setText(str(net.network_address))
+            self._fields["mask"].setText(str(net.netmask))
+            self._fields["wildcard"].setText(str(net.hostmask))
+            self._fields["broadcast"].setText(str(net.broadcast_address))
+            self._fields["first"].setText(first)
+            self._fields["last"].setText(last)
+            self._fields["hosts"].setText(f"{hosts:,}".replace(",", "\u202f"))
+            self._fields["cls"].setText(cls)
+            self._grid_w.setVisible(True)
+            self._status.setText(f"/{net.prefixlen} — {hosts} хостов")
+            self._status.setStyleSheet("color: #22C55E; font-size: 12px;")
+        except Exception as e:
+            self._status.setText(f"Ошибка: {e}")
+            self._status.setStyleSheet("color: #EF4444; font-size: 12px;")
+            self._grid_w.setVisible(False)
+
+    def refresh_theme(self, dark: bool) -> None:
+        self._dark = dark
+
+
+class _DnsCacheBridge(QObject):
+    rows_ready = Signal(list)
+    finished   = Signal(bool, str)
+
+
+class _DnsCachePanel(QWidget):
+    def __init__(self, dark: bool = True) -> None:
+        super().__init__()
+        self._dark = dark
+        self._bridge = _DnsCacheBridge()
+
+        root = QVBoxLayout(self)
+        root.setContentsMargins(16, 14, 16, 14)
+        root.setSpacing(10)
+
+        hdr = QLabel("DNS Cache")
+        hdr.setObjectName("ToolPanelTitle")
+        root.addWidget(hdr)
+
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(6)
+        _f = QFont("Segoe UI", 10)
+        _f.setWeight(QFont.Weight.DemiBold)
+        btn_ref = QPushButton("\u25b6  Refresh")
+        btn_ref.setProperty("role", "primary")
+        btn_ref.setObjectName("ToolBtn")
+        btn_ref.setFixedSize(100, 28)
+        btn_ref.setFont(_f)
+        btn_flush = QPushButton("\u21ba  Flush")
+        btn_flush.setProperty("role", "action")
+        btn_flush.setObjectName("ToolBtn")
+        btn_flush.setFixedSize(90, 28)
+        btn_flush.setFont(_f)
+        btn_row.addWidget(btn_ref)
+        btn_row.addWidget(btn_flush)
+        btn_row.addStretch(1)
+        root.addLayout(btn_row)
+
+        self._tree = QTreeWidget()
+        self._tree.setObjectName("ToolTree")
+        self._tree.setStyle(QStyleFactory.create("Fusion"))
+        self._tree.setStyleSheet(_TREE_SS_LIGHT if not dark else _TREE_SS_DARK)
+        self._tree.setHeaderLabels(["Имя", "Тип", "TTL", "Данные"])
+        self._tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self._tree.header().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        self._tree.header().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        self._tree.header().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        self._tree.setAlternatingRowColors(True)
+        self._tree.setRootIsDecorated(False)
+        self._tree.setSortingEnabled(True)
+        root.addWidget(self._tree, 1)
+
+        self._status = QLabel("")
+        self._status.setObjectName("ToolStatus")
+        root.addWidget(self._status)
+
+        btn_ref.clicked.connect(self._refresh)
+        btn_flush.clicked.connect(self._flush)
+        self._bridge.rows_ready.connect(self._populate)
+        self._bridge.finished.connect(self._on_finished)
+
+    def _refresh(self) -> None:
+        self._tree.clear()
+        self._status.setText("Получение DNS кэша...")
+        threading.Thread(target=self._worker, daemon=True).start()
+
+    def _flush(self) -> None:
+        try:
+            subprocess.run(
+                ["ipconfig", "/flushdns"],
+                capture_output=True, creationflags=0x08000000, timeout=5,
+            )
+            self._tree.clear()
+            self._status.setText("DNS кэш очищен")
+            self._status.setStyleSheet("color: #22C55E; font-size: 12px;")
+        except Exception as e:
+            self._status.setText(str(e))
+            self._status.setStyleSheet("color: #EF4444; font-size: 12px;")
+
+    def _worker(self) -> None:
+        try:
+            result = subprocess.run(
+                ["ipconfig", "/displaydns"],
+                capture_output=True, creationflags=0x08000000, timeout=15,
+            )
+            try:
+                text = result.stdout.decode("utf-8")
+            except UnicodeDecodeError:
+                text = result.stdout.decode("cp866", errors="replace")
+            rows = self._parse(text)
+            self._bridge.rows_ready.emit(rows)
+            self._bridge.finished.emit(True, f"Записей: {len(rows)}")
+        except Exception as e:
+            self._bridge.finished.emit(False, str(e))
+
+    @staticmethod
+    def _parse(text: str) -> list:
+        rows = []
+        name = ""
+        entry: dict = {}
+        for line in text.splitlines():
+            s = line.strip()
+            if not s or set(s) <= {"-"}:
+                if entry and name:
+                    rec_type = entry.pop("Record Type", "")
+                    ttl = entry.pop("Time To Live", "")
+                    for skip in ("Record Name", "Data Length", "Section"):
+                        entry.pop(skip, None)
+                    data = next(iter(entry.values()), "")
+                    if data:
+                        rows.append((name, rec_type, ttl, data))
+                entry = {}
+                continue
+            if " : " in s:
+                key, _, val = s.partition(" : ")
+                key = key.rstrip(". ").strip()
+                val = val.strip()
+                if key == "Record Name":
+                    name = val.rstrip(".")
+                    entry = {}
+                else:
+                    entry[key] = val
+        return rows
+
+    def _populate(self, rows: list) -> None:
+        self._tree.clear()
+        for rec_name, rec_type, ttl, data in rows:
+            QTreeWidgetItem(self._tree, [rec_name, rec_type, ttl, data])
+
+    def _on_finished(self, success: bool, msg: str) -> None:
+        color = "#22C55E" if success else "#EF4444"
+        self._status.setText(msg)
+        self._status.setStyleSheet(f"color: {color}; font-size: 12px;")
+
+    def refresh_theme(self, dark: bool) -> None:
+        self._dark = dark
+        self._tree.setStyleSheet(_TREE_SS_LIGHT if not dark else _TREE_SS_DARK)
+
+
+class _SpeedTestPanel(QWidget):
+    def __init__(self, dark: bool = True) -> None:
+        super().__init__()
+        self._dark = dark
+        self._bridge = _Bridge()
+        self._running = False
+
+        root = QVBoxLayout(self)
+        root.setContentsMargins(16, 14, 16, 14)
+        root.setSpacing(10)
+
+        hdr = QLabel("Bandwidth Speed Test")
+        hdr.setObjectName("ToolPanelTitle")
+        root.addWidget(hdr)
+
+        cards_row = QHBoxLayout()
+        cards_row.setSpacing(12)
+        self._dl_val   = QLabel("\u2014")
+        self._ul_val   = QLabel("\u2014")
+        self._ping_val = QLabel("\u2014")
+        for title, val_lbl, unit in [
+            ("Download", self._dl_val,   "Mbps"),
+            ("Upload",   self._ul_val,   "Mbps"),
+            ("Ping",     self._ping_val, "ms"),
+        ]:
+            card = QFrame()
+            card.setObjectName("SpeedCard")
+            cl = QVBoxLayout(card)
+            cl.setContentsMargins(12, 8, 12, 8)
+            cl.setSpacing(2)
+            t = QLabel(title)
+            t.setObjectName("SpeedCardTitle")
+            t.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            val_lbl.setObjectName("SpeedCardValue")
+            val_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            u = QLabel(unit)
+            u.setObjectName("SpeedCardUnit")
+            u.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            cl.addWidget(t)
+            cl.addWidget(val_lbl)
+            cl.addWidget(u)
+            cards_row.addWidget(card, 1)
+        root.addLayout(cards_row)
+
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(6)
+        _f = QFont("Segoe UI", 10)
+        _f.setWeight(QFont.Weight.DemiBold)
+        self._btn_run = QPushButton("\u25b6  Start Test")
+        self._btn_run.setProperty("role", "primary")
+        self._btn_run.setObjectName("ToolBtn")
+        self._btn_run.setFixedSize(110, 28)
+        self._btn_run.setFont(_f)
+        self._btn_stop = QPushButton("\u25a0  Stop")
+        self._btn_stop.setProperty("role", "action")
+        self._btn_stop.setObjectName("ToolBtn")
+        self._btn_stop.setFixedSize(80, 28)
+        self._btn_stop.setFont(_f)
+        self._btn_stop.setEnabled(False)
+        btn_row.addWidget(self._btn_run)
+        btn_row.addWidget(self._btn_stop)
+        btn_row.addStretch(1)
+        root.addLayout(btn_row)
+
+        self._output = QTextEdit()
+        self._output.setObjectName("ToolOutput")
+        self._output.setReadOnly(True)
+        self._output.setFont(QFont("Consolas", 10))
+        root.addWidget(self._output, 1)
+
+        self._status = QLabel("")
+        self._status.setObjectName("ToolStatus")
+        root.addWidget(self._status)
+
+        self._btn_run.clicked.connect(self._on_run)
+        self._btn_stop.clicked.connect(self._on_stop)
+        self._bridge.output.connect(self._on_output)
+        self._bridge.finished.connect(self._on_finished)
+        self._bridge.chart_update.connect(self._on_speed_result)
+
+    def _on_run(self) -> None:
+        self._output.clear()
+        self._dl_val.setText("\u2014")
+        self._ul_val.setText("\u2014")
+        self._ping_val.setText("\u2014")
+        self._running = True
+        self._btn_run.setEnabled(False)
+        self._btn_stop.setEnabled(True)
+        self._status.setText("Инициализация...")
+        threading.Thread(target=self._worker, daemon=True).start()
+
+    def _on_stop(self) -> None:
+        self._running = False
+        self._btn_run.setEnabled(True)
+        self._btn_stop.setEnabled(False)
+        self._status.setText("Остановлено")
+
+    def _worker(self) -> None:
+        try:
+            import speedtest as _st
+        except ImportError:
+            self._bridge.output.emit(
+                "Для работы Speed Test установите speedtest-cli:\n\n"
+                "    pip install speedtest-cli\n\n"
+                "Затем перезапустите приложение.",
+                True,
+            )
+            self._bridge.finished.emit(False, "Требуется: pip install speedtest-cli")
+            return
+        try:
+            self._bridge.output.emit("Поиск сервера...", False)
+            st = _st.Speedtest(secure=True)
+            if not self._running:
+                return
+            st.get_best_server()
+            srv = st.results.server
+            srv_str = f"{srv.get('sponsor', '')} ({srv.get('name', '')}, {srv.get('country', '')})"
+            self._bridge.output.emit(f"Сервер: {srv_str}", False)
+            if not self._running:
+                return
+            self._bridge.output.emit("Тест загрузки (Download)...", False)
+            dl = st.download() / 1e6
+            self._bridge.output.emit(f"Download: {dl:.2f} Mbps", False)
+            if not self._running:
+                return
+            self._bridge.output.emit("Тест отдачи (Upload)...", False)
+            ul = st.upload() / 1e6
+            self._bridge.output.emit(f"Upload:   {ul:.2f} Mbps", False)
+            ping_ms = st.results.ping
+            self._bridge.output.emit(f"Ping:     {ping_ms:.1f} ms", False)
+            self._bridge.chart_update.emit([dl, ul, ping_ms])
+            self._bridge.finished.emit(True, f"\u2193 {dl:.1f} Mbps  \u2191 {ul:.1f} Mbps  ping {ping_ms:.0f} ms")
+        except Exception as e:
+            self._bridge.finished.emit(False, str(e))
+
+    def _on_output(self, text: str, is_error: bool) -> None:
+        if is_error:
+            self._output.setTextColor(QColor("#EF4444"))
+            self._output.append(text)
+            self._output.setCurrentCharFormat(QTextCharFormat())
+        else:
+            self._output.setCurrentCharFormat(QTextCharFormat())
+            self._output.append(text)
+        self._output.verticalScrollBar().setValue(self._output.verticalScrollBar().maximum())
+
+    def _on_speed_result(self, values: list) -> None:
+        if len(values) >= 3:
+            self._dl_val.setText(f"{values[0]:.1f}")
+            self._ul_val.setText(f"{values[1]:.1f}")
+            self._ping_val.setText(f"{values[2]:.0f}")
+
+    def _on_finished(self, success: bool, msg: str) -> None:
+        self._running = False
+        self._btn_run.setEnabled(True)
+        self._btn_stop.setEnabled(False)
+        color = "#22C55E" if success else "#EF4444"
+        self._status.setText(msg)
+        self._status.setStyleSheet(f"color: {color}; font-size: 12px;")
+
+    def refresh_theme(self, dark: bool) -> None:
+        self._dark = dark
+
+
+# fmt: (group_name,) for headers, (name, icon) for tools
 _TOOLS = [
-    ("Ping",           "\u25cf"),
-    ("Traceroute",     "\u2937"),
-    ("DNS Lookup",     "\u2316"),
-    ("Flush DNS",      "\u21ba"),
-    ("Адаптеры",       "\u2261"),
-    ("Port Scan",      "\u229e"),
-    ("Netstat",        "\u21c6"),
-    ("ARP",            "\u25a6"),
-    ("HTTP Check",     "\u21af"),
-    ("SSL Cert",       "\u26bf"),
-    ("Routes",         "\u21d2"),
-    ("Signal Monitor", "\u25f7"),
+    ("Диагностика",),
+    ("Ping",           "\u25ce"),   # ◎  target
+    ("Traceroute",     "\u21ac"),   # ↬  path
+    ("DNS Lookup",     "\u2315"),   # ⌕  search
+    ("HTTP Check",     "\u21d7"),   # ⇗  request
+    ("SSL Cert",       "\u26BF"),   # ⚿  lock
+    ("Локальная сеть",),
+    ("Адаптеры",       "\u2637"),   # ☷  layers
+    ("Netstat",        "\u21c4"),   # ⇄  exchange
+    ("ARP",            "\u2237"),   # ∷  table
+    ("Routes",         "\u21e2"),   # ⇢  route
+    ("Signal Monitor", "\u25d4"),   # ◔  signal
+    ("Утилиты",),
+    ("Port Scan",      "\u22a1"),   # ⊡  scan
+    ("DNS Cache",      "\u2338"),   # ⌸  cache
+    ("Subnet Calc",    "\u229e"),   # ⊞  grid
+    ("Speed Test",     "\u26a1"),   # ⚡  speed
 ]
+
+
+class _ToolNavItem(QFrame):
+    """Sidebar nav row: accent-bar | icon | name."""
+
+    clicked_sig = Signal()
+
+    def __init__(self, icon: str, name: str) -> None:
+        super().__init__()
+        self.setObjectName("ToolNavItem")
+        self.setFixedHeight(32)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+
+        lay = QHBoxLayout(self)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(0)
+
+        # Left accent bar
+        self._bar = QFrame()
+        self._bar.setObjectName("ToolNavBar")
+        self._bar.setFixedWidth(3)
+        lay.addWidget(self._bar)
+
+        # Icon label — fixed width so text always aligns
+        ico_lbl = QLabel(icon)
+        ico_lbl.setObjectName("ToolNavIcon")
+        ico_lbl.setFixedWidth(26)
+        ico_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lay.addWidget(ico_lbl)
+
+        self._name = QLabel(name)
+        self._name.setObjectName("ToolNavText")
+        lay.addWidget(self._name, 1)
+
+    def set_active(self, active: bool) -> None:
+        state = "true" if active else "false"
+        for w in (self, self._bar, self._name):
+            w.setProperty("active", state)
+            w.style().unpolish(w)
+            w.style().polish(w)
+
+    def mousePressEvent(self, event) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.clicked_sig.emit()
+        super().mousePressEvent(event)
 
 
 class ToolsPage(QWidget):
@@ -1715,28 +2152,38 @@ class ToolsPage(QWidget):
 
         sidebar = QFrame()
         sidebar.setObjectName("ToolsSidebar")
-        sidebar.setFixedWidth(180)
+        sidebar.setFixedWidth(190)
         sb_lay = QVBoxLayout(sidebar)
-        sb_lay.setContentsMargins(10, 14, 10, 14)
-        sb_lay.setSpacing(2)
+        sb_lay.setContentsMargins(0, 16, 6, 14)
+        sb_lay.setSpacing(1)
 
-        lbl = QLabel("TOOLS")
-        lbl.setObjectName("NavGroupLabel")
-        sb_lay.addWidget(lbl)
-        sb_lay.addSpacing(6)
-
-        self._tool_btns: list = []
-        _f = QFont("Segoe UI", 10)
-        _f.setWeight(QFont.Weight.DemiBold)
-        for i, (name, icon) in enumerate(_TOOLS):
-            btn = QPushButton(f"{icon}  {name}")
-            btn.setObjectName("ToolNavBtn")
-            btn.setProperty("active", "true" if i == 0 else "false")
-            btn.setFixedHeight(36)
-            btn.setFont(_f)
-            btn.clicked.connect(lambda _, idx=i: self._switch_tool(idx))
-            sb_lay.addWidget(btn)
-            self._tool_btns.append(btn)
+        self._nav_items: list[_ToolNavItem] = []
+        self._item_panel_map: list[int] = []
+        panel_idx = 0
+        first = True
+        for entry in _TOOLS:
+            if len(entry) == 1:
+                if panel_idx > 0:
+                    div = QFrame()
+                    div.setObjectName("ToolDivider")
+                    div.setFixedHeight(1)
+                    sb_lay.addSpacing(6)
+                    sb_lay.addWidget(div)
+                    sb_lay.addSpacing(4)
+                grp = QLabel(entry[0])
+                grp.setObjectName("ToolGroupLabel")
+                sb_lay.addWidget(grp)
+                sb_lay.addSpacing(3)
+            else:
+                name, icon = entry
+                item = _ToolNavItem(icon, name)
+                item.set_active(first)
+                item.clicked_sig.connect(lambda p=panel_idx: self._switch_tool(p))
+                sb_lay.addWidget(item)
+                self._nav_items.append(item)
+                self._item_panel_map.append(panel_idx)
+                panel_idx += 1
+                first = False
 
         sb_lay.addStretch(1)
         root.addWidget(sidebar)
@@ -1744,19 +2191,22 @@ class ToolsPage(QWidget):
         self._stack = QStackedWidget()
         self._stack.setObjectName("ToolsStack")
 
+        # Order must match tool entries in _TOOLS (excluding group headers)
         self._panels: list = [
-            _PingPanel(self._dark),
+            _PingPanel(self._dark),           # Диагностика
             _TraceroutePanel(self._dark),
             _DnsPanel(self._dark),
-            _FlushDnsPanel(self._dark),
-            _IpconfigPanel(self._dark),
-            _PortScanPanel(self._dark),
-            _NetstatPanel(self._dark),
-            _ArpPanel(self._dark),
             _HttpCheckPanel(self._dark),
             _SslPanel(self._dark),
+            _IpconfigPanel(self._dark),       # Локальная сеть
+            _NetstatPanel(self._dark),
+            _ArpPanel(self._dark),
             _RouteTablePanel(self._dark),
             _SignalMonitorPanel(self._dark),
+            _PortScanPanel(self._dark),       # Утилиты
+            _DnsCachePanel(self._dark),
+            _SubnetCalcPanel(self._dark),
+            _SpeedTestPanel(self._dark),
         ]
         for panel in self._panels:
             self._stack.addWidget(panel)
@@ -1766,10 +2216,8 @@ class ToolsPage(QWidget):
 
     def _switch_tool(self, idx: int) -> None:
         self._stack.setCurrentIndex(idx)
-        for i, btn in enumerate(self._tool_btns):
-            btn.setProperty("active", "true" if i == idx else "false")
-            btn.style().unpolish(btn)
-            btn.style().polish(btn)
+        for item, p_idx in zip(self._nav_items, self._item_panel_map):
+            item.set_active(p_idx == idx)
 
     def refresh_theme(self, dark_mode: bool) -> None:
         self._dark = dark_mode

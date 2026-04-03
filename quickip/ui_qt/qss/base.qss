@@ -691,24 +691,57 @@ QFrame#ToolsSidebar {
     background: transparent;
 }
 
-QPushButton#ToolNavBtn {
+/* ── Tool nav items ── */
+QFrame#ToolNavItem {
     background: transparent;
-    color: #64748B;
-    border: none;
-    border-radius: 6px;
-    text-align: left;
-    padding: 0 10px;
+    border-radius: 0;
+}
+QFrame#ToolNavItem:hover {
+    background: #F1F5F9;
+}
+QFrame#ToolNavItem[active="true"] {
+    background: #EEF2FF;
+}
+
+QFrame#ToolNavBar {
+    background: transparent;
+    border-radius: 0 2px 2px 0;
+}
+QFrame#ToolNavBar[active="true"] {
+    background: #4F46E5;
+}
+
+QLabel#ToolNavIcon {
+    color: #94A3B8;
     font-size: 13px;
 }
-
-QPushButton#ToolNavBtn:hover {
-    background: #F1F5F9;
-    color: #334155;
+QLabel#ToolNavIcon[active="true"] {
+    color: #4F46E5;
 }
 
-QPushButton#ToolNavBtn[active="true"] {
-    background: #EEF2FF;
+QLabel#ToolNavText {
+    color: #475569;
+    font-size: 12px;
+    padding-right: 4px;
+}
+QLabel#ToolNavText[active="true"] {
     color: #4F46E5;
+    font-weight: 600;
+}
+
+QLabel#ToolGroupLabel {
+    font-size: 13px;
+    font-weight: 700;
+    color: #94A3B8;
+    padding-left: 14px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+QFrame#ToolDivider {
+    background: #E2E8F0;
+    max-height: 1px;
+    margin: 0 10px;
 }
 
 QLabel#ToolPanelTitle {
@@ -717,8 +750,40 @@ QLabel#ToolPanelTitle {
     color: #1E293B;
 }
 
+/* Subnet Calculator */
+QLabel#SubnetLabel {
+    font-size: 12px;
+    color: #64748B;
+    min-width: 140px;
+}
+QLabel#SubnetValue {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1E293B;
+}
+
+/* Speed Test cards */
+QFrame#SpeedCard {
+    background: #F1F5F9;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+}
+QLabel#SpeedCardTitle {
+    font-size: 11px;
+    color: #64748B;
+}
+QLabel#SpeedCardValue {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1E293B;
+}
+QLabel#SpeedCardUnit {
+    font-size: 11px;
+    color: #94A3B8;
+}
+
 QTextEdit#ToolOutput {
-    background: #F8FAFC;
+    background: #FFFFFF;
     border: 1px solid #E2E8F0;
     border-radius: 8px;
     color: #1E293B;
@@ -728,8 +793,45 @@ QTextEdit#ToolOutput {
     margin-top: 10px;
 }
 
+/* Netstat / Routes / DNS Cache shared tree */
+QTreeWidget#NetstatTable,
+QTreeWidget#ToolTree {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    outline: none;
+}
+QTreeWidget#NetstatTable::item,
+QTreeWidget#ToolTree::item {
+    padding: 3px 6px;
+    color: #1E293B;
+}
+QTreeWidget#NetstatTable::item:hover,
+QTreeWidget#ToolTree::item:hover {
+    background: #F1F5F9;
+}
+QTreeWidget#NetstatTable::item:selected,
+QTreeWidget#NetstatTable::item:selected:active,
+QTreeWidget#NetstatTable::item:selected:!active,
+QTreeWidget#ToolTree::item:selected,
+QTreeWidget#ToolTree::item:selected:active,
+QTreeWidget#ToolTree::item:selected:!active {
+    background: #6366F1;
+    color: #FFFFFF;
+}
+QTreeWidget#NetstatTable QHeaderView::section,
+QTreeWidget#ToolTree QHeaderView::section {
+    background: #EEF2FF;
+    color: #4F46E5;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 6px;
+    border: none;
+    border-bottom: 1px solid #C7D2FE;
+}
+
 QTreeWidget#IpconfigTree {
-    background: #F8FAFC;
+    background: #FFFFFF;
     border: 1px solid #E2E8F0;
     border-radius: 8px;
     alternate-background-color: #F1F5F9;

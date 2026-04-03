@@ -566,23 +566,35 @@ QFrame#ToolsSidebar {
     border-right: 1px solid rgba(255, 255, 255, 0.07);
 }
 
-QPushButton#ToolNavBtn {
-    color: rgba(255, 255, 255, 0.40);
-}
+QFrame#ToolNavItem:hover        { background: rgba(255,255,255,0.05); }
+QFrame#ToolNavItem[active="true"] { background: rgba(99,102,241,0.14); }
 
-QPushButton#ToolNavBtn:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.75);
-}
+QFrame#ToolNavBar[active="true"] { background: #818CF8; }
 
-QPushButton#ToolNavBtn[active="true"] {
-    background: rgba(99, 102, 241, 0.18);
-    color: #818CF8;
-}
+QLabel#ToolNavIcon              { color: rgba(148,163,184,0.60); }
+QLabel#ToolNavIcon[active="true"]{ color: #818CF8; }
+
+QLabel#ToolNavText              { color: rgba(226,232,240,0.55); }
+QLabel#ToolNavText[active="true"]{ color: #818CF8; font-weight: 600; }
+
+QLabel#ToolGroupLabel           { color: rgba(255,255,255,0.30); }
+
+QFrame#ToolDivider              { background: rgba(255,255,255,0.07); }
 
 QLabel#ToolPanelTitle {
     color: rgba(226, 232, 240, 0.92);
 }
+
+QLabel#SubnetLabel  { color: rgba(148, 163, 184, 0.85); }
+QLabel#SubnetValue  { color: #E2E8F0; }
+
+QFrame#SpeedCard {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+QLabel#SpeedCardTitle { color: rgba(148, 163, 184, 0.85); }
+QLabel#SpeedCardValue { color: #E2E8F0; }
+QLabel#SpeedCardUnit  { color: rgba(148, 163, 184, 0.60); }
 
 QTextEdit#ToolOutput {
     background: rgba(255, 255, 255, 0.03);
@@ -591,6 +603,42 @@ QTextEdit#ToolOutput {
     selection-background-color: #6366F1;
     selection-color: #FFFFFF;
     margin-top: 10px;
+}
+
+QTreeWidget#NetstatTable,
+QTreeWidget#ToolTree {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    outline: none;
+}
+QTreeWidget#NetstatTable::item,
+QTreeWidget#ToolTree::item {
+    color: rgba(226,232,240,0.85);
+    padding: 3px 6px;
+}
+QTreeWidget#NetstatTable::item:hover,
+QTreeWidget#ToolTree::item:hover {
+    background: rgba(255,255,255,0.05);
+}
+QTreeWidget#NetstatTable::item:selected,
+QTreeWidget#NetstatTable::item:selected:active,
+QTreeWidget#NetstatTable::item:selected:!active,
+QTreeWidget#ToolTree::item:selected,
+QTreeWidget#ToolTree::item:selected:active,
+QTreeWidget#ToolTree::item:selected:!active {
+    background: #4F46E5;
+    color: #FFFFFF;
+}
+QTreeWidget#NetstatTable QHeaderView::section,
+QTreeWidget#ToolTree QHeaderView::section {
+    background: rgba(99,102,241,0.12);
+    color: #818CF8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 6px;
+    border: none;
+    border-bottom: 1px solid rgba(99,102,241,0.25);
 }
 
 QTreeWidget#IpconfigTree {
