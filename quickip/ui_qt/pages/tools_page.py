@@ -430,8 +430,8 @@ foreach ($a in $allAdapters) {
     $if6 = $allIfs | Where-Object { $_.InterfaceIndex -eq $idx -and $_.AddressFamily -eq 'IPv6' } | Select-Object -First 1
 
     $medium = "$($a.NdisPhysicalMediumType)"
-    $ifType = if ($medium -match 'NativeWifi|WirelessLan|802\.11') { "Wireless" } `
-              elseif ($medium -match '802\.3|Ethernet') { "Ethernet" } `
+    $ifType = if ($medium -match 'NativeWifi|WirelessLan|802[.]11') { "Wireless" } `
+              elseif ($medium -match '802[.]3|Ethernet') { "Ethernet" } `
               elseif ($a.InterfaceType -eq 71) { "Wireless" } `
               elseif ($a.InterfaceType -eq 6)  { "Ethernet" } `
               else { $medium }
@@ -753,7 +753,8 @@ class _NetstatPanel(QWidget):
         root.setContentsMargins(16, 14, 16, 14)
         root.setSpacing(10)
 
-        root.addWidget(QLabel("Netstat — активные соединения", objectName="ToolPanelTitle"))
+        _hdr = QLabel("Netstat — активные соединения"); _hdr.setObjectName("ToolPanelTitle")
+        root.addWidget(_hdr)
 
         form = QHBoxLayout()
         form.setSpacing(8)
@@ -1033,15 +1034,19 @@ class _SslPanel(_ToolPanel):
                     cert = ssock.getpeercert()
                     cipher = ssock.cipher()
 
-            def fmt_name(fields):
-                return ", ".join(f"{k}={v}" for rdn in fields for k, v in rdn)
+            if cert is None:
+                self._bridge.finished.emit(False, "Сертификат не получен")
+                return
 
-            subject  = fmt_name(cert.get("subject", []))
-            issuer   = fmt_name(cert.get("issuer", []))
-            not_before = cert.get("notBefore", "—")
-            not_after  = cert.get("notAfter",  "—")
+            def fmt_name(fields) -> str:
+                return ", ".join(f"{k}={v}" for rdn in (fields or []) for k, v in rdn)
 
-            # Дни до истечения
+            subject    = fmt_name(cert.get("subject"))
+            issuer     = fmt_name(cert.get("issuer"))
+            not_before = str(cert.get("notBefore", "—"))
+            not_after  = str(cert.get("notAfter",  "—"))
+
+            days_left: int | None = None
             try:
                 exp = datetime.datetime.strptime(not_after, "%b %d %H:%M:%S %Y %Z")
                 days_left = (exp - datetime.datetime.utcnow()).days
@@ -1049,8 +1054,11 @@ class _SslPanel(_ToolPanel):
             except Exception:
                 expiry_str = not_after
 
-            san_list = [v for t, v in cert.get("subjectAltName", []) if t == "DNS"]
-            san_str  = ", ".join(san_list) if san_list else "—"
+            san_raw  = cert.get("subjectAltName") or []
+            san_list = [str(v) for t, v in san_raw if t == "DNS"]
+
+            tls_ver = cipher[1] if cipher else "—"
+            tls_alg = cipher[0] if cipher else "—"
 
             lines = [
                 f"  {'Хост':<18} {hostname}:{port}",
@@ -1058,23 +1066,22 @@ class _SslPanel(_ToolPanel):
                 f"  {'Issuer':<18} {issuer}",
                 f"  {'Valid From':<18} {not_before}",
                 f"  {'Valid To':<18} {expiry_str}",
-                f"  {'TLS версия':<18} {cipher[1]}",
-                f"  {'Шифр':<18} {cipher[0]}",
+                f"  {'TLS версия':<18} {tls_ver}",
+                f"  {'Шифр':<18} {tls_alg}",
                 "",
                 f"  SAN ({len(san_list)}):",
             ]
             for s in san_list:
                 lines.append(f"    • {s}")
 
-            is_expired = days_left < 0 if isinstance(days_left, int) else False
-            is_soon    = 0 <= days_left <= 30 if isinstance(days_left, int) else False
-
             for line in lines:
                 self._bridge.output.emit(line, False)
 
-            if is_expired:
-                self._bridge.finished.emit(False, f"Сертификат истёк {days_left} дн. назад")
-            elif is_soon:
+            if days_left is None:
+                self._bridge.finished.emit(True, "Сертификат получен")
+            elif days_left < 0:
+                self._bridge.finished.emit(False, f"Сертификат истёк {-days_left} дн. назад")
+            elif days_left <= 30:
                 self._bridge.finished.emit(False, f"Истекает через {days_left} дн. — требует обновления")
             else:
                 self._bridge.finished.emit(True, f"Действителен ещё {days_left} дн.")
@@ -1101,7 +1108,8 @@ class _RouteTablePanel(QWidget):
         root.setContentsMargins(16, 14, 16, 14)
         root.setSpacing(10)
 
-        root.addWidget(QLabel("Route Table — таблица маршрутизации", objectName="ToolPanelTitle"))
+        _hdr = QLabel("Route Table — таблица маршрутизации"); _hdr.setObjectName("ToolPanelTitle")
+        root.addWidget(_hdr)
 
         form = QHBoxLayout()
         form.setSpacing(8)
@@ -1357,7 +1365,8 @@ class _SignalMonitorPanel(QWidget):
         root.setContentsMargins(16, 14, 16, 14)
         root.setSpacing(10)
 
-        root.addWidget(QLabel("Wi-Fi Signal Monitor", objectName="ToolPanelTitle"))
+        _hdr = QLabel("Wi-Fi Signal Monitor"); _hdr.setObjectName("ToolPanelTitle")
+        root.addWidget(_hdr)
 
         # ── Кнопки ───────────────────────────────────────────────────
         _f = QFont("Segoe UI", 10)
@@ -1401,7 +1410,7 @@ class _SignalMonitorPanel(QWidget):
         root.addWidget(self._graph)
 
         # ── Лог роуминга ──────────────────────────────────────────────
-        log_lbl = QLabel("Roaming Log", objectName="ToolPanelTitle")
+        log_lbl = QLabel("Roaming Log"); log_lbl.setObjectName("ToolPanelTitle")
         log_lbl.setStyleSheet("font-size: 12px;")
         root.addWidget(log_lbl)
         self._log = QTextEdit()
@@ -1411,7 +1420,7 @@ class _SignalMonitorPanel(QWidget):
         self._log.setMaximumHeight(160)
         root.addWidget(self._log)
 
-        self._status = QLabel("", objectName="ToolStatus")
+        self._status = QLabel(""); self._status.setObjectName("ToolStatus")
         root.addWidget(self._status)
 
     # ── Вспомогательный метод карточки ───────────────────────────────
@@ -1600,8 +1609,7 @@ class _SignalMonitorPanel(QWidget):
                     stdout = result.stdout.decode("utf-8")
                 except UnicodeDecodeError:
                     stdout = result.stdout.decode("cp866", errors="replace")
-                result = type("R", (), {"stdout": stdout})()
-                d = self._parse(result.stdout)
+                d = self._parse(stdout)
 
                 if not d.get("connected", False):
                     self._bridge.updated.emit({
@@ -1863,33 +1871,48 @@ class _DnsCachePanel(QWidget):
         except Exception as e:
             self._bridge.finished.emit(False, str(e))
 
+    # Поля которые содержат имя записи (EN + RU)
+    _NAME_KEYS  = {"Record Name", "Имя записи"}
+    _TYPE_KEYS  = {"Record Type", "Тип записи"}
+    _TTL_KEYS   = {"Time To Live", "Срок жизни"}
+    _SKIP_KEYS  = {"Data Length", "Длина данных", "Section", "Раздел"}
+
     @staticmethod
     def _parse(text: str) -> list:
-        rows = []
+        rows: list = []
         name = ""
+        rec_type = ""
+        ttl = ""
         entry: dict = {}
+
+        def _flush() -> None:
+            nonlocal name, rec_type, ttl, entry
+            if entry and name:
+                data = next(iter(entry.values()), "")
+                if data:
+                    rows.append((name, rec_type, ttl, data))
+            rec_type = ttl = ""
+            entry = {}
+
         for line in text.splitlines():
             s = line.strip()
             if not s or set(s) <= {"-"}:
-                if entry and name:
-                    rec_type = entry.pop("Record Type", "")
-                    ttl = entry.pop("Time To Live", "")
-                    for skip in ("Record Name", "Data Length", "Section"):
-                        entry.pop(skip, None)
-                    data = next(iter(entry.values()), "")
-                    if data:
-                        rows.append((name, rec_type, ttl, data))
-                entry = {}
+                _flush()
                 continue
             if " : " in s:
                 key, _, val = s.partition(" : ")
                 key = key.rstrip(". ").strip()
                 val = val.strip()
-                if key == "Record Name":
+                if key in _DnsCachePanel._NAME_KEYS:
+                    _flush()
                     name = val.rstrip(".")
-                    entry = {}
-                else:
+                elif key in _DnsCachePanel._TYPE_KEYS:
+                    rec_type = val
+                elif key in _DnsCachePanel._TTL_KEYS:
+                    ttl = val
+                elif key not in _DnsCachePanel._SKIP_KEYS:
                     entry[key] = val
+        _flush()
         return rows
 
     def _populate(self, rows: list) -> None:
@@ -2006,7 +2029,7 @@ class _SpeedTestPanel(QWidget):
 
     def _worker(self) -> None:
         try:
-            import speedtest as _st
+            import speedtest as _st  # type: ignore[import-untyped]
         except ImportError:
             self._bridge.output.emit(
                 "Для работы Speed Test установите speedtest-cli:\n\n"
