@@ -32,7 +32,7 @@ from PySide6.QtWidgets import (
 )
 
 from quickip.app.bootstrap import bootstrap
-from quickip.core.events.types import ProfileApplied, WifiStatusUpdated
+from quickip.core.events.types import LangChanged, ProfileApplied, ThemeChanged, WifiStatusUpdated
 from quickip.ui_qt.adapters.profiles_facade import ProfilesFacade
 from quickip.ui_qt.theme import load_qss, _resource_root
 from quickip.ui_qt.widgets.backdrop import BackdropWidget
@@ -55,6 +55,7 @@ class QtMainWindow(QMainWindow):
         super().__init__()
         self.container = bootstrap()
         self.theme_mode = str(self.container.settings_repo.get("ui_theme", "dark")).lower()
+        self._current_page_key = "profiles"
 
         self.setWindowTitle("NetConneXion")
         self.resize(1240, 780)
@@ -94,11 +95,11 @@ class QtMainWindow(QMainWindow):
         tb = QHBoxLayout(self.topbar)
         tb.setContentsMargins(18, 0, 14, 0)
         tb.setSpacing(12)
-        self._page_title = QLabel("Profiles")
+        self._page_title = QLabel(self._tr("page_profiles"))
         self._page_title.setObjectName("TopbarTitle")
         tb.addWidget(self._page_title)
         tb.addStretch(1)
-        self.btn_theme = QPushButton("Light mode")
+        self.btn_theme = QPushButton("Тёмная тема")
         self.btn_theme.setObjectName("ThemeBtn")
         self.btn_theme.setProperty("role", "action")
         self.btn_theme.setMinimumHeight(32)
@@ -132,6 +133,9 @@ class QtMainWindow(QMainWindow):
         self.facade.bootstrap()
         self._connect_status_events()
         self._update_status_block()
+        # Применяем сохранённый язык ко всем страницам
+        if self.container.i18n.get_current_locale() != "ru":
+            self._retranslate_ui()
 
     # ── Sidebar ───────────────────────────────────────────────────────
 
@@ -162,25 +166,27 @@ class QtMainWindow(QMainWindow):
         nav_lay.setSpacing(0)
         self.nav_buttons: dict[str, QPushButton] = {}
 
-        net_lbl = QLabel("Network")
+        net_lbl = QLabel(self._tr("nav_group_network"))
         net_lbl.setObjectName("NavGroupLabel")
+        self._nav_group_network = net_lbl
         nav_lay.addWidget(net_lbl)
 
         for item in [
-            _NavItem("profiles", "Profiles", "\u25A3"),
-            _NavItem("wifi",     "Wi-Fi",    "",        svg="nav-wifi.svg"),
-            _NavItem("tools",    "Tools",    "\u2692"),
+            _NavItem("profiles", self._tr("nav_profiles"), "\u25A3"),
+            _NavItem("wifi",     "Wi-Fi",                  "",    svg="nav-wifi.svg"),
+            _NavItem("tools",    self._tr("nav_tools"),    "\u2692"),
         ]:
             b = self._nav_btn(item)
             nav_lay.addWidget(b)
             self.nav_buttons[item.key] = b
 
         nav_lay.addSpacing(12)
-        sys_lbl = QLabel("System")
+        sys_lbl = QLabel(self._tr("nav_group_system"))
         sys_lbl.setObjectName("NavGroupLabel")
+        self._nav_group_system = sys_lbl
         nav_lay.addWidget(sys_lbl)
 
-        si = _NavItem("settings", "Settings", "\u2699")
+        si = _NavItem("settings", self._tr("nav_settings"), "\u2699")
         sb = self._nav_btn(si)
         nav_lay.addWidget(sb)
         self.nav_buttons[si.key] = sb
@@ -202,8 +208,9 @@ class QtMainWindow(QMainWindow):
         r1.addWidget(self._st_active, 1)
         st_lay.addLayout(r1)
         r2 = QHBoxLayout()
-        ak = QLabel("Adapter")
+        ak = QLabel(self._tr("status_adapter"))
         ak.setObjectName("StatusKey")
+        self._st_adapter_key = ak
         self._st_adapter = QLabel("\u2014")
         self._st_adapter.setObjectName("StatusValue")
         r2.addWidget(ak)
@@ -262,10 +269,12 @@ class QtMainWindow(QMainWindow):
         self._switch_page("profiles")
 
     def _switch_page(self, key: str) -> None:
-        idx    = {"profiles": 0, "wifi": 1, "tools": 2, "settings": 3}.get(key, 0)
-        labels = {"profiles": "Profiles", "wifi": "Wi-Fi", "tools": "Tools", "settings": "Settings"}
+        idx = {"profiles": 0, "wifi": 1, "tools": 2, "settings": 3}.get(key, 0)
+        page_keys = {"profiles": "page_profiles", "wifi": "page_wifi",
+                     "tools": "page_tools", "settings": "page_settings"}
+        self._current_page_key = key
         self.stack.setCurrentIndex(idx)
-        self._page_title.setText(labels.get(key, key.capitalize()))
+        self._page_title.setText(self._tr(page_keys.get(key, "page_profiles")))
         for k, btn in self.nav_buttons.items():
             btn.setProperty("active", "true" if k == key else "false")
             btn.style().unpolish(btn)
@@ -282,6 +291,8 @@ class QtMainWindow(QMainWindow):
         bus = self.container.event_bus
         bus.subscribe(ProfileApplied, self._on_profile_applied)  # type: ignore[arg-type]
         bus.subscribe(WifiStatusUpdated, self._on_wifi_status_updated)  # type: ignore[arg-type]
+        bus.subscribe(ThemeChanged, self._on_theme_changed)  # type: ignore[arg-type]
+        bus.subscribe(LangChanged, self._on_lang_changed)  # type: ignore[arg-type]
 
     def _on_profile_applied(self, event) -> None:
         """Обновляем StatusBlock, feedback и историю после применения профиля."""
@@ -294,6 +305,19 @@ class QtMainWindow(QMainWindow):
             self.profiles_page.show_apply_result(success, profile_name, duration_ms)
         # Обновляем StatusBlock
         QTimer.singleShot(1500, self._update_status_block)
+
+    def _on_theme_changed(self, event) -> None:
+        """Обновляем тему при изменении из страницы настроек."""
+        from PySide6.QtCore import QTimer
+        mode = getattr(event, "theme", "dark")
+        if mode != self.theme_mode:
+            self.theme_mode = mode
+            QTimer.singleShot(0, self._apply_theme)
+
+    def _on_lang_changed(self, event) -> None:
+        """Перерисовываем все строки UI при смене языка."""
+        from PySide6.QtCore import QTimer
+        QTimer.singleShot(0, self._retranslate_ui)
 
     def _on_wifi_status_updated(self, event) -> None:
         """Обновляем StatusBlock при изменении Wi-Fi статуса."""
@@ -359,6 +383,42 @@ class QtMainWindow(QMainWindow):
 
     # ── Theme ─────────────────────────────────────────────────────────
 
+    def _tr(self, key: str) -> str:
+        return self.container.i18n.get(key)
+
+    def _retranslate_ui(self) -> None:
+        """Обновляет все строки main_window и всех страниц."""
+        # Nav group labels
+        self._nav_group_network.setText(self._tr("nav_group_network"))
+        self._nav_group_system.setText(self._tr("nav_group_system"))
+
+        # Кнопки навигации
+        nav_keys = {"profiles": "nav_profiles", "tools": "nav_tools", "settings": "nav_settings"}
+        for key, btn in self.nav_buttons.items():
+            tr_key = nav_keys.get(key)
+            if tr_key:
+                # Сохраняем иконку-префикс
+                parts = btn.text().split("  ", 1)
+                prefix = parts[0] + "  " if len(parts) == 2 else ""
+                btn.setText(prefix + self._tr(tr_key))
+
+        # Заголовок топбара
+        page_tr = {"profiles": "page_profiles", "wifi": "page_wifi",
+                   "tools": "page_tools", "settings": "page_settings"}
+        self._page_title.setText(self._tr(page_tr.get(self._current_page_key, "page_profiles")))
+
+        # Статус-блок
+        self._st_adapter_key.setText(self._tr("status_adapter"))
+
+        # Кнопка темы
+        is_dark = self.theme_mode == "dark"
+        self.btn_theme.setText(self._tr("btn_theme_light") if is_dark else self._tr("btn_theme_dark"))
+
+        # Все страницы
+        for pg in (self.profiles_page, self.wifi_page, self.tools_page, self.settings_page):
+            if hasattr(pg, "retranslate"):
+                pg.retranslate()  # type: ignore[union-attr]
+
     def _toggle_theme(self) -> None:
         self.theme_mode = "light" if self.theme_mode == "dark" else "dark"
         self.container.settings_repo.set("ui_theme", self.theme_mode)
@@ -368,7 +428,7 @@ class QtMainWindow(QMainWindow):
         is_dark = self.theme_mode == "dark"
         self.root.set_theme_mode(self.theme_mode)
         self.setStyleSheet(load_qss(self.theme_mode))
-        self.btn_theme.setText("Light mode" if is_dark else "Dark mode")
+        self.btn_theme.setText(self._tr("btn_theme_light") if is_dark else self._tr("btn_theme_dark"))
         self._update_logo(self.theme_mode)
         self._apply_windows_titlebar(is_dark)
 

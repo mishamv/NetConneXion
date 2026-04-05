@@ -134,3 +134,11 @@ class WifiProfileSaved(AppEvent):
 class WifiProfileDeleted(AppEvent):
     """A Wi-Fi credential profile was deleted."""
     profile_id: str
+
+
+# ── Language events ───────────────────────────────────────────────
+
+@dataclass
+class LangChanged(AppEvent):
+    """UI language was switched."""
+    locale: str  # "ru" or "en"

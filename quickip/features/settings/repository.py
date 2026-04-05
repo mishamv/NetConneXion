@@ -19,10 +19,10 @@ class SettingsRepository:
         self._repo = container.settings_repo
 
     def get_language(self) -> str:
-        return self._repo.get("language", "ru")
+        return str(self._repo.get("ui_locale", "ru"))
 
     def set_language(self, lang: str) -> None:
-        self._repo.set("language", lang)
+        self._repo.set("ui_locale", lang)
         self._repo.save()
 
     def get_theme(self) -> str:

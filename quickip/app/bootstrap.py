@@ -61,7 +61,7 @@ class ServiceContainer:
 
         # ── i18n ─────────────────────────────────────────────────
         _locales_dir = str(Path(__file__).resolve().parents[2] / "data" / "locales")
-        _saved_locale = self.settings_repo.get("language", "ru")
+        _saved_locale = str(self.settings_repo.get("ui_locale", "ru"))
         self.i18n = I18nService(locales_dir=_locales_dir, default_locale=_saved_locale)
 
         # ── Security ─────────────────────────────────────────────

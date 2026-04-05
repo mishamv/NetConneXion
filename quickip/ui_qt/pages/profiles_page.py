@@ -9,7 +9,7 @@ from PySide6.QtGui import QColor, QFont, QPainter, QPen
 from PySide6.QtWidgets import (
     QAbstractItemView, QComboBox, QFileDialog, QFrame,
     QGridLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget,
-    QListWidgetItem, QPushButton, QScrollArea, QSizePolicy,
+    QListWidgetItem, QMessageBox, QPushButton, QScrollArea, QSizePolicy,
     QVBoxLayout, QWidget,
 )
 
@@ -189,8 +189,9 @@ class ProfilesPage(QWidget):
         hdr.setObjectName("PanelHeader")
         hdr_lay = QHBoxLayout(hdr)
         hdr_lay.setContentsMargins(13, 10, 13, 8)
-        lbl = QLabel("Saved profiles")
+        lbl = QLabel("Сохранённые профили")
         lbl.setObjectName("PanelTitle")
+        self._lbl_profiles_header = lbl
         hdr_lay.addWidget(lbl)
         hdr_lay.addStretch(1)
         self._count_pill = QLabel("0")
@@ -205,7 +206,7 @@ class ProfilesPage(QWidget):
         sw_lay.setContentsMargins(10, 8, 10, 0)
         self.search = QLineEdit()
         self.search.setObjectName("ProfilesSearch")
-        self.search.setPlaceholderText("Search...")
+        self.search.setPlaceholderText("Поиск...")
         self.search.textChanged.connect(self.facade.set_search_query)
         sw_lay.addWidget(self.search)
         lay.addWidget(sw)
@@ -217,7 +218,7 @@ class ProfilesPage(QWidget):
         af_lay.setContentsMargins(10, 6, 10, 0)
         self.adapter_filter = QComboBox()
         self.adapter_filter.setObjectName("AdapterFilter")
-        self.adapter_filter.addItem("All adapters")
+        self.adapter_filter.addItem(self._tr("filter_all_adapters"))
         self.adapter_filter.currentTextChanged.connect(self._apply_profile_filters)
         af_lay.addWidget(self.adapter_filter)
         lay.addWidget(af)
@@ -303,16 +304,16 @@ class ProfilesPage(QWidget):
 
         eh_lay.addStretch(1)
 
-        self.btn_save = QPushButton("\u2713  Save")
+        self.btn_save = QPushButton("\u2713  Сохранить")
         self.btn_save.setProperty("role", "action")
         self.btn_save.setObjectName("BtnSave")
-        self.btn_save.setFixedSize(75, 28)   # ширина=75, высота=28
+        self.btn_save.setFixedSize(100, 28)
         eh_lay.addWidget(self.btn_save)
 
-        self.btn_apply = QPushButton("\u25B6  Apply Profile")
+        self.btn_apply = QPushButton("\u25B6  Применить")
         self.btn_apply.setProperty("role", "primary")
         self.btn_apply.setObjectName("BtnApply")
-        self.btn_apply.setFixedSize(115, 28)  # ширина=115, высота=28
+        self.btn_apply.setFixedSize(110, 28)
         eh_lay.addWidget(self.btn_apply)
         lay.addWidget(eh)
 
@@ -343,13 +344,15 @@ class ProfilesPage(QWidget):
         self.name_edit.setMaxLength(30)
         self.adapter_combo = QComboBox()
         self.adapter_combo.setObjectName("EditorCombo")
-        body_lay.addWidget(self._section(
-            "General",
-            [("Name", self.name_edit), ("Adapter", self.adapter_combo)],
-        ))
+        _sec, self._lbl_sec_basic, _fl = self._section(
+            "Основные",
+            [("Название", self.name_edit), ("Адаптер", self.adapter_combo)],
+        )
+        self._lbl_name, self._lbl_adapter_field = _fl
+        body_lay.addWidget(_sec)
 
         # Network section
-        self.dhcp_ip_cb = ToggleSwitch("Use DHCP for IP")
+        self.dhcp_ip_cb = ToggleSwitch("DHCP для IP")
         self.dhcp_ip_cb.setObjectName("DhcpCheck")
         self.ip_edit = QLineEdit()
         self.ip_edit.setObjectName("EditorField")
@@ -357,24 +360,28 @@ class ProfilesPage(QWidget):
         self.mask_edit.setObjectName("EditorField")
         self.gw_edit = QLineEdit()
         self.gw_edit.setObjectName("EditorField")
-        body_lay.addWidget(self._section(
-            "Network",
-            [("IP address", self.ip_edit), ("Subnet mask", self.mask_edit), ("Gateway", self.gw_edit)],
+        _sec, self._lbl_sec_network, _fl = self._section(
+            "Сеть",
+            [("IP-адрес", self.ip_edit), ("Маска подсети", self.mask_edit), ("Шлюз", self.gw_edit)],
             top_widget=self.dhcp_ip_cb,
-        ))
+        )
+        self._lbl_ip, self._lbl_mask, self._lbl_gw = _fl
+        body_lay.addWidget(_sec)
 
         # DNS section
-        self.dhcp_dns_cb = ToggleSwitch("Use DHCP for DNS")
+        self.dhcp_dns_cb = ToggleSwitch("DHCP для DNS")
         self.dhcp_dns_cb.setObjectName("DhcpCheck")
         self.dns1_edit = QLineEdit()
         self.dns1_edit.setObjectName("EditorField")
         self.dns2_edit = QLineEdit()
         self.dns2_edit.setObjectName("EditorField")
-        body_lay.addWidget(self._section(
+        _sec, self._lbl_sec_dns, _fl = self._section(
             "DNS",
-            [("Primary DNS", self.dns1_edit), ("Secondary DNS", self.dns2_edit)],
+            [("Основной DNS", self.dns1_edit), ("Резервный DNS", self.dns2_edit)],
             top_widget=self.dhcp_dns_cb,
-        ))
+        )
+        self._lbl_dns1, self._lbl_dns2 = _fl
+        body_lay.addWidget(_sec)
 
         body_lay.addStretch(1)
         scroll.setWidget(body)
@@ -392,7 +399,10 @@ class ProfilesPage(QWidget):
         self.dhcp_ip_cb.toggled.connect(self._mark_dirty)
         self.dhcp_dns_cb.toggled.connect(self._mark_dirty)
 
-    def _section(self, title: str, fields: list, top_widget: QWidget | None = None) -> QFrame:
+    def _section(
+        self, title: str, fields: list, top_widget: QWidget | None = None
+    ) -> tuple:
+        """Returns (frame, title_label, [field_labels])."""
         sec = QFrame()
         sec.setObjectName("SectionCard")
         lay = QVBoxLayout(sec)
@@ -418,13 +428,15 @@ class ProfilesPage(QWidget):
         grid.setVerticalSpacing(9)
         grid.setColumnMinimumWidth(0, 110)
         grid.setColumnStretch(1, 1)
+        field_lbls: list[QLabel] = []
         for i, (lbl_text, widget) in enumerate(fields):
             lbl = QLabel(lbl_text)
             lbl.setObjectName("FieldLabel")
             grid.addWidget(lbl, i, 0)
             grid.addWidget(widget, i, 1)
+            field_lbls.append(lbl)
         lay.addLayout(grid)
-        return sec
+        return sec, t, field_lbls
 
     # ── Slots ─────────────────────────────────────────────────────────
 
@@ -439,7 +451,7 @@ class ProfilesPage(QWidget):
         search_q = self.search.text().strip().lower()
         self.list.clear()
         for p in self._all_items:
-            if sel_adapter and sel_adapter != "All adapters" and p.adapter != sel_adapter:
+            if self.adapter_filter.currentIndex() != 0 and p.adapter != sel_adapter:
                 continue
             if search_q and search_q not in p.name.lower():
                 continue
@@ -466,8 +478,7 @@ class ProfilesPage(QWidget):
         is_dhcp = data.get("dhcp_ip", False)
         self.name_edit.setText(data.get("name", ""))
         adapter = data.get("adapter", "")
-        # Не подставляем служебные значения в поле адаптера
-        if adapter not in ("Все адаптеры", "All adapters"):
+        if adapter:
             self._set_combo(self.adapter_combo, adapter)
         self.dhcp_ip_cb.setChecked(bool(is_dhcp))
         self.ip_edit.setText(data.get("ip", ""))
@@ -492,21 +503,19 @@ class ProfilesPage(QWidget):
     def _set_adapter_values(self, values: List[str]) -> None:
         cur = self.adapter_combo.currentText()
         self.adapter_combo.clear()
-        self.adapter_combo.addItems([
-            v for v in values
-            if v and v not in ("All adapters", "Все адаптеры")
-        ])
+        self.adapter_combo.addItems([v for v in values if v])
         # Восстанавливаем выбор только если значение есть в списке
         idx = self.adapter_combo.findText(cur)
         if idx >= 0:
             self.adapter_combo.setCurrentIndex(idx)
 
+        _all_labels = {"Все адаптеры", "All adapters"}
         cur_f = self.adapter_filter.currentText()
         self.adapter_filter.blockSignals(True)
         self.adapter_filter.clear()
-        self.adapter_filter.addItem("All adapters")
+        self.adapter_filter.addItem(self._tr("filter_all_adapters"))
         for v in values:
-            if v and v not in ("All adapters", "Все адаптеры"):
+            if v and v not in _all_labels:
                 self.adapter_filter.addItem(v)
         # Восстанавливаем выбор только если значение есть в списке
         idx = self.adapter_filter.findText(cur_f)
@@ -565,24 +574,24 @@ class ProfilesPage(QWidget):
         """Диалог подтверждения потери несохранённых изменений."""
         from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
         dlg = QDialog(self)
-        dlg.setWindowTitle("Несохранённые изменения")
+        dlg.setWindowTitle(self._tr("dlg_unsaved_title"))
         from PySide6.QtCore import Qt
         dlg.setWindowFlags(dlg.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
         lay = QVBoxLayout(dlg)
         lay.setContentsMargins(24, 20, 24, 16)
         lay.setSpacing(16)
-        lbl = QLabel("Профиль был изменён.\nУдалить изменения?")
+        lbl = QLabel(self._tr("dlg_unsaved_text"))
         lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         lbl.setWordWrap(True)
         lay.addWidget(lbl)
         btn_row = QHBoxLayout()
         btn_row.setSpacing(8)
         btn_row.addStretch(1)
-        btn_no = QPushButton("Нет")
+        btn_no = QPushButton(self._tr("btn_no"))
         btn_no.setProperty("role", "action")
         btn_no.setFixedSize(90, 32)
         btn_no.clicked.connect(dlg.reject)
-        btn_yes = QPushButton("Да")
+        btn_yes = QPushButton(self._tr("btn_yes"))
         btn_yes.setProperty("role", "primary")
         btn_yes.setFixedSize(90, 32)
         btn_yes.clicked.connect(dlg.accept)
@@ -613,15 +622,26 @@ class ProfilesPage(QWidget):
         names = self._selected_names()
         if not names:
             return
+        if len(names) == 1:
+            msg = self._tr("dlg_delete_profile_q").format(name=names[0])
+        else:
+            msg = self._tr("dlg_delete_profiles_q").format(count=len(names))
+        reply = QMessageBox.question(
+            self, self._tr("dlg_confirm_delete_title"), msg,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
         self.facade.delete_profiles(names)
 
     def _on_export(self) -> None:
-        path, _ = QFileDialog.getSaveFileName(self, "Export profiles", "", "JSON (*.json)")
+        path, _ = QFileDialog.getSaveFileName(self, self._tr("dlg_export_title"), "", "JSON (*.json)")
         if path:
             self.facade.export_profiles(path)
 
     def _on_import(self) -> None:
-        path, _ = QFileDialog.getOpenFileName(self, "Import profiles", "", "JSON (*.json)")
+        path, _ = QFileDialog.getOpenFileName(self, self._tr("dlg_import_title"), "", "JSON (*.json)")
         if path:
             self.facade.import_profiles(path)
 
@@ -637,10 +657,10 @@ class ProfilesPage(QWidget):
         """Показывает результат применения профиля в feedback bar."""
         if success:
             dur = f"  ({duration_ms} ms)" if duration_ms else ""
-            text = f"✓  {profile_name} applied{dur}"
+            text = f"✓  {profile_name} применён{dur}"
             color = "#22C55E"
         else:
-            text = f"✕  Failed to apply {profile_name}"
+            text = f"✕  Не удалось применить {profile_name}"
             color = "#EF4444"
         self._feedback_bar.setText(text)
         self._feedback_bar.setStyleSheet(
@@ -667,3 +687,49 @@ class ProfilesPage(QWidget):
         self._apply_profile_filters()
         self.dhcp_ip_cb.set_dark_mode(dark_mode)
         self.dhcp_dns_cb.set_dark_mode(dark_mode)
+
+    # ── i18n ──────────────────────────────────────────────────────────
+
+    def _tr(self, key: str) -> str:
+        return self.facade._container.i18n.get(key)
+
+    def retranslate(self) -> None:
+        """Обновляет все видимые строки при смене языка."""
+        self._lbl_profiles_header.setText(self._tr("profiles_header"))
+        self.search.setPlaceholderText(self._tr("search_placeholder"))
+
+        # Фильтр адаптеров — первый элемент
+        cur_idx = self.adapter_filter.currentIndex()
+        self.adapter_filter.blockSignals(True)
+        self.adapter_filter.setItemText(0, self._tr("filter_all_adapters"))
+        self.adapter_filter.blockSignals(False)
+        self.adapter_filter.setCurrentIndex(cur_idx)
+
+        # Кнопки панели списка
+        self.btn_new.setText(self._tr("btn_new_profile"))
+        self.btn_copy.setText(self._tr("btn_copy_profile"))
+        self.btn_export.setText(self._tr("btn_export_profiles"))
+        self.btn_import.setText(self._tr("btn_import_profiles"))
+        self.btn_delete.setText(self._tr("btn_delete_profile"))
+
+        # Кнопки редактора
+        self.btn_save.setText(self._tr("btn_save_profile"))
+        self.btn_apply.setText(self._tr("btn_apply_profile_form"))
+
+        # Заголовки секций
+        self._lbl_sec_basic.setText(self._tr("section_basic").upper())
+        self._lbl_sec_network.setText(self._tr("section_network").upper())
+        self._lbl_sec_dns.setText(self._tr("section_dns").upper())
+
+        # Лейблы полей
+        self._lbl_name.setText(self._tr("lbl_name"))
+        self._lbl_adapter_field.setText(self._tr("lbl_adapter"))
+        self._lbl_ip.setText(self._tr("lbl_ip"))
+        self._lbl_mask.setText(self._tr("lbl_mask"))
+        self._lbl_gw.setText(self._tr("lbl_gateway"))
+        self._lbl_dns1.setText(self._tr("lbl_dns1"))
+        self._lbl_dns2.setText(self._tr("lbl_dns2"))
+
+        # ToggleSwitch labels
+        self.dhcp_ip_cb.set_label(self._tr("dhcp_ip"))
+        self.dhcp_dns_cb.set_label(self._tr("dhcp_dns"))

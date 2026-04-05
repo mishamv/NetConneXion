@@ -33,6 +33,11 @@ class ToggleSwitch(QWidget):
         self._checked = state
         self.update()
 
+    def set_label(self, text: str) -> None:
+        self._label = text
+        self.update()
+        self.updateGeometry()
+
     def set_dark_mode(self, dark: bool) -> None:
         self._dark_mode = dark
         self.update()

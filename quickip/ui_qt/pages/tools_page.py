@@ -16,7 +16,7 @@ from PySide6.QtCore import Qt, QObject, QTimer, Signal, QSize
 from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPen, QTextCharFormat
 from PySide6.QtWidgets import (
     QAbstractItemView, QComboBox, QFrame, QGridLayout, QHBoxLayout, QHeaderView, QLabel,
-    QLineEdit, QPushButton, QSizePolicy, QSpinBox, QStackedWidget, QStyleFactory,
+    QLineEdit, QMessageBox, QPushButton, QSizePolicy, QSpinBox, QStackedWidget, QStyleFactory,
     QTreeWidget, QTreeWidgetItem, QTextEdit, QVBoxLayout, QWidget,
 )
 
@@ -58,9 +58,10 @@ class _Bridge(QObject):
 
 
 class _ToolPanel(QWidget):
-    def __init__(self, title: str, dark: bool = True) -> None:
+    def __init__(self, title: str, dark: bool = True, i18n=None) -> None:
         super().__init__()
         self._dark = dark
+        self._i18n = i18n
         self._bridge = _Bridge()
         self._running = False
         self._proc = None
@@ -69,34 +70,35 @@ class _ToolPanel(QWidget):
         root.setContentsMargins(16, 14, 16, 14)
         root.setSpacing(10)
 
-        hdr = QLabel(title)
-        hdr.setObjectName("ToolPanelTitle")
-        root.addWidget(hdr)
+        self._hdr = QLabel(title)
+        self._hdr.setObjectName("ToolPanelTitle")
+        root.addWidget(self._hdr)
 
         self._form = QHBoxLayout()
         self._form.setSpacing(8)
         self._form.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         root.addLayout(self._form)
 
-        btn_row = QHBoxLayout()
-        btn_row.setSpacing(6)
         _f = QFont("Segoe UI", 10)
         _f.setWeight(QFont.Weight.DemiBold)
-        self.btn_run = QPushButton("\u25b6  Run")
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(6)
+        btn_row.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        self.btn_run = QPushButton("\u25b6  Запуск")
         self.btn_run.setProperty("role", "primary")
         self.btn_run.setObjectName("ToolBtn")
         self.btn_run.setFixedSize(90, 28)
         self.btn_run.setFont(_f)
-        self.btn_stop = QPushButton("\u25a0  Stop")
+        self.btn_stop = QPushButton("\u25a0  Стоп")
         self.btn_stop.setProperty("role", "action")
         self.btn_stop.setObjectName("ToolBtn")
         self.btn_stop.setFixedSize(80, 28)
         self.btn_stop.setFont(_f)
         self.btn_stop.setEnabled(False)
-        self.btn_clear = QPushButton("Clear")
+        self.btn_clear = QPushButton("Очистить")
         self.btn_clear.setProperty("role", "action")
         self.btn_clear.setObjectName("ToolBtn")
-        self.btn_clear.setFixedSize(60, 28)
+        self.btn_clear.setFixedSize(90, 28)
         self.btn_clear.setFont(_f)
         btn_row.addWidget(self.btn_run)
         btn_row.addWidget(self.btn_stop)
@@ -120,6 +122,9 @@ class _ToolPanel(QWidget):
         self.btn_stop.clicked.connect(self._on_stop)
         self.btn_clear.clicked.connect(self._output.clear)
 
+    def _tr(self, key: str) -> str:
+        return self._i18n.get(key) if self._i18n else key
+
     def _on_run(self) -> None:
         pass
 
@@ -132,7 +137,7 @@ class _ToolPanel(QWidget):
                 pass
         self.btn_run.setEnabled(True)
         self.btn_stop.setEnabled(False)
-        self._status.setText("Stopped")
+        self._status.setText("Остановлено")
 
     def _set_running(self, running: bool) -> None:
         self._running = running
@@ -227,7 +232,7 @@ class _PingPanel(_ToolPanel):
     def _on_run(self) -> None:
         host = self._host.text().strip()
         if not host:
-            self._status.setText("Enter a host")
+            self._status.setText("Введите хост")
             return
         self._output.clear()
         self._set_running(True)
@@ -264,7 +269,7 @@ class _PingPanel(_ToolPanel):
                 self._bridge.finished.emit(success_count > 0,
                     f"Sent: {len(times)}  Received: {success_count}  Avg: {avg:.0f} ms")
             else:
-                self._bridge.finished.emit(False, "All requests timed out")
+                self._bridge.finished.emit(False, "Все запросы истекли по таймауту")
         except Exception as e:
             self._bridge.finished.emit(False, str(e))
 
@@ -273,19 +278,22 @@ class _PingPanel(_ToolPanel):
 
 
 class _TraceroutePanel(_ToolPanel):
-    def __init__(self, dark: bool = True) -> None:
-        super().__init__("Traceroute", dark)
+    def __init__(self, dark: bool = True, i18n=None) -> None:
+        super().__init__("Traceroute", dark, i18n=i18n)
         self._host = QLineEdit()
         self._host.setObjectName("ToolInput")
-        self._host.setPlaceholderText("Host or IP")
+        self._host.setPlaceholderText(self._tr("tools_placeholder_host"))
         self._host.setFixedHeight(28)
         self._host.returnPressed.connect(self._on_run)
         self._form.addWidget(self._host, 1)
 
+    def retranslate(self) -> None:
+        self._host.setPlaceholderText(self._tr("tools_placeholder_host"))
+
     def _on_run(self) -> None:
         host = self._host.text().strip()
         if not host:
-            self._status.setText("Enter a host")
+            self._status.setText("Введите хост")
             return
         self._output.clear()
         self._set_running(True)
@@ -314,11 +322,11 @@ class _TraceroutePanel(_ToolPanel):
 
 
 class _DnsPanel(_ToolPanel):
-    def __init__(self, dark: bool = True) -> None:
-        super().__init__("DNS Lookup", dark)
+    def __init__(self, dark: bool = True, i18n=None) -> None:
+        super().__init__("DNS Lookup", dark, i18n=i18n)
         self._host = QLineEdit()
         self._host.setObjectName("ToolInput")
-        self._host.setPlaceholderText("Domain or IP")
+        self._host.setPlaceholderText(self._tr("tools_placeholder_domain"))
         self._host.setFixedHeight(28)
         self._host.returnPressed.connect(self._on_run)
         self._form.addWidget(self._host, 1)
@@ -333,10 +341,13 @@ class _DnsPanel(_ToolPanel):
         self._form.addWidget(lbl)
         self._form.addWidget(self._type)
 
+    def retranslate(self) -> None:
+        self._host.setPlaceholderText(self._tr("tools_placeholder_domain"))
+
     def _on_run(self) -> None:
         host = self._host.text().strip()
         if not host:
-            self._status.setText("Enter a domain or IP")
+            self._status.setText("Введите домен или IP")
             return
         self._output.clear()
         self._set_running(True)
@@ -373,7 +384,7 @@ class _DnsPanel(_ToolPanel):
                 self._bridge.output.emit(line, False)
             self._proc.wait()
             ok = any("Address" in l or "Name" in l or "\u0410\u0434\u0440\u0435\u0441" in l for l in lines)
-            self._bridge.finished.emit(ok, "Done" if ok else "No records found")
+            self._bridge.finished.emit(ok, "Готово" if ok else "Записи не найдены")
         except Exception as e:
             self._bridge.finished.emit(False, str(e))
 
@@ -385,13 +396,13 @@ class _FlushDnsPanel(_ToolPanel):
         info.setObjectName("FieldLabel")
         info.setWordWrap(True)
         self._form.addWidget(info, 1)
-        self.btn_run.setText("\u25b6  Flush")
+        self.btn_run.setText("\u25b6  Очистить")
         self.btn_stop.hide()
 
     def _on_run(self) -> None:
         self._output.clear()
         self._set_running(True)
-        self._status.setText("Flushing DNS cache...")
+        self._status.setText("Очистка DNS-кэша...")
         threading.Thread(target=self._worker, daemon=True).start()
 
     def _worker(self) -> None:
@@ -403,7 +414,7 @@ class _FlushDnsPanel(_ToolPanel):
             for line in (result.stdout + result.stderr).splitlines():
                 self._bridge.output.emit(line, False)
             ok = result.returncode == 0
-            self._bridge.finished.emit(ok, "DNS cache flushed" if ok else "Failed")
+            self._bridge.finished.emit(ok, "DNS-кэш очищен" if ok else "Ошибка")
         except Exception as e:
             self._bridge.finished.emit(False, str(e))
 
@@ -500,24 +511,27 @@ class _IpconfigBridge(QObject):
 
 
 class _IpconfigPanel(QWidget):
-    def __init__(self, dark: bool = True, parent=None) -> None:
+    def __init__(self, dark: bool = True, parent=None, i18n=None) -> None:
         super().__init__(parent)
         self._dark = dark
+        self._i18n = i18n
         self._bridge = _IpconfigBridge()
+        _t = lambda k: i18n.get(k) if i18n else k  # noqa: E731
 
         root = QVBoxLayout(self)
         root.setContentsMargins(16, 14, 16, 14)
         root.setSpacing(10)
 
-        hdr = QLabel("Сетевые Адаптеры")
-        hdr.setObjectName("ToolPanelTitle")
-        root.addWidget(hdr)
+        self._hdr = QLabel(_t("tools_ipconfig_title"))
+        self._hdr.setObjectName("ToolPanelTitle")
+        root.addWidget(self._hdr)
 
-        btn_row = QHBoxLayout()
-        btn_row.setSpacing(6)
         _f = QFont("Segoe UI", 10)
         _f.setWeight(QFont.Weight.DemiBold)
-        self.btn_run = QPushButton("\u25b6  Refresh")
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(6)
+        btn_row.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        self.btn_run = QPushButton("\u25b6  Обновить")
         self.btn_run.setProperty("role", "primary")
         self.btn_run.setObjectName("ToolBtn")
         self.btn_run.setFixedSize(100, 28)
@@ -529,7 +543,7 @@ class _IpconfigPanel(QWidget):
         self._tree = QTreeWidget()
         self._tree.setObjectName("IpconfigTree")
         self._tree.setColumnCount(2)
-        self._tree.setHeaderLabels(["Параметр", "Значение"])
+        self._tree.setHeaderLabels([_t("tools_ipconfig_col_param"), _t("tools_ipconfig_col_value")])
         self._tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
         self._tree.header().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self._tree.header().setDefaultSectionSize(220)
@@ -550,10 +564,20 @@ class _IpconfigPanel(QWidget):
         self._bridge.enable_btn.connect(lambda: self.btn_run.setEnabled(True))
         self.btn_run.clicked.connect(self._on_run)
 
+    def _tr(self, key: str) -> str:
+        return self._i18n.get(key) if self._i18n else key
+
+    def retranslate(self) -> None:
+        self._hdr.setText(self._tr("tools_ipconfig_title"))
+        self._tree.setHeaderLabels([
+            self._tr("tools_ipconfig_col_param"),
+            self._tr("tools_ipconfig_col_value"),
+        ])
+
     def _on_run(self) -> None:
         self._tree.clear()
         self.btn_run.setEnabled(False)
-        self._status.setText("Getting adapter info...")
+        self._status.setText("Загрузка адаптеров...")
         threading.Thread(target=self._worker, daemon=True).start()
 
     def _worker(self) -> None:
@@ -608,19 +632,19 @@ class _IpconfigPanel(QWidget):
 
 
 class _PortScanPanel(_ToolPanel):
-    _PRESETS = [
-        ("Common",   "1-1024"),
-        ("Extended", "1-10000"),
-        ("Full",     "1-65535"),
-        ("Web",      "80, 443, 8080, 8443"),
-        ("Custom",   ""),
+    _PRESET_KEYS = [
+        ("tools_portscan_preset_basic",    "1-1024"),
+        ("tools_portscan_preset_extended", "1-10000"),
+        ("tools_portscan_preset_all",      "1-65535"),
+        ("Web",                            "80, 443, 8080, 8443"),
+        ("tools_portscan_preset_manual",   ""),
     ]
 
-    def __init__(self, dark: bool = True) -> None:
-        super().__init__("Port Scanner (TCP)", dark)
+    def __init__(self, dark: bool = True, i18n=None) -> None:
+        super().__init__("Port Scanner (TCP)", dark, i18n=i18n)
         self._host = QLineEdit()
         self._host.setObjectName("ToolInput")
-        self._host.setPlaceholderText("Host or IP")
+        self._host.setPlaceholderText(self._tr("tools_placeholder_host"))
         self._host.setFixedHeight(28)
         self._host.returnPressed.connect(self._on_run)
         self._form.addWidget(self._host, 1)
@@ -628,7 +652,10 @@ class _PortScanPanel(_ToolPanel):
         self._preset = QComboBox()
         self._preset.setObjectName("ToolCombo")
         self._preset.setFixedSize(150, 28)
-        self._preset.addItems([p[0] for p in self._PRESETS])
+        self._preset.addItems([
+            i18n.get(k) if (i18n and not k.startswith("W")) else k
+            for k, _ in self._PRESET_KEYS
+        ])
         self._preset.currentIndexChanged.connect(self._on_preset_changed)
         self._form.addWidget(self._preset)
 
@@ -641,14 +668,24 @@ class _PortScanPanel(_ToolPanel):
         self._ports.textEdited.connect(self._on_ports_edited)
         self._form.addWidget(self._ports)
 
+    def retranslate(self) -> None:
+        self._host.setPlaceholderText(self._tr("tools_placeholder_host"))
+        cur_idx = self._preset.currentIndex()
+        self._preset.blockSignals(True)
+        for i, (key, _) in enumerate(self._PRESET_KEYS):
+            label = self._tr(key) if not key.startswith("W") else key
+            self._preset.setItemText(i, label)
+        self._preset.blockSignals(False)
+        self._preset.setCurrentIndex(cur_idx)
+
     def _on_preset_changed(self, idx: int) -> None:
-        spec = self._PRESETS[idx][1]
+        spec = self._PRESET_KEYS[idx][1]
         if spec:
             self._ports.setText(spec)
 
     def _on_ports_edited(self) -> None:
         """При ручном редактировании поля портов — переключаем комбо на Custom."""
-        custom_idx = len(self._PRESETS) - 1
+        custom_idx = len(self._PRESET_KEYS) - 1
         if self._preset.currentIndex() != custom_idx:
             self._preset.blockSignals(True)
             self._preset.setCurrentIndex(custom_idx)
@@ -673,15 +710,15 @@ class _PortScanPanel(_ToolPanel):
     def _on_run(self) -> None:
         host = self._host.text().strip()
         if not host:
-            self._status.setText("Enter a host")
+            self._status.setText("Введите хост")
             return
         try:
             ports = self._parse_ports(self._ports.text())
         except ValueError:
-            self._status.setText("Invalid port spec — use: 80, 443, 1000-2000")
+            self._status.setText("Неверный формат портов — пример: 80, 443, 1000-2000")
             return
         if not ports:
-            self._status.setText("No valid ports specified")
+            self._status.setText("Не указаны допустимые порты")
             return
         self._output.clear()
         self._set_running(True)
@@ -742,56 +779,59 @@ class _NetstatBridge(QObject):
 
 
 class _NetstatPanel(QWidget):
-    def __init__(self, dark: bool = True) -> None:
+    def __init__(self, dark: bool = True, i18n=None) -> None:
         super().__init__()
         self._dark = dark
+        self._i18n = i18n
         self._bridge = _NetstatBridge()
         self._bridge.rows_ready.connect(self._populate)
         self._bridge.finished.connect(self._on_finished)
+        _t = lambda k: i18n.get(k) if i18n else k  # noqa: E731
 
         root = QVBoxLayout(self)
         root.setContentsMargins(16, 14, 16, 14)
         root.setSpacing(10)
 
-        _hdr = QLabel("Netstat — активные соединения"); _hdr.setObjectName("ToolPanelTitle")
-        root.addWidget(_hdr)
+        self._hdr = QLabel(_t("tools_netstat_title"))
+        self._hdr.setObjectName("ToolPanelTitle")
+        root.addWidget(self._hdr)
 
+        _f = QFont("Segoe UI", 10)
+        _f.setWeight(QFont.Weight.DemiBold)
         form = QHBoxLayout()
         form.setSpacing(8)
         self._filter = QComboBox()
         self._filter.setObjectName("ToolCombo")
         self._filter.setFixedHeight(28)
-        self._filter.addItems(["Все", "TCP", "UDP", "LISTENING", "ESTABLISHED"])
-        form.addWidget(self._filter)
+        self._filter.addItems([_t("tools_filter_all"), "TCP", "UDP", "LISTENING", "ESTABLISHED"])
+        form.addWidget(self._filter, 0, Qt.AlignmentFlag.AlignVCenter)
         form.addStretch(1)
         root.addLayout(form)
 
-        _f = QFont("Segoe UI", 10)
-        _f.setWeight(QFont.Weight.DemiBold)
         btn_row = QHBoxLayout()
         btn_row.setSpacing(6)
-        self.btn_run = QPushButton("▶  Run")
+        self.btn_run = QPushButton("▶  Запуск")
         self.btn_run.setProperty("role", "primary")
         self.btn_run.setObjectName("ToolBtn")
         self.btn_run.setFixedSize(90, 28)
         self.btn_run.setFont(_f)
         self.btn_run.clicked.connect(self._on_run)
-        self.btn_stop = QPushButton("■  Stop")
+        self.btn_stop = QPushButton("■  Стоп")
         self.btn_stop.setProperty("role", "action")
         self.btn_stop.setObjectName("ToolBtn")
         self.btn_stop.setFixedSize(80, 28)
         self.btn_stop.setFont(_f)
         self.btn_stop.setEnabled(False)
-        self.btn_clear = QPushButton("Clear")
+        self.btn_clear = QPushButton("Очистить")
         self.btn_clear.setProperty("role", "action")
         self.btn_clear.setObjectName("ToolBtn")
-        self.btn_clear.setFixedSize(60, 28)
+        self.btn_clear.setFixedSize(90, 28)
         self.btn_clear.setFont(_f)
         self.btn_clear.clicked.connect(self._clear)
-        btn_row.addWidget(self.btn_run)
-        btn_row.addWidget(self.btn_stop)
+        btn_row.addWidget(self.btn_run, 0, Qt.AlignmentFlag.AlignVCenter)
+        btn_row.addWidget(self.btn_stop, 0, Qt.AlignmentFlag.AlignVCenter)
         btn_row.addStretch(1)
-        btn_row.addWidget(self.btn_clear)
+        btn_row.addWidget(self.btn_clear, 0, Qt.AlignmentFlag.AlignVCenter)
         root.addLayout(btn_row)
 
         self._table = QTreeWidget()
@@ -803,7 +843,7 @@ class _NetstatPanel(QWidget):
         self._table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self._table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self._table.setColumnCount(5)
-        self._table.setHeaderLabels(["Proto", "Local Address", "Remote Address", "State", "PID"])
+        self._table.setHeaderLabels(["Протокол", "Локальный", "Удалённый", "Состояние", "PID"])
         self._table.header().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         self._table.header().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self._table.header().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
@@ -866,7 +906,7 @@ class _NetstatPanel(QWidget):
                     state = "—"
                 else:
                     continue
-                if flt != "Все":
+                if self._filter.currentIndex() != 0:  # 0 = All
                     if flt in ("TCP", "UDP") and proto != flt:
                         continue
                     if flt in ("LISTENING", "ESTABLISHED") and state.upper() != flt:
@@ -877,15 +917,36 @@ class _NetstatPanel(QWidget):
         except Exception as e:
             self._bridge.finished.emit(False, str(e))
 
+    def _tr(self, key: str) -> str:
+        return self._i18n.get(key) if self._i18n else key
+
+    def retranslate(self) -> None:
+        self._hdr.setText(self._tr("tools_netstat_title"))
+        cur_idx = self._filter.currentIndex()
+        self._filter.blockSignals(True)
+        self._filter.setItemText(0, self._tr("tools_filter_all"))
+        self._filter.blockSignals(False)
+        self._filter.setCurrentIndex(cur_idx)
+        self._table.setHeaderLabels([
+            self._tr("tools_netstat_col_proto"),
+            self._tr("tools_netstat_col_local"),
+            self._tr("tools_netstat_col_remote"),
+            self._tr("tools_netstat_col_state"),
+            "PID",
+        ])
+
     def refresh_theme(self, dark: bool) -> None:
         self._dark = dark
         self._table.setStyleSheet(_TREE_SS_LIGHT if not dark else _TREE_SS_DARK)
 
 
 class _ArpPanel(_ToolPanel):
-    def __init__(self, dark: bool = True) -> None:
-        super().__init__("ARP таблица", dark)
+    def __init__(self, dark: bool = True, i18n=None) -> None:
+        super().__init__("ARP таблица", dark, i18n=i18n)
         self._form.addStretch(1)
+
+    def retranslate(self) -> None:
+        self._hdr.setText(self._tr("tools_arp_title"))
 
     def _on_run(self) -> None:
         self._output.clear()
@@ -1000,14 +1061,17 @@ class _HttpCheckPanel(_ToolPanel):
 
 
 class _SslPanel(_ToolPanel):
-    def __init__(self, dark: bool = True) -> None:
-        super().__init__("SSL Certificate", dark)
+    def __init__(self, dark: bool = True, i18n=None) -> None:
+        super().__init__("SSL Certificate", dark, i18n=i18n)
         self._host = QLineEdit()
         self._host.setObjectName("ToolInput")
-        self._host.setPlaceholderText("example.com  или  example.com:8443")
+        self._host.setPlaceholderText(self._tr("tools_placeholder_ssl"))
         self._host.setFixedHeight(28)
         self._host.returnPressed.connect(self._on_run)
         self._form.addWidget(self._host, 1)
+
+    def retranslate(self) -> None:
+        self._host.setPlaceholderText(self._tr("tools_placeholder_ssl"))
 
     def _on_run(self) -> None:
         host = self._host.text().strip().removeprefix("https://").removeprefix("http://").rstrip("/")
@@ -1097,49 +1161,52 @@ class _RouteTableBridge(QObject):
 
 
 class _RouteTablePanel(QWidget):
-    def __init__(self, dark: bool = True) -> None:
+    def __init__(self, dark: bool = True, i18n=None) -> None:
         super().__init__()
         self._dark = dark
+        self._i18n = i18n
         self._bridge = _RouteTableBridge()
         self._bridge.rows_ready.connect(self._populate)
         self._bridge.finished.connect(self._on_finished)
+        _t = lambda k: i18n.get(k) if i18n else k  # noqa: E731
 
         root = QVBoxLayout(self)
         root.setContentsMargins(16, 14, 16, 14)
         root.setSpacing(10)
 
-        _hdr = QLabel("Route Table — таблица маршрутизации"); _hdr.setObjectName("ToolPanelTitle")
-        root.addWidget(_hdr)
+        self._hdr = QLabel(_t("tools_route_title"))
+        self._hdr.setObjectName("ToolPanelTitle")
+        root.addWidget(self._hdr)
 
+        _f = QFont("Segoe UI", 10)
+        _f.setWeight(QFont.Weight.DemiBold)
         form = QHBoxLayout()
         form.setSpacing(8)
         self._filter = QComboBox()
         self._filter.setObjectName("ToolCombo")
         self._filter.setFixedHeight(28)
-        self._filter.addItems(["IPv4 + IPv6", "Только IPv4", "Только IPv6"])
-        form.addWidget(self._filter)
+        self._filter.addItems([_t("tools_route_filter_both"), _t("tools_route_filter_ipv4"), _t("tools_route_filter_ipv6")])
+        form.addWidget(self._filter, 0, Qt.AlignmentFlag.AlignVCenter)
         form.addStretch(1)
         root.addLayout(form)
 
-        _f = QFont("Segoe UI", 10)
-        _f.setWeight(QFont.Weight.DemiBold)
         btn_row = QHBoxLayout()
         btn_row.setSpacing(6)
-        self.btn_run = QPushButton("▶  Run")
+        self.btn_run = QPushButton("▶  Запуск")
         self.btn_run.setProperty("role", "primary")
         self.btn_run.setObjectName("ToolBtn")
         self.btn_run.setFixedSize(90, 28)
         self.btn_run.setFont(_f)
         self.btn_run.clicked.connect(self._on_run)
-        self.btn_clear = QPushButton("Clear")
+        self.btn_clear = QPushButton("Очистить")
         self.btn_clear.setProperty("role", "action")
         self.btn_clear.setObjectName("ToolBtn")
-        self.btn_clear.setFixedSize(60, 28)
+        self.btn_clear.setFixedSize(90, 28)
         self.btn_clear.setFont(_f)
         self.btn_clear.clicked.connect(self._clear)
-        btn_row.addWidget(self.btn_run)
+        btn_row.addWidget(self.btn_run, 0, Qt.AlignmentFlag.AlignVCenter)
         btn_row.addStretch(1)
-        btn_row.addWidget(self.btn_clear)
+        btn_row.addWidget(self.btn_clear, 0, Qt.AlignmentFlag.AlignVCenter)
         root.addLayout(btn_row)
 
         self._table = QTreeWidget()
@@ -1151,7 +1218,7 @@ class _RouteTablePanel(QWidget):
         self._table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self._table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self._table.setColumnCount(5)
-        self._table.setHeaderLabels(["Network", "Netmask", "Gateway", "Interface", "Metric"])
+        self._table.setHeaderLabels([_t("tools_route_col_net"), _t("tools_route_col_mask"), _t("tools_route_col_gw"), _t("tools_route_col_iface"), _t("tools_route_col_metric")])
         hdr = self._table.header()
         hdr.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         hdr.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
@@ -1194,12 +1261,32 @@ class _RouteTablePanel(QWidget):
         """Оставляет только ASCII-печатные символы из имён адаптеров Windows."""
         return "".join(c for c in s if 0x20 <= ord(c) <= 0x7E).strip()
 
+    def _tr(self, key: str) -> str:
+        return self._i18n.get(key) if self._i18n else key
+
+    def retranslate(self) -> None:
+        self._hdr.setText(self._tr("tools_route_title"))
+        cur_idx = self._filter.currentIndex()
+        self._filter.blockSignals(True)
+        self._filter.setItemText(0, self._tr("tools_route_filter_both"))
+        self._filter.setItemText(1, self._tr("tools_route_filter_ipv4"))
+        self._filter.setItemText(2, self._tr("tools_route_filter_ipv6"))
+        self._filter.blockSignals(False)
+        self._filter.setCurrentIndex(cur_idx)
+        self._table.setHeaderLabels([
+            self._tr("tools_route_col_net"),
+            self._tr("tools_route_col_mask"),
+            self._tr("tools_route_col_gw"),
+            self._tr("tools_route_col_iface"),
+            self._tr("tools_route_col_metric"),
+        ])
+
     def _worker(self) -> None:
         try:
-            flt = self._filter.currentText()
+            flt_idx = self._filter.currentIndex()
             rows: list[list[str]] = []
 
-            if flt != "Только IPv6":
+            if flt_idx != 2:  # not IPv6-only
                 # IPv4 маршруты через PowerShell — надёжный парсинг
                 ps = (
                     "Get-NetRoute -AddressFamily IPv4 | "
@@ -1227,7 +1314,7 @@ class _RouteTablePanel(QWidget):
                             net, prefix = dest, ""
                         rows.append([net, f"/{prefix}", gw, iface, metric])
 
-            if flt != "Только IPv4":
+            if flt_idx != 1:  # not IPv4-only
                 ps6 = (
                     "Get-NetRoute -AddressFamily IPv6 | "
                     "Select-Object DestinationPrefix,NextHop,InterfaceAlias,RouteMetric | "
@@ -1274,6 +1361,7 @@ class _SignalGraph(QWidget):
         self._values: list[float] = []
         self._dark = True
         self.setMinimumHeight(90)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
     def push(self, dbm: float) -> None:
         self._values.append(dbm)
@@ -1352,9 +1440,10 @@ class _SignalMonitorPanel(QWidget):
     # Порог «слабый сигнал» для учащения опроса
     _WEAK_DBM = -70.0
 
-    def __init__(self, dark: bool = True) -> None:
+    def __init__(self, dark: bool = True, i18n=None) -> None:
         super().__init__()
         self._dark = dark
+        self._i18n = i18n
         self._running = False
         self._bridge = _SignalMonitorBridge()
         self._bridge.updated.connect(self._on_update)
@@ -1373,13 +1462,15 @@ class _SignalMonitorPanel(QWidget):
         _f.setWeight(QFont.Weight.DemiBold)
         btn_row = QHBoxLayout()
         btn_row.setSpacing(6)
-        self._btn_start = QPushButton("▶  Start")
+        btn_row.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        _t = lambda k: i18n.get(k) if i18n else k  # noqa: E731
+        self._btn_start = QPushButton(_t("tools_signal_btn_start"))
         self._btn_start.setProperty("role", "primary")
         self._btn_start.setObjectName("ToolBtn")
         self._btn_start.setFixedSize(90, 28)
         self._btn_start.setFont(_f)
         self._btn_start.clicked.connect(self._start)
-        self._btn_stop = QPushButton("■  Stop")
+        self._btn_stop = QPushButton(_t("tools_signal_btn_stop"))
         self._btn_stop.setProperty("role", "action")
         self._btn_stop.setObjectName("ToolBtn")
         self._btn_stop.setFixedSize(80, 28)
@@ -1449,6 +1540,13 @@ class _SignalMonitorPanel(QWidget):
         layout.addWidget(frame, stretch)
         return val_lbl
 
+    def _tr(self, key: str) -> str:
+        return self._i18n.get(key) if self._i18n else key
+
+    def retranslate(self) -> None:
+        self._btn_start.setText(self._tr("tools_signal_btn_start"))
+        self._btn_stop.setText(self._tr("tools_signal_btn_stop"))
+
     # ── Управление ────────────────────────────────────────────────────
 
     def _start(self) -> None:
@@ -1500,9 +1598,11 @@ class _SignalMonitorPanel(QWidget):
         self._lbl_tx.setStyleSheet(val_style)
         self._graph.push(dbm)
         self._status.setStyleSheet("color:#64748B;font-size:11px;")
+        interval = "1" if dbm < self._WEAK_DBM else "2"
         self._status.setText(
-            f"Опрос каждые {'1' if dbm < self._WEAK_DBM else '2'}с  "
-            f"│  Точек: {len(self._graph._values)}/60"
+            self._tr("tools_signal_status").format(
+                interval=interval, count=len(self._graph._values)
+            )
         )
 
     def _on_roam(self, d: dict) -> None:
@@ -1664,9 +1764,23 @@ class _SignalMonitorPanel(QWidget):
 
 
 class _SubnetCalcPanel(QWidget):
-    def __init__(self, dark: bool = True) -> None:
+    _ROW_KEYS = [
+        ("tools_subnet_cidr",      "cidr"),
+        ("tools_subnet_network",   "network"),
+        ("tools_subnet_mask",      "mask"),
+        ("tools_subnet_wildcard",  "wildcard"),
+        ("tools_subnet_broadcast", "broadcast"),
+        ("tools_subnet_first",     "first"),
+        ("tools_subnet_last",      "last"),
+        ("tools_subnet_hosts",     "hosts"),
+        ("tools_subnet_cls",       "cls"),
+    ]
+
+    def __init__(self, dark: bool = True, i18n=None) -> None:
         super().__init__()
         self._dark = dark
+        self._i18n = i18n
+        _t = lambda k: i18n.get(k) if i18n else k  # noqa: E731
         root = QVBoxLayout(self)
         root.setContentsMargins(16, 14, 16, 14)
         root.setSpacing(10)
@@ -1679,19 +1793,19 @@ class _SubnetCalcPanel(QWidget):
         form.setSpacing(8)
         self._cidr = QLineEdit()
         self._cidr.setObjectName("ToolInput")
-        self._cidr.setPlaceholderText("192.168.1.0/24  или  10.0.0.5/255.255.0.0")
+        self._cidr.setPlaceholderText(_t("tools_subnet_placeholder"))
         self._cidr.setFixedHeight(28)
         self._cidr.returnPressed.connect(self._calc)
         form.addWidget(self._cidr, 1)
         _f = QFont("Segoe UI", 10)
         _f.setWeight(QFont.Weight.DemiBold)
-        btn = QPushButton("\u22b9  Calculate")
-        btn.setProperty("role", "primary")
-        btn.setObjectName("ToolBtn")
-        btn.setFixedSize(110, 28)
-        btn.setFont(_f)
-        btn.clicked.connect(self._calc)
-        form.addWidget(btn)
+        self._btn_calc = QPushButton(_t("tools_subnet_btn_calc"))
+        self._btn_calc.setProperty("role", "primary")
+        self._btn_calc.setObjectName("ToolBtn")
+        self._btn_calc.setFixedHeight(28)
+        self._btn_calc.setFont(_f)
+        self._btn_calc.clicked.connect(self._calc)
+        form.addWidget(self._btn_calc)
         root.addLayout(form)
 
         self._grid_w = QWidget()
@@ -1700,26 +1814,17 @@ class _SubnetCalcPanel(QWidget):
         gl.setContentsMargins(0, 4, 0, 4)
         gl.setColumnStretch(1, 1)
         self._fields: dict = {}
-        _rows = [
-            ("CIDR нотация",   "cidr"),
-            ("Сетевой адрес",  "network"),
-            ("Маска подсети",  "mask"),
-            ("Wildcard маска", "wildcard"),
-            ("Broadcast",      "broadcast"),
-            ("Первый хост",    "first"),
-            ("Последний хост", "last"),
-            ("Кол-во хостов",  "hosts"),
-            ("Класс адреса",   "cls"),
-        ]
-        for row, (text, key) in enumerate(_rows):
-            lbl = QLabel(text + ":")
+        self._row_labels: dict = {}
+        for row, (i18n_key, field_key) in enumerate(self._ROW_KEYS):
+            lbl = QLabel(_t(i18n_key) + ":")
             lbl.setObjectName("SubnetLabel")
             val = QLabel("\u2014")
             val.setObjectName("SubnetValue")
             val.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
             gl.addWidget(lbl, row, 0)
             gl.addWidget(val, row, 1)
-            self._fields[key] = val
+            self._fields[field_key] = val
+            self._row_labels[field_key] = lbl
         self._grid_w.setVisible(False)
         root.addWidget(self._grid_w)
 
@@ -1727,6 +1832,15 @@ class _SubnetCalcPanel(QWidget):
         self._status.setObjectName("ToolStatus")
         root.addWidget(self._status)
         root.addStretch(1)
+
+    def _tr(self, key: str) -> str:
+        return self._i18n.get(key) if self._i18n else key
+
+    def retranslate(self) -> None:
+        self._btn_calc.setText(self._tr("tools_subnet_btn_calc"))
+        self._cidr.setPlaceholderText(self._tr("tools_subnet_placeholder"))
+        for i18n_key, field_key in self._ROW_KEYS:
+            self._row_labels[field_key].setText(self._tr(i18n_key) + ":")
 
     def _calc(self) -> None:
         import ipaddress
@@ -1782,9 +1896,10 @@ class _DnsCacheBridge(QObject):
 
 
 class _DnsCachePanel(QWidget):
-    def __init__(self, dark: bool = True) -> None:
+    def __init__(self, dark: bool = True, i18n=None) -> None:
         super().__init__()
         self._dark = dark
+        self._i18n = i18n
         self._bridge = _DnsCacheBridge()
 
         root = QVBoxLayout(self)
@@ -1795,22 +1910,23 @@ class _DnsCachePanel(QWidget):
         hdr.setObjectName("ToolPanelTitle")
         root.addWidget(hdr)
 
-        btn_row = QHBoxLayout()
-        btn_row.setSpacing(6)
         _f = QFont("Segoe UI", 10)
         _f.setWeight(QFont.Weight.DemiBold)
-        btn_ref = QPushButton("\u25b6  Refresh")
-        btn_ref.setProperty("role", "primary")
-        btn_ref.setObjectName("ToolBtn")
-        btn_ref.setFixedSize(100, 28)
-        btn_ref.setFont(_f)
-        btn_flush = QPushButton("\u21ba  Flush")
-        btn_flush.setProperty("role", "action")
-        btn_flush.setObjectName("ToolBtn")
-        btn_flush.setFixedSize(90, 28)
-        btn_flush.setFont(_f)
-        btn_row.addWidget(btn_ref)
-        btn_row.addWidget(btn_flush)
+        _t = lambda k: i18n.get(k) if i18n else k  # noqa: E731
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(6)
+        self._btn_ref = QPushButton(_t("tools_dns_cache_btn_refresh"))
+        self._btn_ref.setProperty("role", "primary")
+        self._btn_ref.setObjectName("ToolBtn")
+        self._btn_ref.setFixedHeight(28)
+        self._btn_ref.setFont(_f)
+        self._btn_flush = QPushButton(_t("tools_dns_cache_btn_flush"))
+        self._btn_flush.setProperty("role", "action")
+        self._btn_flush.setObjectName("ToolBtn")
+        self._btn_flush.setFixedHeight(28)
+        self._btn_flush.setFont(_f)
+        btn_row.addWidget(self._btn_ref, 0, Qt.AlignmentFlag.AlignVCenter)
+        btn_row.addWidget(self._btn_flush, 0, Qt.AlignmentFlag.AlignVCenter)
         btn_row.addStretch(1)
         root.addLayout(btn_row)
 
@@ -1818,7 +1934,7 @@ class _DnsCachePanel(QWidget):
         self._tree.setObjectName("ToolTree")
         self._tree.setStyle(QStyleFactory.create("Fusion"))
         self._tree.setStyleSheet(_TREE_SS_LIGHT if not dark else _TREE_SS_DARK)
-        self._tree.setHeaderLabels(["Имя", "Тип", "TTL", "Данные"])
+        self._tree.setHeaderLabels([_t("tools_dns_cache_col_name"), _t("tools_dns_cache_col_type"), "TTL", _t("tools_dns_cache_col_data")])
         self._tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self._tree.header().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         self._tree.header().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
@@ -1832,10 +1948,23 @@ class _DnsCachePanel(QWidget):
         self._status.setObjectName("ToolStatus")
         root.addWidget(self._status)
 
-        btn_ref.clicked.connect(self._refresh)
-        btn_flush.clicked.connect(self._flush)
+        self._btn_ref.clicked.connect(self._refresh)
+        self._btn_flush.clicked.connect(self._flush)
         self._bridge.rows_ready.connect(self._populate)
         self._bridge.finished.connect(self._on_finished)
+
+    def _tr(self, key: str) -> str:
+        return self._i18n.get(key) if self._i18n else key
+
+    def retranslate(self) -> None:
+        self._btn_ref.setText(self._tr("tools_dns_cache_btn_refresh"))
+        self._btn_flush.setText(self._tr("tools_dns_cache_btn_flush"))
+        self._tree.setHeaderLabels([
+            self._tr("tools_dns_cache_col_name"),
+            self._tr("tools_dns_cache_col_type"),
+            "TTL",
+            self._tr("tools_dns_cache_col_data"),
+        ])
 
     def _refresh(self) -> None:
         self._tree.clear()
@@ -1843,6 +1972,14 @@ class _DnsCachePanel(QWidget):
         threading.Thread(target=self._worker, daemon=True).start()
 
     def _flush(self) -> None:
+        reply = QMessageBox.question(
+            self, self._tr("dlg_dns_flush_title"),
+            self._tr("dlg_dns_flush_text"),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
         try:
             subprocess.run(
                 ["ipconfig", "/flushdns"],
@@ -1930,169 +2067,6 @@ class _DnsCachePanel(QWidget):
         self._tree.setStyleSheet(_TREE_SS_LIGHT if not dark else _TREE_SS_DARK)
 
 
-class _SpeedTestPanel(QWidget):
-    def __init__(self, dark: bool = True) -> None:
-        super().__init__()
-        self._dark = dark
-        self._bridge = _Bridge()
-        self._running = False
-
-        root = QVBoxLayout(self)
-        root.setContentsMargins(16, 14, 16, 14)
-        root.setSpacing(10)
-
-        hdr = QLabel("Bandwidth Speed Test")
-        hdr.setObjectName("ToolPanelTitle")
-        root.addWidget(hdr)
-
-        cards_row = QHBoxLayout()
-        cards_row.setSpacing(12)
-        self._dl_val   = QLabel("\u2014")
-        self._ul_val   = QLabel("\u2014")
-        self._ping_val = QLabel("\u2014")
-        for title, val_lbl, unit in [
-            ("Download", self._dl_val,   "Mbps"),
-            ("Upload",   self._ul_val,   "Mbps"),
-            ("Ping",     self._ping_val, "ms"),
-        ]:
-            card = QFrame()
-            card.setObjectName("SpeedCard")
-            cl = QVBoxLayout(card)
-            cl.setContentsMargins(12, 8, 12, 8)
-            cl.setSpacing(2)
-            t = QLabel(title)
-            t.setObjectName("SpeedCardTitle")
-            t.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            val_lbl.setObjectName("SpeedCardValue")
-            val_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            u = QLabel(unit)
-            u.setObjectName("SpeedCardUnit")
-            u.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            cl.addWidget(t)
-            cl.addWidget(val_lbl)
-            cl.addWidget(u)
-            cards_row.addWidget(card, 1)
-        root.addLayout(cards_row)
-
-        btn_row = QHBoxLayout()
-        btn_row.setSpacing(6)
-        _f = QFont("Segoe UI", 10)
-        _f.setWeight(QFont.Weight.DemiBold)
-        self._btn_run = QPushButton("\u25b6  Start Test")
-        self._btn_run.setProperty("role", "primary")
-        self._btn_run.setObjectName("ToolBtn")
-        self._btn_run.setFixedSize(110, 28)
-        self._btn_run.setFont(_f)
-        self._btn_stop = QPushButton("\u25a0  Stop")
-        self._btn_stop.setProperty("role", "action")
-        self._btn_stop.setObjectName("ToolBtn")
-        self._btn_stop.setFixedSize(80, 28)
-        self._btn_stop.setFont(_f)
-        self._btn_stop.setEnabled(False)
-        btn_row.addWidget(self._btn_run)
-        btn_row.addWidget(self._btn_stop)
-        btn_row.addStretch(1)
-        root.addLayout(btn_row)
-
-        self._output = QTextEdit()
-        self._output.setObjectName("ToolOutput")
-        self._output.setReadOnly(True)
-        self._output.setFont(QFont("Consolas", 10))
-        root.addWidget(self._output, 1)
-
-        self._status = QLabel("")
-        self._status.setObjectName("ToolStatus")
-        root.addWidget(self._status)
-
-        self._btn_run.clicked.connect(self._on_run)
-        self._btn_stop.clicked.connect(self._on_stop)
-        self._bridge.output.connect(self._on_output)
-        self._bridge.finished.connect(self._on_finished)
-        self._bridge.chart_update.connect(self._on_speed_result)
-
-    def _on_run(self) -> None:
-        self._output.clear()
-        self._dl_val.setText("\u2014")
-        self._ul_val.setText("\u2014")
-        self._ping_val.setText("\u2014")
-        self._running = True
-        self._btn_run.setEnabled(False)
-        self._btn_stop.setEnabled(True)
-        self._status.setText("Инициализация...")
-        threading.Thread(target=self._worker, daemon=True).start()
-
-    def _on_stop(self) -> None:
-        self._running = False
-        self._btn_run.setEnabled(True)
-        self._btn_stop.setEnabled(False)
-        self._status.setText("Остановлено")
-
-    def _worker(self) -> None:
-        try:
-            import speedtest as _st  # type: ignore[import-untyped]
-        except ImportError:
-            self._bridge.output.emit(
-                "Для работы Speed Test установите speedtest-cli:\n\n"
-                "    pip install speedtest-cli\n\n"
-                "Затем перезапустите приложение.",
-                True,
-            )
-            self._bridge.finished.emit(False, "Требуется: pip install speedtest-cli")
-            return
-        try:
-            self._bridge.output.emit("Поиск сервера...", False)
-            st = _st.Speedtest(secure=True)
-            if not self._running:
-                return
-            st.get_best_server()
-            srv = st.results.server
-            srv_str = f"{srv.get('sponsor', '')} ({srv.get('name', '')}, {srv.get('country', '')})"
-            self._bridge.output.emit(f"Сервер: {srv_str}", False)
-            if not self._running:
-                return
-            self._bridge.output.emit("Тест загрузки (Download)...", False)
-            dl = st.download() / 1e6
-            self._bridge.output.emit(f"Download: {dl:.2f} Mbps", False)
-            if not self._running:
-                return
-            self._bridge.output.emit("Тест отдачи (Upload)...", False)
-            ul = st.upload() / 1e6
-            self._bridge.output.emit(f"Upload:   {ul:.2f} Mbps", False)
-            ping_ms = st.results.ping
-            self._bridge.output.emit(f"Ping:     {ping_ms:.1f} ms", False)
-            self._bridge.chart_update.emit([dl, ul, ping_ms])
-            self._bridge.finished.emit(True, f"\u2193 {dl:.1f} Mbps  \u2191 {ul:.1f} Mbps  ping {ping_ms:.0f} ms")
-        except Exception as e:
-            self._bridge.finished.emit(False, str(e))
-
-    def _on_output(self, text: str, is_error: bool) -> None:
-        if is_error:
-            self._output.setTextColor(QColor("#EF4444"))
-            self._output.append(text)
-            self._output.setCurrentCharFormat(QTextCharFormat())
-        else:
-            self._output.setCurrentCharFormat(QTextCharFormat())
-            self._output.append(text)
-        self._output.verticalScrollBar().setValue(self._output.verticalScrollBar().maximum())
-
-    def _on_speed_result(self, values: list) -> None:
-        if len(values) >= 3:
-            self._dl_val.setText(f"{values[0]:.1f}")
-            self._ul_val.setText(f"{values[1]:.1f}")
-            self._ping_val.setText(f"{values[2]:.0f}")
-
-    def _on_finished(self, success: bool, msg: str) -> None:
-        self._running = False
-        self._btn_run.setEnabled(True)
-        self._btn_stop.setEnabled(False)
-        color = "#22C55E" if success else "#EF4444"
-        self._status.setText(msg)
-        self._status.setStyleSheet(f"color: {color}; font-size: 12px;")
-
-    def refresh_theme(self, dark: bool) -> None:
-        self._dark = dark
-
-
 # fmt: (group_name,) for headers, (name, icon) for tools
 _TOOLS = [
     ("Диагностика",),
@@ -2102,7 +2076,7 @@ _TOOLS = [
     ("HTTP Check",     "\u21d7"),   # ⇗  request
     ("SSL Cert",       "\u26BF"),   # ⚿  lock
     ("Локальная сеть",),
-    ("Адаптеры",       "\u2637"),   # ☷  layers
+    ("tools_nav_adapters", "\u2637"),   # ☷  layers
     ("Netstat",        "\u21c4"),   # ⇄  exchange
     ("ARP",            "\u2237"),   # ∷  table
     ("Routes",         "\u21e2"),   # ⇢  route
@@ -2111,7 +2085,6 @@ _TOOLS = [
     ("Port Scan",      "\u22a1"),   # ⊡  scan
     ("DNS Cache",      "\u2338"),   # ⌸  cache
     ("Subnet Calc",    "\u229e"),   # ⊞  grid
-    ("Speed Test",     "\u26a1"),   # ⚡  speed
 ]
 
 
@@ -2146,6 +2119,9 @@ class _ToolNavItem(QFrame):
         self._name = QLabel(name)
         self._name.setObjectName("ToolNavText")
         lay.addWidget(self._name, 1)
+
+    def set_name(self, name: str) -> None:
+        self._name.setText(name)
 
     def set_active(self, active: bool) -> None:
         state = "true" if active else "false"
@@ -2182,6 +2158,9 @@ class ToolsPage(QWidget):
 
         self._nav_items: list[_ToolNavItem] = []
         self._item_panel_map: list[int] = []
+        self._group_labels: list[QLabel] = []  # refs for retranslate
+        self._nav_i18n: list[tuple[_ToolNavItem, str]] = []  # (item, key) for translatable names
+        _i18n_build = self._container.i18n
         panel_idx = 0
         first = True
         for entry in _TOOLS:
@@ -2195,11 +2174,16 @@ class ToolsPage(QWidget):
                     sb_lay.addSpacing(4)
                 grp = QLabel(entry[0])
                 grp.setObjectName("ToolGroupLabel")
+                self._group_labels.append(grp)
                 sb_lay.addWidget(grp)
                 sb_lay.addSpacing(3)
             else:
                 name, icon = entry
-                item = _ToolNavItem(icon, name)
+                # If name is an i18n key, translate it
+                display_name = _i18n_build.get(name) if name.startswith("tools_") else name
+                item = _ToolNavItem(icon, display_name)
+                if name.startswith("tools_"):
+                    self._nav_i18n.append((item, name))
                 item.set_active(first)
                 item.clicked_sig.connect(lambda p=panel_idx: self._switch_tool(p))
                 sb_lay.addWidget(item)
@@ -2215,21 +2199,21 @@ class ToolsPage(QWidget):
         self._stack.setObjectName("ToolsStack")
 
         # Order must match tool entries in _TOOLS (excluding group headers)
+        _i18n = self._container.i18n
         self._panels: list = [
-            _PingPanel(self._dark),           # Диагностика
-            _TraceroutePanel(self._dark),
-            _DnsPanel(self._dark),
+            _PingPanel(self._dark),                                    # Диагностика
+            _TraceroutePanel(self._dark, i18n=_i18n),
+            _DnsPanel(self._dark, i18n=_i18n),
             _HttpCheckPanel(self._dark),
-            _SslPanel(self._dark),
-            _IpconfigPanel(self._dark),       # Локальная сеть
-            _NetstatPanel(self._dark),
-            _ArpPanel(self._dark),
-            _RouteTablePanel(self._dark),
-            _SignalMonitorPanel(self._dark),
-            _PortScanPanel(self._dark),       # Утилиты
-            _DnsCachePanel(self._dark),
-            _SubnetCalcPanel(self._dark),
-            _SpeedTestPanel(self._dark),
+            _SslPanel(self._dark, i18n=_i18n),
+            _IpconfigPanel(self._dark, i18n=_i18n),                    # Локальная сеть
+            _NetstatPanel(self._dark, i18n=_i18n),
+            _ArpPanel(self._dark, i18n=_i18n),
+            _RouteTablePanel(self._dark, i18n=_i18n),
+            _SignalMonitorPanel(self._dark, i18n=_i18n),
+            _PortScanPanel(self._dark, i18n=_i18n),                    # Утилиты
+            _DnsCachePanel(self._dark, i18n=_i18n),
+            _SubnetCalcPanel(self._dark, i18n=_i18n),
         ]
         for panel in self._panels:
             self._stack.addWidget(panel)
@@ -2246,4 +2230,27 @@ class ToolsPage(QWidget):
         self._dark = dark_mode
         for panel in self._panels:
             panel.refresh_theme(dark_mode)
-# QSS placeholder — стили добавляются в base.qss и dark.qss
+
+    def retranslate(self) -> None:
+        i18n = self._container.i18n
+        # Group labels sidebar
+        group_keys = ["tools_group_diagnostics", "tools_group_local", "tools_group_utils"]
+        for lbl, key in zip(self._group_labels, group_keys):
+            lbl.setText(i18n.get(key))
+        # Translatable nav item names
+        for item, key in self._nav_i18n:
+            item.set_name(i18n.get(key))
+        # Buttons in all panels
+        run_text   = i18n.get("tools_btn_run")
+        stop_text  = i18n.get("tools_btn_stop")
+        clear_text = i18n.get("tools_btn_clear")
+        for panel in self._panels:
+            if hasattr(panel, "btn_run"):
+                panel.btn_run.setText(run_text)
+            if hasattr(panel, "btn_stop"):
+                panel.btn_stop.setText(stop_text)
+            if hasattr(panel, "btn_clear"):
+                panel.btn_clear.setText(clear_text)
+            if hasattr(panel, "retranslate"):
+                panel.retranslate()
+
