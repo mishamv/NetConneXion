@@ -5,10 +5,11 @@ from __future__ import annotations
 import sys
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QUrl
+from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QCheckBox, QFrame, QHBoxLayout, QLabel,
-    QMessageBox, QPushButton, QScrollArea, QVBoxLayout, QWidget,
+    QMessageBox, QPushButton, QScrollArea, QSpinBox, QVBoxLayout, QWidget,
 )
 
 from quickip.features.settings.presenter import SettingsPresenter
@@ -42,11 +43,14 @@ class SettingsPage(QWidget):
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        root.addWidget(scroll)
 
         body = QWidget()
         lay = QVBoxLayout(body)
-        lay.setContentsMargins(24, 20, 24, 20)
+        lay.setContentsMargins(24, 20, 42, 20)  # 42px справа — отступ под скроллбар
         lay.setSpacing(16)
+        scroll.setWidget(body)
 
         # Внешний вид
         self._card_appearance, self._lbl_sec_appearance = self._card(
@@ -60,32 +64,93 @@ class SettingsPage(QWidget):
         )
         lay.addWidget(self._lang_card)
 
-        # Сеть
-        self._chk_auto = QCheckBox("Авто-переключение профиля по Wi-Fi SSID")
-        self._chk_auto.setChecked(
-            bool(self._container.settings_repo.get("auto_switch_enabled", False))
+        # Wi-Fi
+        self._chk_auto_scan = QCheckBox("Автоматическое сканирование при открытии")
+        self._chk_auto_scan.setChecked(
+            bool(self._container.settings_repo.get("wifi_auto_scan", True))
         )
-        self._chk_auto.stateChanged.connect(self._on_auto_switch)
-        self._card_network, self._lbl_sec_network = self._card("СЕТЬ", [self._chk_auto])
-        lay.addWidget(self._card_network)
+        self._chk_auto_scan.stateChanged.connect(self._on_auto_scan)
+
+        scan_row = QWidget()
+        scan_row.setObjectName("SettingsRow")
+        scan_lay = QHBoxLayout(scan_row)
+        scan_lay.setContentsMargins(0, 0, 0, 0)
+        scan_lay.setSpacing(8)
+        self._lbl_scan_interval = QLabel("Интервал авто-обновления (сек)")
+        self._lbl_scan_interval.setObjectName("FieldLabel")
+        scan_lay.addWidget(self._lbl_scan_interval)
+        scan_lay.addStretch(1)
+        self._spin_scan_interval = QSpinBox()
+        self._spin_scan_interval.setObjectName("SettingsSpinBox")
+        self._spin_scan_interval.setRange(10, 600)
+        self._spin_scan_interval.setSingleStep(1)
+        self._spin_scan_interval.setKeyboardTracking(False)
+        val = max(10, min(600, int(self._container.settings_repo.get("wifi_scan_interval", 30))))
+        self._spin_scan_interval.setValue(val)
+        self._spin_scan_interval.setFixedSize(80, 32)
+        self._spin_scan_interval.setToolTip("10 – 600 сек")
+        self._spin_scan_interval.valueChanged.connect(self._on_scan_interval)
+        scan_lay.addWidget(self._spin_scan_interval, 0, Qt.AlignmentFlag.AlignTop)
+
+        self._lbl_scan_hint = QLabel("10 – 600 сек")
+        self._lbl_scan_hint.setObjectName("SettingsHint")
+        scan_lay.addWidget(self._lbl_scan_hint, 0, Qt.AlignmentFlag.AlignTop)
+
+        self._card_wifi, self._lbl_sec_wifi = self._card(
+            "WI-FI", [self._chk_auto_scan, scan_row]
+        )
+        lay.addWidget(self._card_wifi)
 
         # Система
         self._chk_autostart = QCheckBox("Запуск с Windows")
         self._chk_autostart.setChecked(self._get_autostart())
         self._chk_autostart.stateChanged.connect(self._on_autostart)
-        self._card_system, self._lbl_sec_system = self._card("СИСТЕМА", [self._chk_autostart])
+
+        self._chk_tray = QCheckBox("Сворачивать в трей вместо закрытия")
+        self._chk_tray.setChecked(
+            bool(self._container.settings_repo.get("minimize_to_tray", False))
+        )
+        self._chk_tray.stateChanged.connect(self._on_minimize_to_tray)
+
+        self._chk_start_min = QCheckBox("Запускать свёрнутым в трей")
+        self._chk_start_min.setChecked(
+            bool(self._container.settings_repo.get("start_minimized", False))
+        )
+        self._chk_start_min.stateChanged.connect(self._on_start_minimized)
+
+        self._card_system, self._lbl_sec_system = self._card(
+            "СИСТЕМА", [self._chk_autostart, self._chk_tray, self._chk_start_min]
+        )
         lay.addWidget(self._card_system)
 
+        # О программе
+        about_row = QWidget()
+        about_row.setObjectName("SettingsRow")
+        about_lay = QHBoxLayout(about_row)
+        about_lay.setContentsMargins(0, 0, 0, 0)
+        about_lay.setSpacing(8)
+        self._lbl_version = QLabel("NetConneXion  v2.0.0")
+        self._lbl_version.setObjectName("FieldLabel")
+        about_lay.addWidget(self._lbl_version)
+        about_lay.addStretch(1)
+        self._btn_repo = QPushButton("GitHub")
+        self._btn_repo.setProperty("role", "action")
+        self._btn_repo.setFixedSize(90, 32)
+        self._btn_repo.clicked.connect(
+            lambda: QDesktopServices.openUrl(QUrl("https://github.com/mishamv/NetConneXion"))
+        )
+        about_lay.addWidget(self._btn_repo, 0, Qt.AlignmentFlag.AlignTop)
+        self._card_about, self._lbl_sec_about = self._card("О ПРОГРАММЕ", [about_row])
+        lay.addWidget(self._card_about)
+
         lay.addStretch(1)
-        scroll.setWidget(body)
-        root.addWidget(scroll)
 
     def _card(self, title: str, widgets: list) -> tuple:
         """Returns (card_frame, title_label)."""
         card = QFrame()
         card.setObjectName("SectionCard")
         lay = QVBoxLayout(card)
-        lay.setContentsMargins(16, 12, 16, 14)
+        lay.setContentsMargins(18, 14, 18, 14)
         lay.setSpacing(10)
 
         hdr = QLabel(title)
@@ -105,6 +170,7 @@ class SettingsPage(QWidget):
 
     def _theme_row(self) -> QWidget:
         row = QWidget()
+        row.setObjectName("SettingsRow")
         lay = QHBoxLayout(row)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(8)
@@ -117,19 +183,19 @@ class SettingsPage(QWidget):
         self._btn_light = QPushButton("Светлая")
         self._btn_dark  = QPushButton("Тёмная")
         for btn in (self._btn_light, self._btn_dark):
-            btn.setMinimumWidth(100)
-            btn.setMaximumWidth(160)
-            btn.setFixedHeight(34)
+            btn.setProperty("role", "action")
+            btn.setFixedSize(100, 32)
 
         self._btn_light.clicked.connect(lambda: self._on_theme("light"))
         self._btn_dark.clicked.connect(lambda: self._on_theme("dark"))
 
-        lay.addWidget(self._btn_light)
-        lay.addWidget(self._btn_dark)
+        lay.addWidget(self._btn_light, 0, Qt.AlignmentFlag.AlignTop)
+        lay.addWidget(self._btn_dark, 0, Qt.AlignmentFlag.AlignTop)
         return row
 
     def _lang_row(self) -> QWidget:
         row = QWidget()
+        row.setObjectName("SettingsRow")
         lay = QHBoxLayout(row)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(8)
@@ -142,15 +208,14 @@ class SettingsPage(QWidget):
         self._btn_ru = QPushButton("Русский")
         self._btn_en = QPushButton("English")
         for btn in (self._btn_ru, self._btn_en):
-            btn.setMinimumWidth(100)
-            btn.setMaximumWidth(160)
-            btn.setFixedHeight(34)
+            btn.setProperty("role", "action")
+            btn.setFixedSize(100, 32)
 
         self._btn_ru.clicked.connect(lambda: self._on_lang("ru"))
         self._btn_en.clicked.connect(lambda: self._on_lang("en"))
 
-        lay.addWidget(self._btn_ru)
-        lay.addWidget(self._btn_en)
+        lay.addWidget(self._btn_ru, 0, Qt.AlignmentFlag.AlignTop)
+        lay.addWidget(self._btn_en, 0, Qt.AlignmentFlag.AlignTop)
         return row
 
     # ── Handlers ──────────────────────────────────────────────────
@@ -160,8 +225,8 @@ class SettingsPage(QWidget):
         self._update_theme_btns(mode)
 
     def _update_theme_btns(self, mode: str) -> None:
-        self._btn_light.setProperty("role", "primary" if mode == "light" else "")
-        self._btn_dark.setProperty("role",  "primary" if mode == "dark"  else "")
+        self._btn_light.setProperty("role", "primary" if mode == "light" else "action")
+        self._btn_dark.setProperty("role",  "primary" if mode == "dark"  else "action")
         for btn in (self._btn_light, self._btn_dark):
             btn.style().unpolish(btn)
             btn.style().polish(btn)
@@ -175,18 +240,30 @@ class SettingsPage(QWidget):
         self._container.event_bus.publish(LangChanged(locale=locale))
 
     def _update_lang_btns(self, locale: str) -> None:
-        self._btn_ru.setProperty("role", "primary" if locale == "ru" else "")
-        self._btn_en.setProperty("role", "primary" if locale == "en" else "")
+        self._btn_ru.setProperty("role", "primary" if locale == "ru" else "action")
+        self._btn_en.setProperty("role", "primary" if locale == "en" else "action")
         for btn in (self._btn_ru, self._btn_en):
             btn.style().unpolish(btn)
             btn.style().polish(btn)
 
-    def _on_auto_switch(self, state: int) -> None:
-        self._container.settings_repo.set("auto_switch_enabled", bool(state))
+    def _on_auto_scan(self, state: int) -> None:
+        self._container.settings_repo.set("wifi_auto_scan", bool(state))
+        self._container.settings_repo.save()
+
+    def _on_scan_interval(self, value: int) -> None:
+        self._container.settings_repo.set("wifi_scan_interval", value)
         self._container.settings_repo.save()
 
     def _on_autostart(self, state: int) -> None:
         self._set_autostart(bool(state))
+
+    def _on_minimize_to_tray(self, state: int) -> None:
+        self._container.settings_repo.set("minimize_to_tray", bool(state))
+        self._container.settings_repo.save()
+
+    def _on_start_minimized(self, state: int) -> None:
+        self._container.settings_repo.set("start_minimized", bool(state))
+        self._container.settings_repo.save()
 
     # ── Windows registry helpers ──────────────────────────────────
 
@@ -253,15 +330,20 @@ class SettingsPage(QWidget):
         """Обновляет все видимые строки при смене языка."""
         self._lbl_sec_appearance.setText(self._tr("section_appearance").upper())
         self._lbl_sec_language.setText(self._tr("section_language").upper())
-        self._lbl_sec_network.setText(self._tr("section_network_cfg").upper())
+        self._lbl_sec_wifi.setText(self._tr("section_wifi").upper())
         self._lbl_sec_system.setText(self._tr("section_system").upper())
 
         self._lbl_theme.setText(self._tr("label_theme"))
         self._btn_light.setText(self._tr("btn_light"))
         self._btn_dark.setText(self._tr("btn_dark"))
 
-        self._chk_auto.setText(self._tr("chk_auto_switch"))
+        self._chk_auto_scan.setText(self._tr("chk_wifi_auto_scan"))
+        self._lbl_scan_interval.setText(self._tr("lbl_scan_interval"))
         self._chk_autostart.setText(self._tr("chk_autostart"))
+        self._chk_tray.setText(self._tr("chk_minimize_to_tray"))
+        self._chk_start_min.setText(self._tr("chk_start_minimized"))
+        self._lbl_sec_about.setText(self._tr("section_about").upper())
+        self._lbl_version.setText(f"NetConneXion  v2.0.0")
 
         # Восстанавливаем активное состояние кнопок языка
         locale = self._container.i18n.get_current_locale()

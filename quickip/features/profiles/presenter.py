@@ -8,7 +8,7 @@ import threading
 import uuid
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Protocol
 
-from quickip.core.models import Profile, IPMode, DNSMode
+from quickip.domain.models import Profile, IPMode, DNSMode
 from quickip.shared.paths import get_profiles_file
 from quickip.core.events.types import (
     ProfileCreated, ProfileUpdated, ProfileDeleted, ProfilesChanged,
@@ -60,6 +60,9 @@ class ProfilesPresenter:
         """Called by the view's __init__ to register the UI callback target."""
         self._view = view
 
+    def _t(self, key: str) -> str:
+        return self._container.i18n.get(key)
+
     # ── Bootstrap ─────────────────────────────────────────────────
 
     def load_initial(self) -> None:
@@ -88,18 +91,19 @@ class ProfilesPresenter:
 
         filtered: List[str] = []
         adapter_values: set = set()
+        all_adapters_label = self._t("filter_all_adapters")
 
         for name, profile in self._profiles.items():
             if profile.adapter:
                 adapter_values.add(profile.adapter)
             if search and search not in name.lower():
                 continue
-            if adapter_filter != "Все адаптеры" and profile.adapter != adapter_filter:
+            if adapter_filter and adapter_filter != all_adapters_label and profile.adapter != adapter_filter:
                 continue
             filtered.append(name)
 
         self._view.update_adapter_filter_values(
-            ["Все адаптеры"] + sorted(adapter_values)
+            [all_adapters_label] + sorted(adapter_values)
         )
 
         if not filtered:
@@ -223,9 +227,8 @@ class ProfilesPresenter:
             if (profile.name != self._current_key
                     and profile.name in self._profiles):
                 self._view.show_message(
-                    "Имя занято",
-                    f"Профиль с именем «{profile.name}» уже существует.\n"
-                    "Выберите другое имя или используйте «Сохранить как новый».",
+                    self._t("dlg_name_taken_title"),
+                    self._t("dlg_name_taken_text").format(name=profile.name),
                 )
                 return
 
@@ -239,7 +242,7 @@ class ProfilesPresenter:
             self._publish_profiles_changed()
             self.refresh_list(select=profile.name)
         except Exception as exc:
-            self._view.show_message("Ошибка", str(exc))
+            self._view.show_message(self._t("error"), str(exc))
 
     def save_as_new_profile(self, form_data: dict) -> None:
         """Save form data as a brand-new profile with a unique name and new ID."""
@@ -274,7 +277,7 @@ class ProfilesPresenter:
             self._publish_profiles_changed()
             self.refresh_list(select=name)
         except Exception as exc:
-            self._view.show_message("Ошибка", str(exc))
+            self._view.show_message(self._t("error"), str(exc))
 
     # ── Apply ─────────────────────────────────────────────────────
 
@@ -297,8 +300,8 @@ class ProfilesPresenter:
             if not profile.is_dhcp_ip and profile.ipv4:
                 if self._service.is_ip_in_use(profile.ipv4):
                     proceed = self._view.ask_yes_no(
-                        "Возможный конфликт IP",
-                        f"IP {profile.ipv4} уже используется в сети.\n\nПродолжить?",
+                        self._t("dlg_ip_conflict_title"),
+                        self._t("dlg_ip_conflict_text").format(ip=profile.ipv4),
                     )
                     if not proceed:
                         return
@@ -308,14 +311,17 @@ class ProfilesPresenter:
             self.refresh_list(select=profile.name)
 
             if result.success:
-                self._view.show_message("Готово", f"Профиль '{profile.name}' применён.")
+                self._view.show_message(
+                    self._t("dlg_profile_applied_title"),
+                    self._t("dlg_profile_applied_text").format(name=profile.name),
+                )
                 self._container.toast.notify_profile_applied(profile.name, profile.adapter)
             else:
-                self._view.show_message("Ошибка применения", result.message)
+                self._view.show_message(self._t("dlg_apply_error_title"), result.message)
                 self._container.toast.notify_profile_failed(profile.name, result.message)
 
         except Exception as exc:
-            self._view.show_message("Ошибка", str(exc))
+            self._view.show_message(self._t("error"), str(exc))
             self._container.toast.notify_profile_failed(form_data.get("name", "?"), str(exc))
 
     # ── Import / Export ───────────────────────────────────────────
@@ -326,7 +332,7 @@ class ProfilesPresenter:
         try:
             self._import_export.export_profiles(path)
         except Exception as exc:
-            self._view.show_message("Ошибка экспорта", str(exc))
+            self._view.show_message(self._t("dlg_export_error_title"), str(exc))
 
     def import_profiles(self, path: str, strategy: str = "rename") -> None:
         if not path or self._view is None:
@@ -337,7 +343,7 @@ class ProfilesPresenter:
             self._publish_profiles_changed()
             self.refresh_list(select=next(iter(self._profiles), None))
         except Exception as exc:
-            self._view.show_message("Ошибка импорта", str(exc))
+            self._view.show_message(self._t("dlg_import_error_title"), str(exc))
 
     # ── Summary ───────────────────────────────────────────────────
 
@@ -418,33 +424,34 @@ class ProfilesPresenter:
             tags=existing.tags if existing else [],
         )
 
-    @staticmethod
-    def _validate(profile: Profile) -> None:
+    def _validate(self, profile: Profile) -> None:
         if not profile.name.strip():
-            raise ValueError("Введите имя профиля.")
+            raise ValueError(self._t("val_name_required"))
         if len(profile.name) > 30:
-            raise ValueError("Имя профиля не может быть длиннее 30 символов.")
+            raise ValueError(self._t("val_name_too_long"))
         if not profile.adapter.strip():
-            raise ValueError("Выберите сетевой адаптер.")
+            raise ValueError(self._t("val_adapter_required"))
 
-        def _ip(value: str, field: str) -> None:
+        def _ip(value: str, field_key: str) -> None:
             try:
                 ipaddress.IPv4Address(value)
             except Exception as exc:
-                raise ValueError(f"Некорректное значение поля '{field}': {value}") from exc
+                raise ValueError(
+                    self._t("val_ip_invalid").format(field=self._t(field_key), value=value)
+                ) from exc
 
         if not profile.is_dhcp_ip:
             if not profile.ipv4 or not profile.mask:
-                raise ValueError("Для статического режима обязательны IP и маска.")
-            _ip(profile.ipv4, "IP адрес")
-            _ip(profile.mask, "Маска подсети")
+                raise ValueError(self._t("val_ip_mask_required"))
+            _ip(profile.ipv4, "field_ip")
+            _ip(profile.mask, "field_mask")
             if profile.gateway:
-                _ip(profile.gateway, "Шлюз")
+                _ip(profile.gateway, "field_gateway")
 
         if not profile.is_dhcp_dns:
             if profile.dns_primary:
-                _ip(profile.dns_primary, "DNS основной")
+                _ip(profile.dns_primary, "field_dns_primary")
             if profile.dns_secondary:
-                _ip(profile.dns_secondary, "DNS альтернативный")
+                _ip(profile.dns_secondary, "field_dns_secondary")
                 if profile.dns_secondary == profile.dns_primary:
-                    raise ValueError("DNS альтернативный не должен совпадать с основным.")
+                    raise ValueError(self._t("val_dns_duplicate"))

@@ -9,12 +9,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, TYPE_CHECKING
 
-from quickip.core.models import Profile, IPMode, DNSMode, ImportConflict, ImportReport
+from quickip.domain.models import Profile, IPMode, DNSMode, ImportConflict, ImportReport
 from quickip.core.events.types import ProfilesImported
 
 if TYPE_CHECKING:
     from quickip.features.profiles.repository import ProfileRepository
-    from quickip.core.events.bus import EventBus
+    from quickip.events.bus import EventBus
 
 logger = logging.getLogger(__name__)
 

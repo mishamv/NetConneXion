@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-import json
 import logging
 import platform
-import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, List
 
-from quickip.core.models import Profile, ApplyResult, ProfileHistoryEntry
+from quickip.domain.models import Profile, ApplyResult, ProfileHistoryEntry
 from quickip.core.events.types import ProfileApplied, ProfileApplyFailed
 
 if TYPE_CHECKING:

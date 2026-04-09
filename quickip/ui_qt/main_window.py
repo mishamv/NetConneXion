@@ -24,11 +24,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QEvent, QRectF, QSize
-from PySide6.QtGui import QColor, QIcon, QPainterPath, QPalette, QPixmap, QRegion
+from PySide6.QtCore import Qt, QEvent, QSize
+from PySide6.QtGui import QColor, QIcon, QPalette, QPixmap
 from PySide6.QtWidgets import (
     QApplication, QFrame, QHBoxLayout, QLabel, QMainWindow,
-    QPushButton, QSizePolicy, QStackedWidget, QVBoxLayout, QWidget,
+    QMenu, QPushButton, QSizePolicy, QStackedWidget, QSystemTrayIcon,
+    QVBoxLayout, QWidget,
 )
 
 from quickip.app.bootstrap import bootstrap
@@ -93,7 +94,7 @@ class QtMainWindow(QMainWindow):
         self.topbar.setObjectName("Topbar")
         self.topbar.setFixedHeight(52)
         tb = QHBoxLayout(self.topbar)
-        tb.setContentsMargins(18, 0, 14, 0)
+        tb.setContentsMargins(18, 0, 18, 0)
         tb.setSpacing(12)
         self._page_title = QLabel(self._tr("page_profiles"))
         self._page_title.setObjectName("TopbarTitle")
@@ -102,21 +103,20 @@ class QtMainWindow(QMainWindow):
         self.btn_theme = QPushButton("Тёмная тема")
         self.btn_theme.setObjectName("ThemeBtn")
         self.btn_theme.setProperty("role", "action")
-        self.btn_theme.setMinimumHeight(32)
-        tb.addWidget(self.btn_theme)
+        self.btn_theme.setFixedHeight(34)
+        tb.addWidget(self.btn_theme, 0, Qt.AlignmentFlag.AlignVCenter)
         right.addWidget(self.topbar)
 
         # ContentShell
         self.content_shell = QFrame()
         self.content_shell.setObjectName("ContentShell")
         cs = QVBoxLayout(self.content_shell)
-        cs.setContentsMargins(0, 0, 0, 0)
+        cs.setContentsMargins(0, 0, 2, 0)
         cs.setSpacing(0)
         self.stack = QStackedWidget()
         self.stack.setObjectName("MainStack")
         cs.addWidget(self.stack, 1)
         right.addWidget(self.content_shell, 1)
-        self.content_shell.installEventFilter(self)
 
         self._build_sidebar(sb_lay)
         self._build_pages()
@@ -133,9 +133,13 @@ class QtMainWindow(QMainWindow):
         self.facade.bootstrap()
         self._connect_status_events()
         self._update_status_block()
+        self._setup_tray()
         # Применяем сохранённый язык ко всем страницам
         if self.container.i18n.get_current_locale() != "ru":
             self._retranslate_ui()
+        # Запустить свёрнутым в трей
+        if self.container.settings_repo.get("start_minimized", False):
+            self.hide()
 
     # ── Sidebar ───────────────────────────────────────────────────────
 
@@ -419,6 +423,43 @@ class QtMainWindow(QMainWindow):
             if hasattr(pg, "retranslate"):
                 pg.retranslate()  # type: ignore[union-attr]
 
+    # ── Tray ──────────────────────────────────────────────────────────
+
+    def _setup_tray(self) -> None:
+        icon_path = _resource_root() / "data" / "logo_dark.png"
+        icon = QIcon(str(icon_path)) if icon_path.exists() else QIcon()
+
+        self._tray = QSystemTrayIcon(icon, self)
+        self._tray.setToolTip("NetConneXion")
+
+        menu = QMenu()
+        self._tray_action_show = menu.addAction(self._tr("tray_show"))
+        menu.addSeparator()
+        self._tray_action_quit = menu.addAction(self._tr("tray_quit"))
+
+        self._tray_action_show.triggered.connect(self._tray_restore)
+        self._tray_action_quit.triggered.connect(QApplication.quit)
+        self._tray.setContextMenu(menu)
+        self._tray.activated.connect(self._on_tray_activated)
+        self._tray.show()
+
+    def _on_tray_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
+        if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
+            self._tray_restore()
+
+    def _tray_restore(self) -> None:
+        self.showNormal()
+        self.activateWindow()
+        self.raise_()
+
+    def closeEvent(self, event) -> None:  # noqa: N802
+        if self.container.settings_repo.get("minimize_to_tray", False):
+            event.ignore()
+            self.hide()
+        else:
+            self._tray.hide()
+            event.accept()
+
     def _toggle_theme(self) -> None:
         self.theme_mode = "light" if self.theme_mode == "dark" else "dark"
         self.container.settings_repo.set("ui_theme", self.theme_mode)
@@ -474,18 +515,8 @@ class QtMainWindow(QMainWindow):
         else:
             self._logo_label.setText("NetConneXion")
 
-    # ── ContentShell rounded mask ─────────────────────────────────────
-
     def eventFilter(self, obj, event) -> bool:
-        if obj is self.content_shell and event.type() == QEvent.Type.Resize:
-            self._apply_shell_mask()
         return super().eventFilter(obj, event)
-
-    def _apply_shell_mask(self) -> None:
-        w, h, r = self.content_shell.width(), self.content_shell.height(), 14
-        path = QPainterPath()
-        path.addRoundedRect(QRectF(0, 0, w, h), r, r)
-        self.content_shell.setMask(QRegion(path.toFillPolygon().toPolygon()))
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────

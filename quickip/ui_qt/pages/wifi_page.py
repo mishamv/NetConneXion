@@ -1150,7 +1150,7 @@ class WifiPage(QWidget):
 
     def _on_tab_changed(self, index: int) -> None:
         """При переходе на вкладку Networks — запускаем сканирование."""
-        if index == 0:
+        if index == 0 and self._container.settings_repo.get("wifi_auto_scan", True):
             self._scan_queued = True
             self.btn_scan.setEnabled(False)
             QTimer.singleShot(200, self._launch_queued_scan)
@@ -1160,5 +1160,6 @@ class WifiPage(QWidget):
         self._poll_status()
         if not self._shown_once:
             self._shown_once = True
-            QTimer.singleShot(300, self._on_scan)
+            if self._container.settings_repo.get("wifi_auto_scan", True):
+                QTimer.singleShot(300, self._on_scan)
         super().showEvent(event)

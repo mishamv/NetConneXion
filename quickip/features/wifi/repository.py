@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from quickip.shared.paths import get_wifi_profiles_file, get_wifi_options_file
-from quickip.core.storage.base_repo import BaseJsonRepository
+from quickip.infrastructure.storage.base_repo import BaseJsonRepository
 
 logger = logging.getLogger(__name__)
 

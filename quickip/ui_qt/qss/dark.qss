@@ -242,6 +242,16 @@ QFrame#SectionLine {
     color: rgba(255, 255, 255, 0.05);
 }
 
+QWidget#SettingsRow {
+    background: transparent;
+}
+
+QLabel#SettingsHint {
+    font-size: 11px;
+    color: rgba(148, 163, 184, 0.55);
+    background: transparent;
+}
+
 QLabel#FieldLabel {
     font-size: 14px;
     color: rgba(255, 255, 255, 0.38);
@@ -760,4 +770,21 @@ QComboBox#ToolCombo QAbstractItemView {
 QSpinBox#ToolSpinBox:disabled {
     color: rgba(255, 255, 255, 0.20);
     background: rgba(255, 255, 255, 0.02);
+}
+
+QSpinBox#SettingsSpinBox {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 7px;
+    color: rgba(226, 232, 240, 0.88);
+    font-size: 13px;
+    padding: 0 8px;
+    min-height: 0;
+    max-height: 9999px;
+}
+
+QSpinBox#SettingsSpinBox::up-button,
+QSpinBox#SettingsSpinBox::down-button {
+    width: 0;
+    border: none;
 }

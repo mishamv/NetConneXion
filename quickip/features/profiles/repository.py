@@ -8,9 +8,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
-from quickip.core.interfaces import ProfileRepository as _ProfileRepositoryABC
-from quickip.core.models import Profile, IPMode, DNSMode
-from quickip.core.storage.base_repo import BaseJsonRepository
+from quickip.domain.interfaces import ProfileRepository as _ProfileRepositoryABC
+from quickip.domain.models import Profile, IPMode, DNSMode
+from quickip.infrastructure.storage.base_repo import BaseJsonRepository
 
 logger = logging.getLogger(__name__)
 

@@ -32,7 +32,7 @@ class ProfilesFacade(QObject):
         self._presenter.bind_view(self)
 
         self._search_query = ""
-        self._adapter_filter = "Все адаптеры"
+        self._adapter_filter = ""
         self._selected_name: Optional[str] = None
 
     def bootstrap(self) -> None:
@@ -65,52 +65,10 @@ class ProfilesFacade(QObject):
             self.delete_profiles([name])
 
     def delete_profiles(self, names: List[str]) -> None:
-        """Удаляет один или несколько профилей с подтверждением."""
+        """Удаляет один или несколько профилей (подтверждение на стороне вызывающего)."""
         if not names:
             return
-
-        dlg = QDialog(self._parent_widget)
-        dlg.setWindowTitle("Удаление")
-        dlg.setWindowFlags(dlg.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
-
-        lay = QVBoxLayout(dlg)
-        lay.setContentsMargins(24, 20, 24, 16)
-        lay.setSpacing(16)
-
-        if len(names) == 1:
-            display_name = names[0] if len(names[0]) <= 28 else names[0][:25] + "..."
-            text = f"Удалить профиль «{display_name}»?"
-        else:
-            text = f"Удалить {len(names)} профиля(-ей)?"
-
-        lbl = QLabel(text)
-        lbl.setFixedWidth(340)
-        lbl.setWordWrap(False)
-        lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        lay.addWidget(lbl)
-
-        btn_row = QHBoxLayout()
-        btn_row.setSpacing(8)
-        btn_row.addStretch(1)
-
-        btn_no = QPushButton("Отмена")
-        btn_no.setProperty("role", "action")
-        btn_no.setFixedSize(90, 32)
-        btn_no.clicked.connect(dlg.reject)
-
-        btn_yes = QPushButton("Удалить")
-        btn_yes.setProperty("role", "delete")
-        btn_yes.setFixedSize(90, 32)
-        btn_yes.clicked.connect(dlg.accept)
-
-        btn_row.addWidget(btn_no)
-        btn_row.addWidget(btn_yes)
-        lay.addLayout(btn_row)
-
-        dlg.setFixedSize(420, 110)
-
-        if dlg.exec() == QDialog.DialogCode.Accepted:
-            self._presenter.delete_profiles(names)
+        self._presenter.delete_profiles(names)
 
     def export_profiles(self, path: str) -> None:
         self._presenter.export_profiles(path)
@@ -133,8 +91,9 @@ class ProfilesFacade(QObject):
         """Показывает диалог подтверждения сохранения.
         Возвращает: 'save' | 'new' | 'cancel'
         """
+        i18n = self._container.i18n
         dlg = QDialog(self._parent_widget)
-        dlg.setWindowTitle("Сохранение профиля")
+        dlg.setWindowTitle(i18n.get("dlg_save_existing_title"))
         dlg.setWindowFlags(dlg.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
 
         lay = QVBoxLayout(dlg)
@@ -142,7 +101,7 @@ class ProfilesFacade(QObject):
         lay.setSpacing(16)
 
         display_name = name if len(name) <= 28 else name[:25] + "..."
-        lbl = QLabel(f"Изменить сохранённый профиль «{display_name}»?")
+        lbl = QLabel(i18n.get("dlg_save_existing_text").format(name=display_name))
         lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         lbl.setFixedWidth(380)
         lbl.setWordWrap(False)
@@ -152,15 +111,15 @@ class ProfilesFacade(QObject):
         btn_row.setSpacing(8)
         btn_row.addStretch(1)
 
-        btn_cancel = QPushButton("Отмена")
+        btn_cancel = QPushButton(i18n.get("btn_cancel"))
         btn_cancel.setProperty("role", "action")
         btn_cancel.setFixedSize(90, 32)
 
-        btn_new = QPushButton("Сохранить как новый")
+        btn_new = QPushButton(i18n.get("btn_save_as_new"))
         btn_new.setProperty("role", "action")
         btn_new.setFixedSize(150, 32)
 
-        btn_save = QPushButton("Сохранить")
+        btn_save = QPushButton(i18n.get("btn_save"))
         btn_save.setProperty("role", "primary")
         btn_save.setFixedSize(100, 32)
 

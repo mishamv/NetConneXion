@@ -333,6 +333,15 @@ QFrame#SectionLine {
     color: #F1F5F9;           /* горизонтальная линия после заголовка секции */
 }
 
+QWidget#SettingsRow {
+    background: transparent;
+}
+
+QLabel#SettingsHint {
+    font-size: 11px;
+    color: #94A3B8;
+}
+
 QLabel#FieldLabel {
     font-size: 14px;
     color: #64748B;           /* подпись поля: Name, IP address и т.д. */
@@ -962,4 +971,21 @@ QComboBox#ToolCombo:focus {
 QSpinBox#ToolSpinBox:disabled {
     color: #94A3B8;
     background: #F1F5F9;
+}
+
+QSpinBox#SettingsSpinBox {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 7px;
+    color: #1E293B;
+    font-size: 13px;
+    padding: 0 8px;
+    min-height: 0;
+    max-height: 9999px;
+}
+
+QSpinBox#SettingsSpinBox::up-button,
+QSpinBox#SettingsSpinBox::down-button {
+    width: 0;
+    border: none;
 }

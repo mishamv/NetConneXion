@@ -9,9 +9,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
-from quickip.core.interfaces import HistoryRepository as _HistoryRepositoryABC
-from quickip.core.models import ProfileHistoryEntry, HistoryStats, AdapterConfig
-from quickip.core.storage.base_repo import BaseJsonRepository
+from quickip.domain.interfaces import HistoryRepository as _HistoryRepositoryABC
+from quickip.domain.models import ProfileHistoryEntry, HistoryStats, AdapterConfig
+from quickip.infrastructure.storage.base_repo import BaseJsonRepository
 
 logger = logging.getLogger(__name__)
 

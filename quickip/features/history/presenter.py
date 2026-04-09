@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, List, Optional, Protocol
 
-from quickip.core.models import ProfileHistoryEntry, HistoryStats
+from quickip.domain.models import ProfileHistoryEntry, HistoryStats
 from quickip.shared.paths import get_history_file
 from quickip.core.events.types import ProfileApplied, ProfileApplyFailed
 from quickip.features.history.repository import HistoryRepository

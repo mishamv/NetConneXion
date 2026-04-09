@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from typing import Optional, List
 
-from quickip.core.models import ApplyResult, Profile
+from quickip.domain.models import ApplyResult, Profile
 
 
 @dataclass
