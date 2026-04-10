@@ -820,13 +820,12 @@ class WifiPage(QWidget):
         if success:
             self._net_feedback.setText("")
             QTimer.singleShot(1500, self._poll_status)
-            # Предлагаем сохранить профиль если его нет
             if self._last_connect_ssid and self._last_connect_password:
                 QTimer.singleShot(1000, self._offer_save_profile)
             else:
-                self._last_connect_password = ""
+                self._clear_connect_password()
         else:
-            self._last_connect_password = ""
+            self._clear_connect_password()
             # Показываем диалог с ошибкой
             from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QHBoxLayout, QPushButton
             dlg = QDialog(self)
@@ -1003,22 +1002,27 @@ class WifiPage(QWidget):
         self._feedback.setStyleSheet(f"color: {color}; font-size: 12px;")
         QTimer.singleShot(3000, lambda: self._feedback.setText(""))
 
+    def _clear_connect_password(self) -> None:
+        """Гарантированно зануляет кешированный пароль подключения."""
+        self._last_connect_password = ""
+
     def _offer_save_profile(self) -> None:
         """Предлагает сохранить профиль после успешного подключения с паролем."""
-        ssid = self._last_connect_ssid
-        if not ssid or self._presenter._profile_repo.find_by_ssid(ssid):
-            self._last_connect_password = ""
-            return
-        msg = QMessageBox(self)
-        msg.setWindowTitle(self._tr("dlg_save_profile_title"))
-        msg.setText(self._tr("dlg_save_profile_text").format(ssid=ssid))
-        msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-        msg.setDefaultButton(QMessageBox.StandardButton.Yes)
-        if msg.exec() == QMessageBox.StandardButton.Yes:
-            self._ed_ssid.setText(ssid)
-            self._ed_password.setText(self._last_connect_password)
-            self._tabs.setCurrentIndex(1)
-        self._last_connect_password = ""  # Очистить пароль из памяти после предложения
+        try:
+            ssid = self._last_connect_ssid
+            if not ssid or self._presenter._profile_repo.find_by_ssid(ssid):
+                return
+            msg = QMessageBox(self)
+            msg.setWindowTitle(self._tr("dlg_save_profile_title"))
+            msg.setText(self._tr("dlg_save_profile_text").format(ssid=ssid))
+            msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            msg.setDefaultButton(QMessageBox.StandardButton.Yes)
+            if msg.exec() == QMessageBox.StandardButton.Yes:
+                self._ed_ssid.setText(ssid)
+                # Пароль не подставляем в поле — пользователь вводит сам
+                self._tabs.setCurrentIndex(1)
+        finally:
+            self._clear_connect_password()
 
     # ── Spinner ──────────────────────────────────────────────────
 
@@ -1155,6 +1159,7 @@ class WifiPage(QWidget):
 
     def _on_tab_changed(self, index: int) -> None:
         """При переходе на вкладку Networks — запускаем сканирование."""
+        self._clear_connect_password()
         if index == 0 and self._container.settings_repo.get("wifi_auto_scan", True):
             self._scan_queued = True
             self.btn_scan.setEnabled(False)
