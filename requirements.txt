@@ -7,5 +7,8 @@ typing_extensions>=4.0
 # Windows DPAPI (password encryption)
 pywin32>=306
 
+# Development / testing
+pytest>=9.0
+
 # Phase 1 (notifications - optional)
 # winotify>=1.1
