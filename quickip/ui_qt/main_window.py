@@ -547,7 +547,7 @@ def _relaunch_as_admin() -> None:
     # sys.executable = путь к python.exe в .venv
     # Передаём явный модульный запуск с правильным рабочим каталогом
     project_dir = str(Path(__file__).parent.parent.parent)
-    args = f'-m quickip.ui_qt.main_window'
+    args = '-m quickip.ui_qt.main_window'
 
     ret = ctypes.windll.shell32.ShellExecuteW(
         None, "runas", sys.executable, args, project_dir, 1
