@@ -59,6 +59,9 @@ class QtMainWindow(QMainWindow):
         self._current_page_key = "profiles"
 
         self.setWindowTitle("NetConneXion")
+        _icon_path = _resource_root() / "data" / "logo_tray.png"
+        if _icon_path.exists():
+            self.setWindowIcon(QIcon(str(_icon_path)))
         self.resize(1240, 780)
         self.setMinimumSize(900, 600)
 
@@ -426,8 +429,7 @@ class QtMainWindow(QMainWindow):
     # ── Tray ──────────────────────────────────────────────────────────
 
     def _setup_tray(self) -> None:
-        icon_path = _resource_root() / "data" / "logo_dark.png"
-        icon = QIcon(str(icon_path)) if icon_path.exists() else QIcon()
+        icon = self._make_tray_icon()
 
         self._tray = QSystemTrayIcon(icon, self)
         self._tray.setToolTip("NetConneXion")
@@ -442,6 +444,13 @@ class QtMainWindow(QMainWindow):
         self._tray.setContextMenu(menu)
         self._tray.activated.connect(self._on_tray_activated)
         self._tray.show()
+
+    @staticmethod
+    def _make_tray_icon() -> QIcon:
+        icon_path = _resource_root() / "data" / "logo_tray.png"
+        if icon_path.exists():
+            return QIcon(str(icon_path))
+        return QIcon()
 
     def _on_tray_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
         if reason == QSystemTrayIcon.ActivationReason.DoubleClick:

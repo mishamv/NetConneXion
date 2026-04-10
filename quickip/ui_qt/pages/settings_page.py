@@ -90,11 +90,11 @@ class SettingsPage(QWidget):
         self._spin_scan_interval.setFixedSize(80, 32)
         self._spin_scan_interval.setToolTip("10 – 600 сек")
         self._spin_scan_interval.valueChanged.connect(self._on_scan_interval)
-        scan_lay.addWidget(self._spin_scan_interval, 0, Qt.AlignmentFlag.AlignTop)
+        scan_lay.addWidget(self._spin_scan_interval, 0, Qt.AlignmentFlag.AlignVCenter)
 
         self._lbl_scan_hint = QLabel("10 – 600 сек")
         self._lbl_scan_hint.setObjectName("SettingsHint")
-        scan_lay.addWidget(self._lbl_scan_hint, 0, Qt.AlignmentFlag.AlignTop)
+        scan_lay.addWidget(self._lbl_scan_hint, 0, Qt.AlignmentFlag.AlignVCenter)
 
         self._card_wifi, self._lbl_sec_wifi = self._card(
             "WI-FI", [self._chk_auto_scan, scan_row]
