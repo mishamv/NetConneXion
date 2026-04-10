@@ -1014,6 +1014,7 @@ class WifiPage(QWidget):
             self._ed_ssid.setText(ssid)
             self._ed_password.setText(self._last_connect_password)
             self._tabs.setCurrentIndex(1)
+        self._last_connect_password = ""  # Очистить пароль из памяти после предложения
 
     # ── Spinner ──────────────────────────────────────────────────
 

@@ -90,6 +90,9 @@ class ProcessRunner:
         Returns:
             CommandResult with stdout, stderr, exit code, duration
         """
+        if shell:
+            logger.warning("shell=True is discouraged; prefer list commands. cmd=%s", command)
+
         start_time = time.time()
         command_str = ' '.join(command) if isinstance(command, list) else command
 

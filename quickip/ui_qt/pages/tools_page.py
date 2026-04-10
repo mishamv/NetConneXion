@@ -1002,9 +1002,7 @@ class _HttpCheckPanel(_ToolPanel):
             import time
             import ssl
 
-            ctx = ssl.create_default_context()
-            ctx.check_hostname = False
-            ctx.verify_mode = ssl.CERT_NONE
+            ctx = ssl.create_default_context()  # TLS verification enabled by default
 
             self._bridge.output.emit(f"  URL:      {url}", False)
 

@@ -14,6 +14,7 @@ from __future__ import annotations
 import csv
 import ipaddress
 import logging
+import os
 import socket
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -27,7 +28,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 _COMMON_PORTS = [22, 23, 80, 135, 139, 443, 445, 3389, 5900, 8080]
-_SCAN_WORKERS = 64
+_SCAN_WORKERS = min(32, (os.cpu_count() or 4) * 4)
 
 
 # ── Enum ──────────────────────────────────────────────────────────────────────
