@@ -1005,6 +1005,7 @@ class _HttpCheckPanel(_ToolPanel):
             ctx = ssl.create_default_context()  # TLS verification enabled by default
 
             self._bridge.output.emit(f"  URL:      {url}", False)
+            self._bridge.output.emit("  TLS verify: ON", False)
 
             redirects = []
             current = url

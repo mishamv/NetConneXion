@@ -823,9 +823,9 @@ class WifiPage(QWidget):
             if self._last_connect_ssid and self._last_connect_password:
                 QTimer.singleShot(1000, self._offer_save_profile)
             else:
-                self._clear_connect_password()
+                self._clear_connect_context()
         else:
-            self._clear_connect_password()
+            self._clear_connect_context()
             # Показываем диалог с ошибкой
             from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QHBoxLayout, QPushButton
             dlg = QDialog(self)
@@ -1002,9 +1002,10 @@ class WifiPage(QWidget):
         self._feedback.setStyleSheet(f"color: {color}; font-size: 12px;")
         QTimer.singleShot(3000, lambda: self._feedback.setText(""))
 
-    def _clear_connect_password(self) -> None:
-        """Гарантированно зануляет кешированный пароль подключения."""
+    def _clear_connect_context(self) -> None:
+        """Зануляет кешированный SSID и пароль после завершения connect-сценария."""
         self._last_connect_password = ""
+        self._last_connect_ssid = ""
 
     def _offer_save_profile(self) -> None:
         """Предлагает сохранить профиль после успешного подключения с паролем."""
@@ -1022,7 +1023,7 @@ class WifiPage(QWidget):
                 # Пароль не подставляем в поле — пользователь вводит сам
                 self._tabs.setCurrentIndex(1)
         finally:
-            self._clear_connect_password()
+            self._clear_connect_context()
 
     # ── Spinner ──────────────────────────────────────────────────
 
@@ -1159,7 +1160,7 @@ class WifiPage(QWidget):
 
     def _on_tab_changed(self, index: int) -> None:
         """При переходе на вкладку Networks — запускаем сканирование."""
-        self._clear_connect_password()
+        self._clear_connect_context()
         if index == 0 and self._container.settings_repo.get("wifi_auto_scan", True):
             self._scan_queued = True
             self.btn_scan.setEnabled(False)
