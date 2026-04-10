@@ -1,60 +1,67 @@
 # NetConneXion
 
-A modern Windows desktop application for managing network profiles and Wi-Fi connections, built with PySide6 / Qt6.
+Современное приложение для Windows для управления сетевыми профилями и Wi-Fi подключениями, построенное на PySide6 / Qt6.
 
-![Platform](https://img.shields.io/badge/platform-Windows-blue)
+![Platform](https://img.shields.io/badge/платформа-Windows-blue)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![UI](https://img.shields.io/badge/UI-PySide6%20%2F%20Qt6-green)
 
-## Features
+[English](README.en.md)
 
-### Network Profiles
-- Create, edit, and delete IP configuration profiles (IP address, subnet mask, gateway, DNS)
-- Apply any profile with a single click via `netsh`
-- Auto-switch profile by Wi-Fi SSID (connect to a network → profile activates automatically)
-- Import / export profiles as JSON
+---
 
-### Wi-Fi Manager
-- Scan and display nearby networks (SSID, signal, security, channel, band, speed)
-- Connect to saved or new networks; save passwords encrypted with Windows DPAPI
-- View and manage saved Wi-Fi profiles
+## Возможности
 
-### Network Tools
-| Tool | Description |
-|------|-------------|
-| Ping | ICMP ping with statistics |
-| DNS Lookup | Forward / reverse DNS resolution |
-| Port Scanner | Scan single ports, comma-separated lists, or ranges (e.g. `22,80,443,8000-8100`) |
-| Traceroute | Network path tracing |
-| Netstat | Live connections table (Protocol / Local / Remote / State / PID) |
-| ARP Table | ARP cache with IP → MAC mapping |
-| HTTP Check | HTTP/HTTPS response time and status |
-| SSL Certificate | TLS certificate details (subject, issuer, validity, SAN, cipher) |
-| Route Table | Windows routing table via PowerShell `Get-NetRoute` |
-| Wi-Fi Signal Monitor | Real-time dBm / quality graph, roaming event log |
+### Сетевые профили
+- Создание, редактирование и удаление профилей IP-конфигурации (IP-адрес, маска подсети, шлюз, DNS)
+- Применение любого профиля одним кликом через `netsh`
+- Импорт и экспорт профилей в формате JSON
 
-### History
-- Full log of profile applications with timestamps and before/after state
-- One-click rollback to any previous configuration
+### Wi-Fi менеджер
+- Сканирование и отображение доступных сетей (SSID, сигнал, защита, канал, диапазон, скорость)
+- Подключение к сохранённым и новым сетям; пароли хранятся зашифрованными через Windows DPAPI
+- Просмотр и управление сохранёнными Wi-Fi профилями
 
-### Settings
-- Light / dark theme
-- Language selection
-- Auto-apply profile on Wi-Fi SSID change
-- Startup with Windows (optional)
+### Сетевые инструменты
+| Инструмент | Описание |
+|------------|----------|
+| Ping | ICMP-пинг со статистикой |
+| DNS Lookup | Прямое / обратное разрешение DNS |
+| Сканер портов | Одиночные порты, список через запятую или диапазон (например `22,80,443,8000-8100`) |
+| Traceroute | Трассировка маршрута |
+| Netstat | Таблица активных соединений (Протокол / Локальный / Удалённый / Состояние / PID) |
+| ARP таблица | Кэш ARP с маппингом IP → MAC |
+| HTTP Check | Время ответа и статус HTTP/HTTPS |
+| SSL сертификат | Детали TLS-сертификата (субъект, издатель, срок действия, SAN, шифр) |
+| Таблица маршрутов | Таблица маршрутизации Windows через PowerShell `Get-NetRoute` |
+| Wi-Fi Signal Monitor | График уровня сигнала в реальном времени (dBm / качество), лог событий роуминга |
 
-## Requirements
+### История
+- Полный журнал применения профилей с временными метками и состоянием до/после
+- Откат к любой предыдущей конфигурации одним кликом
+
+### Настройки
+- Светлая / тёмная тема
+- Выбор языка (Русский / English)
+- Сворачивание в трей, запуск свёрнутым
+- Настройка автоматического сканирования Wi-Fi
+
+---
+
+## Требования
 
 - Windows 10 / 11
 - Python 3.10+
-- Administrator privileges (required for `netsh` commands)
+- Права администратора (требуются для команд `netsh`)
 
 ```
 PySide6 >= 6.5
-pywin32 >= 306   # Windows DPAPI password encryption (optional but recommended)
+pywin32 >= 306   # Шифрование паролей через Windows DPAPI (рекомендуется)
 ```
 
-## Installation
+---
+
+## Установка
 
 ```bash
 git clone https://github.com/mishamv/NetConneXion.git
@@ -63,43 +70,51 @@ python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 
-# Optional: enable DPAPI password encryption
+# Опционально: шифрование паролей через DPAPI
 python -m pip install pywin32
 python .venv\Scripts\pywin32_postinstall.py -install
 ```
 
-## Running
+---
+
+## Запуск
 
 ```bash
-# Run as administrator for full netsh access
+# Запуск от имени администратора для полного доступа к netsh
 python -m quickip
 ```
 
-Or right-click → "Run as administrator" in your file manager.
+Или через проводник: правая кнопка мыши → «Запуск от имени администратора».
 
-## Project Structure
+---
+
+## Структура проекта
 
 ```
 quickip/
-  app/              # Bootstrap, DI container, entry point
-  domain/           # Domain models and services
-  events/           # Event bus
-  features/         # Feature modules (profiles, wifi, tools, history, settings)
-  ui_qt/            # PySide6 UI layer
-    pages/          # Page widgets (profiles, wifi, tools, settings)
-    qss/            # Qt stylesheets (dark / light)
-    assets/         # Icons and SVG assets
-  core/             # Shared infrastructure (process runner, security vault, paths)
-data/               # User data (gitignored): profiles, settings, history, logs
+  app/              # Bootstrap, DI-контейнер, точка входа
+  domain/           # Доменные модели и сервисы
+  events/           # Шина событий
+  features/         # Модули функций (profiles, wifi, tools, history, settings)
+  ui_qt/            # Слой UI на PySide6
+    pages/          # Страницы (profiles, wifi, tools, settings)
+    qss/            # Стили Qt (dark / light)
+    assets/         # Иконки и SVG
+  core/             # Общая инфраструктура (process runner, security vault, paths)
+data/               # Пользовательские данные (в .gitignore): профили, настройки, история, логи
 ```
 
-## Security
+---
 
-- Wi-Fi passwords are encrypted at rest using **Windows DPAPI** (machine + user binding) via `pywin32`
-- Passwords are decrypted in-memory only at connection time and never written to disk in plaintext
-- If `pywin32` is unavailable the app falls back to connecting via existing Windows WLAN profiles
+## Безопасность
 
-## Building an Installer
+- Пароли Wi-Fi хранятся зашифрованными с помощью **Windows DPAPI** (привязка к машине и пользователю) через `pywin32`
+- Пароли расшифровываются только в оперативной памяти в момент подключения и никогда не записываются на диск в открытом виде
+- Если `pywin32` недоступен, приложение использует существующие профили WLAN из Windows
+
+---
+
+## Сборка
 
 ```bash
 pip install pyinstaller
@@ -110,5 +125,4 @@ pyinstaller --noconfirm --windowed --onefile ^
   -m quickip
 ```
 
-Then run Inno Setup on the generated spec for a proper Windows installer.
-
+После сборки можно запустить Inno Setup на сгенерированном spec-файле для создания установщика Windows.
