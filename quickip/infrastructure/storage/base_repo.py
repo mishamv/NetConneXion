@@ -52,15 +52,26 @@ class BaseJsonRepository:
     def _save_raw(self, data: List[dict]) -> None:
         """Atomically write *data* as a JSON array.
 
-        Writes to ``<file>.tmp`` then renames to the target path so that
-        a crash mid-write never corrupts the existing file.
+        Sequence:
+          1. Write to ``<file>.tmp``
+          2. Copy existing file to ``<file>.bak`` (best-effort)
+          3. Rename tmp → target (atomic on same filesystem)
+        A crash at any step leaves either the original or the .bak intact.
         """
         tmp = self._path.with_suffix(".tmp")
+        bak = self._path.with_suffix(".bak")
         try:
             tmp.write_text(
                 json.dumps(data, ensure_ascii=False, indent=2),
                 encoding="utf-8",
             )
+            # Backup existing file before replacing (best-effort, never raises)
+            if self._path.exists():
+                try:
+                    import shutil
+                    shutil.copy2(self._path, bak)
+                except Exception as bak_exc:
+                    logger.warning(f"Could not create backup {bak}: {bak_exc}")
             os.replace(tmp, self._path)
         except Exception as exc:
             logger.error(f"Failed to save {self._path}: {exc}")

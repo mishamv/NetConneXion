@@ -267,6 +267,55 @@ class WifiPresenter:
     def save_options(self, opts: WifiOptions) -> None:
         self._options_repo.save(opts)
 
+    # ── Service façade (keeps UI away from _service/_profile_repo) ────
+
+    def scan_networks(self) -> List[WifiNetworkSnapshot]:
+        return self._service.scan_networks()
+
+    def get_interface_status(self) -> dict:
+        return self._service.get_interface_status()
+
+    def connect_with_ssid(
+        self, ssid: str, password: str,
+        auth: str = "WPA2-Personal", cipher: str = "AES",
+    ):
+        """Connect using a plaintext password (no saved profile)."""
+        return self._service.connect_with_password(ssid, password, auth=auth, cipher=cipher)
+
+    def connect_with_profile(self, ssid: str, profile):
+        return self._service.connect(ssid, profile)
+
+    def connect_open_network(self, ssid: str):
+        return self._service.connect_open(ssid)
+
+    def disconnect_network(self):
+        return self._service.disconnect()
+
+    def get_wifi_interface_config(self, interface_name: str):
+        """Run netsh to read current IP config for the Wi-Fi interface."""
+        return self._service._runner.run(
+            ["netsh", "interface", "ipv4", "show", "config",
+             f"name={interface_name}"],
+            timeout=8,
+        )
+
+    def get_wifi_interface_name(self) -> str:
+        return self._service._get_wifi_interface()
+
+    def delete_netsh_profile_for_ssid(
+        self, ssid: str, callback=None
+    ) -> None:
+        self.delete_system_profile(ssid, callback=callback)
+
+    def find_wifi_profile_by_ssid(self, ssid: str):
+        return self._profile_repo.find_by_ssid(ssid)
+
+    def get_wifi_profile(self, profile_id: str):
+        return self._profile_repo.get(profile_id)
+
+    def save_wifi_profile_obj(self, profile) -> None:
+        self._profile_repo.save(profile)
+
     # ── Helpers ───────────────────────────────────────────────────
 
     @property

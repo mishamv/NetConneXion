@@ -459,7 +459,7 @@ class WifiPage(QWidget):
 
     def _scan_worker(self) -> None:
         try:
-            nets = self._presenter._service.scan_networks()
+            nets = self._presenter.scan_networks()
             import logging
             logging.getLogger(__name__).info(f"Scan complete: {len(nets)} networks found")
             self._bridge.scan_done.emit(nets)
@@ -563,7 +563,7 @@ class WifiPage(QWidget):
 
     def _status_worker(self) -> None:
         try:
-            s = self._presenter._service.get_interface_status()
+            s = self._presenter.get_interface_status()
             self._bridge.status_updated.emit(s)
         except Exception:
             self._bridge.status_updated.emit({})
@@ -607,10 +607,8 @@ class WifiPage(QWidget):
         try:
             import re as _re, logging as _log
             _logger = _log.getLogger(__name__)
-            result = self._presenter._service._runner.run(
-                ["netsh", "interface", "ipv4", "show", "config",
-                 f"name={self._presenter._service._get_wifi_interface()}"],
-                timeout=8,
+            result = self._presenter.get_wifi_interface_config(
+                self._presenter.get_wifi_interface_name()
             )
             if not result.stdout:
                 return
@@ -725,7 +723,7 @@ class WifiPage(QWidget):
             return
 
         # Проверяем есть ли сохранённый профиль
-        profile = self._presenter._profile_repo.find_by_ssid(ssid)
+        profile = self._presenter.find_wifi_profile_by_ssid(ssid)
         # Определяем тип сети из таблицы
         enc_item = self._net_table.item(row, 3)
         enc = enc_item.text() if enc_item else ""
@@ -795,17 +793,14 @@ class WifiPage(QWidget):
             import logging
             _log = logging.getLogger(__name__)
             _log.info(f"Connecting to SSID: {ssid!r}")
-            profile = self._presenter._profile_repo.find_by_ssid(ssid)
+            profile = self._presenter.find_wifi_profile_by_ssid(ssid)
             _log.info(f"Saved profile found: {profile is not None}")
             if profile:
-                result = self._presenter._service.connect(ssid, profile)
+                result = self._presenter.connect_with_profile(ssid, profile)
             elif password:
-                # Передаём plaintext пароль напрямую в сервис — минуем vault
-                result = self._presenter._service.connect_with_password(
-                    ssid, password, auth="WPA2-Personal", cipher="AES"
-                )
+                result = self._presenter.connect_with_ssid(ssid, password)
             else:
-                result = self._presenter._service.connect_open(ssid)
+                result = self._presenter.connect_open_network(ssid)
             _log.info(f"Connect result: success={result.success} msg={result.message!r}")
             self._bridge.connect_done.emit(result.success, result.message)
         except Exception as e:
@@ -855,7 +850,7 @@ class WifiPage(QWidget):
 
     def _disconnect_worker(self) -> None:
         try:
-            r = self._presenter._service.disconnect()
+            r = self._presenter.disconnect_network()
             self._bridge.disconnect_done.emit(r.success, r.message)
         except Exception as e:
             self._bridge.disconnect_done.emit(False, str(e))
@@ -889,7 +884,7 @@ class WifiPage(QWidget):
             return
         pid = self._profile_list.item(row, 0).data(Qt.ItemDataRole.UserRole)  # type: ignore[union-attr]
         self._selected_profile_id = pid
-        p = self._presenter._profile_repo.get(pid)
+        p = self._presenter.get_wifi_profile(pid)
         if not p:
             return
         self._ed_ssid.setText(p.ssid)
@@ -947,7 +942,7 @@ class WifiPage(QWidget):
                 import base64
                 key_protected = "b64:" + base64.b64encode(password.encode()).decode()
         elif self._selected_profile_id:
-            existing = self._presenter._profile_repo.get(self._selected_profile_id)
+            existing = self._presenter.get_wifi_profile(self._selected_profile_id)
             key_protected = existing.key_protected if existing else ""
 
         from quickip.features.wifi.repository import WifiProfile
@@ -962,7 +957,7 @@ class WifiPage(QWidget):
             connect_hidden=self._ed_hidden.isChecked(),
             is_adhoc=False,
         )
-        self._presenter._profile_repo.save(p)
+        self._presenter.save_wifi_profile_obj(p)
         self._selected_profile_id = p.id
         self._show_feedback(self._tr("feedback_profile_saved"))
         self._load_profiles()
@@ -1011,7 +1006,7 @@ class WifiPage(QWidget):
         """Предлагает сохранить профиль после успешного подключения с паролем."""
         try:
             ssid = self._last_connect_ssid
-            if not ssid or self._presenter._profile_repo.find_by_ssid(ssid):
+            if not ssid or self._presenter.find_wifi_profile_by_ssid(ssid):
                 return
             msg = QMessageBox(self)
             msg.setWindowTitle(self._tr("dlg_save_profile_title"))
@@ -1063,7 +1058,7 @@ class WifiPage(QWidget):
         act_copy_mac  = menu.addAction(self._tr("ctx_copy_mac"))
         menu.addSeparator()
         act_forget = menu.addAction(self._tr("ctx_forget"))
-        act_forget.setEnabled(bool(self._presenter._profile_repo.find_by_ssid(ssid)))
+        act_forget.setEnabled(bool(self._presenter.find_wifi_profile_by_ssid(ssid)))
 
         action = menu.exec(self._net_table.viewport().mapToGlobal(pos))
         if action == act_connect:
@@ -1085,14 +1080,13 @@ class WifiPage(QWidget):
         )
         if reply != QMessageBox.StandardButton.Yes:
             return
-        profile = self._presenter._profile_repo.find_by_ssid(ssid)
+        profile = self._presenter.find_wifi_profile_by_ssid(ssid)
         if profile:
             self._presenter.delete_profile(profile.id)
         # Удаляем из Windows netsh
         threading.Thread(
-            target=lambda: self._presenter._service._runner.run(
-                ["netsh", "wlan", "delete", "profile", f"name={ssid}"], timeout=10
-            ), daemon=True
+            target=lambda: self._presenter.delete_netsh_profile_for_ssid(ssid),
+            daemon=True
         ).start()
         self._load_profiles()
         self._net_feedback.setText(f"Deleted: {ssid}")

@@ -1,5 +1,6 @@
 """Safe process execution with timeout and error handling."""
 
+import re
 import subprocess
 import logging
 import platform
@@ -9,6 +10,33 @@ from quickip.domain.models import CommandResult
 
 
 logger = logging.getLogger(__name__)
+
+# Аргументы, содержащие эти ключевые слова, маскируются в логах
+_SENSITIVE_ARG_PATTERNS = re.compile(
+    r"(password|passwd|pwd|secret|token|key|credential|auth)",
+    re.IGNORECASE,
+)
+
+
+def _redact_command(parts: List[str]) -> str:
+    """Возвращает строку команды с маскировкой чувствительных аргументов."""
+    result = []
+    redact_next = False
+    for part in parts:
+        if redact_next:
+            result.append("***")
+            redact_next = False
+        elif _SENSITIVE_ARG_PATTERNS.search(part):
+            # Если аргумент содержит чувствительное слово и имеет вид --key=value
+            if "=" in part:
+                key, _ = part.split("=", 1)
+                result.append(f"{key}=***")
+            else:
+                result.append(part)
+                redact_next = True  # следующий аргумент — значение
+        else:
+            result.append(part)
+    return " ".join(result)
 
 
 class ProcessRunner:
@@ -97,7 +125,7 @@ class ProcessRunner:
             )
 
         start_time = time.time()
-        command_str = ' '.join(command) if isinstance(command, list) else command
+        command_str = _redact_command(command) if isinstance(command, list) else command
 
         logger.debug(f"Executing command: {command_str}")
 

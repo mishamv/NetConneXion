@@ -1004,6 +1004,10 @@ class _HttpCheckPanel(_ToolPanel):
 
             ctx = ssl.create_default_context()  # TLS verification enabled by default
 
+            _CONNECT_TIMEOUT = 8   # seconds to establish connection
+            _READ_TIMEOUT    = 10  # seconds to read response headers
+            _MAX_BODY_BYTES  = 4 * 1024  # read at most 4 KB of body
+
             self._bridge.output.emit(f"  URL:      {url}", False)
             self._bridge.output.emit("  TLS verify: ON", False)
 
@@ -1013,7 +1017,10 @@ class _HttpCheckPanel(_ToolPanel):
                 req = urllib.request.Request(current, headers={"User-Agent": "NetConneXion/1.0"})
                 t0 = time.monotonic()
                 try:
-                    with urllib.request.urlopen(req, timeout=10, context=ctx) as resp:
+                    with urllib.request.urlopen(
+                        req, timeout=_READ_TIMEOUT, context=ctx
+                    ) as resp:
+                        resp.read(_MAX_BODY_BYTES)  # drain limited body to complete handshake
                         elapsed = int((time.monotonic() - t0) * 1000)
                         status = resp.status
                         final_url = resp.url
