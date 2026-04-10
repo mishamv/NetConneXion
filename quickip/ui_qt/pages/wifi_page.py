@@ -823,7 +823,10 @@ class WifiPage(QWidget):
             # Предлагаем сохранить профиль если его нет
             if self._last_connect_ssid and self._last_connect_password:
                 QTimer.singleShot(1000, self._offer_save_profile)
+            else:
+                self._last_connect_password = ""
         else:
+            self._last_connect_password = ""
             # Показываем диалог с ошибкой
             from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QHBoxLayout, QPushButton
             dlg = QDialog(self)
@@ -1004,6 +1007,7 @@ class WifiPage(QWidget):
         """Предлагает сохранить профиль после успешного подключения с паролем."""
         ssid = self._last_connect_ssid
         if not ssid or self._presenter._profile_repo.find_by_ssid(ssid):
+            self._last_connect_password = ""
             return
         msg = QMessageBox(self)
         msg.setWindowTitle(self._tr("dlg_save_profile_title"))
