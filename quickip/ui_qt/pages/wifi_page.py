@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import threading
-from typing import List, Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 from PySide6.QtCore import Qt, QTimer, Signal, QObject, QRectF, QPoint, QSize
-from PySide6.QtGui import QColor, QFont, QPainter, QPen, QCursor
+from PySide6.QtGui import QColor, QFont, QPainter, QPen
 from PySide6.QtWidgets import (
     QAbstractItemView, QCheckBox, QComboBox, QFrame, QGridLayout, QHBoxLayout,
     QHeaderView, QLabel, QLineEdit, QMessageBox, QPushButton, QScrollArea, QSizePolicy,
-    QApplication, QMenu, QStyledItemDelegate, QStyleOptionViewItem, QTabWidget,
+    QApplication, QMenu, QStyledItemDelegate, QTabWidget,
     QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget,
 )
 

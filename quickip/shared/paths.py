@@ -2,8 +2,6 @@
 
 import sys
 from pathlib import Path
-from typing import Optional
-
 
 def get_app_data_dir() -> Path:
     """

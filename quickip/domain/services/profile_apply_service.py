@@ -3,7 +3,6 @@
 import logging
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from quickip.domain.models import IPMode, Profile, ApplyResult, ProfileHistoryEntry
 from quickip.domain.interfaces import ProfileRepository, HistoryRepository

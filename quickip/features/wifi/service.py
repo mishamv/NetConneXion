@@ -10,7 +10,7 @@ import logging
 import os
 import tempfile
 from dataclasses import dataclass
-from typing import List, Optional, TYPE_CHECKING
+from typing import List, TYPE_CHECKING
 
 from quickip.features.wifi.netsh_parser import (
     WifiNetworkSnapshot,

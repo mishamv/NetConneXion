@@ -2,7 +2,6 @@
 
 import logging
 import platform
-import re
 from typing import Optional
 
 from quickip.domain.models import CommandResult

@@ -7,7 +7,7 @@ All frequencies are calculated from channel numbers per IEEE 802.11 spec.
 from __future__ import annotations
 
 import re
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from quickip.features.wifi.repository import WifiNetworkSnapshot
 

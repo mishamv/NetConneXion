@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QObject, QTimer, Signal, QSize
+from PySide6.QtCore import Qt, QObject, Signal, QSize
 from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPen, QTextCharFormat
 from PySide6.QtWidgets import (
     QAbstractItemView, QComboBox, QFrame, QGridLayout, QHBoxLayout, QHeaderView, QLabel,

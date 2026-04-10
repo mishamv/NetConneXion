@@ -24,7 +24,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QEvent, QSize
+from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QColor, QIcon, QPalette, QPixmap
 from PySide6.QtWidgets import (
     QApplication, QFrame, QHBoxLayout, QLabel, QMainWindow,
@@ -543,7 +543,6 @@ def _relaunch_as_admin() -> None:
     """Перезапускает процесс с правами администратора через UAC."""
     import ctypes
     import sys
-    from pathlib import Path
 
     # sys.executable = путь к python.exe в .venv
     # Передаём явный модульный запуск с правильным рабочим каталогом

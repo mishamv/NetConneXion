@@ -52,7 +52,6 @@ class ProcessRunner:
 
         # Detect UTF-16 by zero byte patterns
         if len(raw_bytes) > 4:
-            even_zeros = sum(1 for b in raw_bytes[::2] if b == 0)
             odd_zeros = sum(1 for b in raw_bytes[1::2] if b == 0)
             half = max(1, len(raw_bytes) // 2)
 
@@ -126,7 +125,7 @@ class ProcessRunner:
                 command=command_str
             )
 
-        except subprocess.TimeoutExpired as e:
+        except subprocess.TimeoutExpired:
             duration_ms = int((time.time() - start_time) * 1000)
             logger.error(f"Command timed out after {timeout}s: {command_str}")
             

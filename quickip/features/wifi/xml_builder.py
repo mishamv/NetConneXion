@@ -12,7 +12,6 @@ NEVER log or persist the decrypted password.
 from __future__ import annotations
 
 import xml.etree.ElementTree as ET
-from typing import Optional
 
 _NS = "http://www.microsoft.com/networking/WLAN/profile/v1"
 
