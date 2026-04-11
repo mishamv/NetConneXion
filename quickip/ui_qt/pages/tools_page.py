@@ -383,7 +383,7 @@ class _DnsPanel(_ToolPanel):
                 lines.append(line)
                 self._bridge.output.emit(line, False)
             self._proc.wait()
-            ok = any("Address" in l or "Name" in l or "\u0410\u0434\u0440\u0435\u0441" in l for l in lines)
+            ok = any("Address" in ln or "Name" in ln or "\u0410\u0434\u0440\u0435\u0441" in ln for ln in lines)
             self._bridge.finished.emit(ok, "Готово" if ok else "Записи не найдены")
         except Exception as e:
             self._bridge.finished.emit(False, str(e))
@@ -1090,7 +1090,9 @@ class _SslPanel(_ToolPanel):
         threading.Thread(target=self._worker, args=(host,), daemon=True).start()
 
     def _worker(self, host: str) -> None:
-        import ssl, socket, datetime
+        import ssl
+        import socket
+        import datetime
         try:
             if ":" in host:
                 hostname, port_s = host.rsplit(":", 1)
@@ -1460,7 +1462,8 @@ class _SignalMonitorPanel(QWidget):
         root.setContentsMargins(16, 14, 16, 14)
         root.setSpacing(10)
 
-        _hdr = QLabel("Wi-Fi Signal Monitor"); _hdr.setObjectName("ToolPanelTitle")
+        _hdr = QLabel("Wi-Fi Signal Monitor")
+        _hdr.setObjectName("ToolPanelTitle")
         root.addWidget(_hdr)
 
         # ── Кнопки ───────────────────────────────────────────────────
@@ -1507,7 +1510,8 @@ class _SignalMonitorPanel(QWidget):
         root.addWidget(self._graph)
 
         # ── Лог роуминга ──────────────────────────────────────────────
-        log_lbl = QLabel("Roaming Log"); log_lbl.setObjectName("ToolPanelTitle")
+        log_lbl = QLabel("Roaming Log")
+        log_lbl.setObjectName("ToolPanelTitle")
         log_lbl.setStyleSheet("font-size: 12px;")
         root.addWidget(log_lbl)
         self._log = QTextEdit()
@@ -1517,7 +1521,8 @@ class _SignalMonitorPanel(QWidget):
         self._log.setMaximumHeight(160)
         root.addWidget(self._log)
 
-        self._status = QLabel(""); self._status.setObjectName("ToolStatus")
+        self._status = QLabel("")
+        self._status.setObjectName("ToolStatus")
         root.addWidget(self._status)
 
     # ── Вспомогательный метод карточки ───────────────────────────────

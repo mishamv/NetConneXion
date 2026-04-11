@@ -258,7 +258,8 @@ class QtMainWindow(QMainWindow):
             from quickip.ui_qt.pages.wifi_page import WifiPage
             self.wifi_page = WifiPage(self.container)
         except Exception:
-            import logging, traceback
+            import logging
+            import traceback
             logging.getLogger(__name__).error(
                 "WifiPage init failed:\n%s", traceback.format_exc()
             )

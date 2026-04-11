@@ -357,9 +357,9 @@ class WifiPage(QWidget):
         grid.setColumnStretch(1, 1)
 
         def _lbl(text):
-            l = QLabel(text)
-            l.setObjectName("FieldLabel")
-            return l
+            lbl = QLabel(text)
+            lbl.setObjectName("FieldLabel")
+            return lbl
 
         self._ed_ssid = QLineEdit()
         self._ed_ssid.setObjectName("EditorField")
@@ -464,7 +464,8 @@ class WifiPage(QWidget):
             logging.getLogger(__name__).info(f"Scan complete: {len(nets)} networks found")
             self._bridge.scan_done.emit(nets)
         except Exception:
-            import traceback, logging
+            import traceback
+            import logging
             logging.getLogger(__name__).error(f"Scan error: {traceback.format_exc()}")
             self._bridge.scan_done.emit([])
 
@@ -605,7 +606,8 @@ class WifiPage(QWidget):
     def _fetch_ip_details(self) -> None:
         """Получает IP, шлюз, DNS для текущего Wi-Fi адаптера."""
         try:
-            import re as _re, logging as _log
+            import re as _re
+            import logging as _log
             _logger = _log.getLogger(__name__)
             result = self._presenter.get_wifi_interface_config(
                 self._presenter.get_wifi_interface_name()
@@ -654,13 +656,17 @@ class WifiPage(QWidget):
             _logger.info("Parsed fields: %s", fields)
             if fields:
                 parts = []
-                if "ip"  in fields: parts.append(f"IP: {fields['ip']}")
-                if "gw"  in fields: parts.append(f"GW: {fields['gw']}")
-                if "dns" in fields: parts.append(f"DNS: {fields['dns']}")
+                if "ip" in fields:
+                    parts.append(f"IP: {fields['ip']}")
+                if "gw" in fields:
+                    parts.append(f"GW: {fields['gw']}")
+                if "dns" in fields:
+                    parts.append(f"DNS: {fields['dns']}")
                 detail_text = "  ·  ".join(parts)
                 self._bridge.status_updated.emit({"_details": detail_text})
         except Exception:
-            import traceback, logging
+            import traceback
+            import logging
             logging.getLogger(__name__).error("_fetch_ip_details error: %s", traceback.format_exc())
 
     def _highlight_connected(self, ssid: str) -> None:
@@ -804,7 +810,8 @@ class WifiPage(QWidget):
             _log.info(f"Connect result: success={result.success} msg={result.message!r}")
             self._bridge.connect_done.emit(result.success, result.message)
         except Exception as e:
-            import traceback, logging
+            import traceback
+            import logging
             logging.getLogger(__name__).error(f"Connect error: {traceback.format_exc()}")
             self._bridge.connect_done.emit(False, str(e))
 
