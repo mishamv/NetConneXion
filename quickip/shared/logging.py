@@ -3,10 +3,36 @@
 import logging
 import logging.handlers
 import json
+import os
 import sys
 from pathlib import Path
 from datetime import datetime
 from typing import Any, Dict
+
+
+class _WinSafeTimedRotatingFileHandler(logging.handlers.TimedRotatingFileHandler):
+    """TimedRotatingFileHandler that works on Windows.
+
+    On Windows, os.rename() fails with WinError 32 if the file is still open
+    by the handler itself. This subclass closes the stream before renaming and
+    reopens it afterwards, matching the approach used in CPython issue #82821.
+    """
+
+    def doRollover(self) -> None:
+        if self.stream:
+            self.stream.close()
+            self.stream = None  # type: ignore[assignment]
+        try:
+            super().doRollover()
+        finally:
+            if self.stream is None:
+                self.stream = self._open()
+
+    def rotate(self, source: str, dest: str) -> None:
+        """Replace dest if it already exists (Windows won't overwrite via rename)."""
+        if os.path.exists(dest):
+            os.remove(dest)
+        os.rename(source, dest)
 
 
 class StructuredFormatter(logging.Formatter):
@@ -80,7 +106,7 @@ def setup_logging(
     # File handler — ротация по дням, максимум 7 файлов
     if enable_file and log_dir:
         log_file = log_dir / "netconnexion.log"
-        file_handler = logging.handlers.TimedRotatingFileHandler(
+        file_handler = _WinSafeTimedRotatingFileHandler(
             log_file,
             when="midnight",      # ротация в полночь
             interval=1,
