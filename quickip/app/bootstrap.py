@@ -71,6 +71,9 @@ class ServiceContainer:
         except ImportError:
             self.vault_available = False
 
+        from quickip.core.security.keyring_vault import is_available as _kr_available
+        self.keyring_available: bool = _kr_available()
+
         logger.debug("ServiceContainer initialised")
 
     def get_adapters(self):

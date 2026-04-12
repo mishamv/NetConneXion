@@ -283,7 +283,49 @@ class WifiPresenter:
         return self._service.connect_with_password(ssid, password, auth=auth, cipher=cipher)
 
     def connect_with_profile(self, ssid: str, profile):
+        if profile.key_protected.startswith("b64:"):
+            profile = self._migrate_b64_profile(profile)
         return self._service.connect(ssid, profile)
+
+    def _migrate_b64_profile(self, profile: WifiProfile) -> WifiProfile:
+        """Upgrade a legacy b64: profile to DPAPI or keyring in-place.
+
+        Decodes the weak base64 password and re-encrypts it using the best
+        available vault. Updates the repo immediately so subsequent connects
+        use the secure storage. Returns the (possibly updated) profile.
+        """
+        import base64 as _b64
+        try:
+            password = _b64.b64decode(profile.key_protected[4:]).decode()
+        except Exception as exc:
+            logger.warning("Cannot decode b64: for SSID=%r: %s", profile.ssid, exc)
+            return profile
+
+        new_key: Optional[str] = None
+        if self._container.vault_available:
+            try:
+                from quickip.core.security.vault import protect_text
+                new_key = protect_text(password)
+                logger.info("Migrated b64: → dpapi for SSID=%r", profile.ssid)
+            except Exception as exc:
+                logger.warning("DPAPI migration failed for SSID=%r: %s", profile.ssid, exc)
+
+        if new_key is None and self._container.keyring_available:
+            try:
+                from quickip.core.security.keyring_vault import protect_text as kr_protect
+                new_key = kr_protect(profile.ssid, password)
+                logger.info("Migrated b64: → keyring for SSID=%r", profile.ssid)
+            except Exception as exc:
+                logger.warning("Keyring migration failed for SSID=%r: %s", profile.ssid, exc)
+
+        if new_key is not None:
+            profile.key_protected = new_key
+            self._profile_repo.save(profile)
+        else:
+            logger.warning(
+                "Cannot migrate b64: profile for SSID=%r — no vault/keyring available", profile.ssid
+            )
+        return profile
 
     def connect_open_network(self, ssid: str):
         return self._service.connect_open(ssid)
@@ -321,6 +363,10 @@ class WifiPresenter:
     @property
     def vault_available(self) -> bool:
         return self._container.vault_available
+
+    @property
+    def keyring_available(self) -> bool:
+        return self._container.keyring_available
 
     def get_auth_options(self) -> List[str]:
         return list(AUTH_OPTIONS)

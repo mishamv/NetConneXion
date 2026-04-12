@@ -4,8 +4,11 @@ PySide6>=6.5
 # System/typing
 typing_extensions>=4.0
 
-# Windows DPAPI (password encryption)
+# Windows DPAPI (password encryption) — primary vault
 pywin32>=306
+
+# System keyring (Windows Credential Manager) — fallback vault when pywin32 unavailable
+keyring>=25.0
 
 # Development / testing
 pytest>=9.0

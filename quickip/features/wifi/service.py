@@ -91,12 +91,23 @@ class WifiService:
         """
         password = ""
         if profile.key_protected:
-            if profile.key_protected.startswith("b64:"):
+            if profile.key_protected == "kr:":
+                from quickip.core.security.keyring_vault import unprotect_text as kr_unprotect
+                password = kr_unprotect(ssid)
+                logger.info("Secret source: keyring for SSID=%r", ssid)
+            elif profile.key_protected.startswith("b64:"):
+                # Legacy weak encoding — presenter should have migrated this already.
+                # Log a warning and use it as a last resort so existing profiles
+                # don't break before the user re-saves them.
                 import base64
+                logger.warning(
+                    "SSID=%r uses legacy b64 encoding — re-save the profile to upgrade", ssid
+                )
                 password = base64.b64decode(profile.key_protected[4:]).decode()
             elif self._vault_available:
                 from quickip.core.security.vault import unprotect_text
                 password = unprotect_text(profile.key_protected)
+                logger.info("Secret source: dpapi for SSID=%r", ssid)
             else:
                 logger.warning("Vault unavailable for %s — trying Windows profile", ssid)
 

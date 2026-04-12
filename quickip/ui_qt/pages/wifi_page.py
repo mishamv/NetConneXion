@@ -934,20 +934,20 @@ class WifiPage(QWidget):
                 except Exception as e:
                     self._show_feedback(f"Encryption error: {e}", error=True)
                     return
-            else:
-                # Vault недоступен — сохраняем пароль в base64 (не зашифровано)
-                # Предупреждаем пользователя через диалог
-                from PySide6.QtWidgets import QMessageBox
-                msg = QMessageBox(self)
-                msg.setWindowTitle(self._tr("dlg_security_warning_title"))
-                msg.setIcon(QMessageBox.Icon.Warning)
-                msg.setText(self._tr("dlg_security_warning_text"))
-                msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-                msg.setDefaultButton(QMessageBox.StandardButton.No)
-                if msg.exec() != QMessageBox.StandardButton.Yes:
+            elif self._presenter.keyring_available:
+                try:
+                    from quickip.core.security.keyring_vault import protect_text as kr_protect
+                    key_protected = kr_protect(ssid, password)
+                except Exception as e:
+                    self._show_feedback(f"Keyring error: {e}", error=True)
                     return
-                import base64
-                key_protected = "b64:" + base64.b64encode(password.encode()).decode()
+            else:
+                self._show_feedback(
+                    "Невозможно сохранить пароль: DPAPI и keyring недоступны. "
+                    "Установите pywin32 или keyring.",
+                    error=True,
+                )
+                return
         elif self._selected_profile_id:
             existing = self._presenter.get_wifi_profile(self._selected_profile_id)
             key_protected = existing.key_protected if existing else ""
