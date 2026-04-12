@@ -58,7 +58,6 @@ def check_lint() -> list[str]:
     errors: list[str] = []
     r = _run([
         PYTHON, "-m", "ruff", "check", EXPECTED_PACKAGE,
-        "--select", "F,E4,E7",
         "--output-format=concise",
     ])
     if r.returncode != 0:

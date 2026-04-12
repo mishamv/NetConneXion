@@ -26,7 +26,7 @@ jobs:
 
       - name: Lint (F, E4, E7)
         run: |
-          python -m ruff check quickip --select F,E4,E7 --output-format=concise
+          python -m ruff check quickip --output-format=concise
 
       - name: Tests
         run: |
