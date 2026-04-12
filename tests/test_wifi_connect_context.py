@@ -10,8 +10,6 @@ Scenarios:
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch, call
-
 
 # ---------------------------------------------------------------------------
 # Minimal stub so we can import/test without PySide6 present
