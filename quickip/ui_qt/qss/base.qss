@@ -839,6 +839,41 @@ QTreeWidget#ToolTree QHeaderView::section {
     border-bottom: 1px solid #C7D2FE;
 }
 
+QTableWidget#NetstatTable {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    outline: none;
+    gridline-color: #E2E8F0;
+}
+QTableWidget#NetstatTable::item {
+    padding: 3px 6px;
+    color: #1E293B;
+    border: none;
+}
+QTableWidget#NetstatTable::item:hover {
+    background: #F1F5F9;
+}
+QTableWidget#NetstatTable::item:selected,
+QTableWidget#NetstatTable::item:selected:active,
+QTableWidget#NetstatTable::item:selected:!active {
+    background: #6366F1;
+    color: #FFFFFF;
+}
+QTableWidget#NetstatTable QHeaderView::section {
+    background: #EEF2FF;
+    color: #4F46E5;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 6px;
+    border: none;
+    border-bottom: 1px solid #C7D2FE;
+    border-right: 1px solid #C7D2FE;
+}
+QTableWidget#NetstatTable QHeaderView::section:last {
+    border-right: none;
+}
+
 QTreeWidget#IpconfigTree {
     background: #FFFFFF;
     border: 1px solid #E2E8F0;

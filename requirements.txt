@@ -10,6 +10,9 @@ pywin32>=306
 # System keyring (Windows Credential Manager) — fallback vault when pywin32 unavailable
 keyring>=25.0
 
+# Excel read/write (IP Batch Check tool)
+openpyxl>=3.1
+
 # Development / testing
 pytest>=9.0
 

@@ -48,22 +48,11 @@ class WifiService:
             timeout=15,
         )
         if result.stdout:
-            # Логируем строки со скоростями для диагностики
-            import re as _re
-            rate_lines = [ln for ln in result.stdout.splitlines()
-                         if _re.search(r"скорост|rates", ln, _re.IGNORECASE)]
-            if rate_lines:
-                logger.info("Rate lines sample: %s", rate_lines[:6])
-            else:
-                logger.warning("No rate lines found in netsh output!")
-            import tempfile
-            import os
-            tmp = os.path.join(tempfile.gettempdir(), "netsh_wifi_debug.txt")
-            try:
-                with open(tmp, "w", encoding="utf-8") as f:
-                    f.write(result.stdout)
-            except Exception:
-                pass
+            if logger.isEnabledFor(logging.DEBUG):
+                import re as _re
+                rate_lines = [ln for ln in result.stdout.splitlines()
+                              if _re.search(r"скорост|rates", ln, _re.IGNORECASE)]
+                logger.debug("Rate lines sample: %s", rate_lines[:6])
         return parse_networks(result.stdout) if result.stdout else []
 
     def get_interface_status(self) -> dict:

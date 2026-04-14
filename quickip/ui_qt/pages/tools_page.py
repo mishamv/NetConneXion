@@ -3,21 +3,24 @@
 from __future__ import annotations
 
 import base64
+import csv
 import json
 import re
 import socket
 import subprocess
 import threading
-from typing import TYPE_CHECKING
-
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt, QObject, Signal, QSize
 from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPen, QTextCharFormat
 from PySide6.QtWidgets import (
-    QAbstractItemView, QComboBox, QFrame, QGridLayout, QHBoxLayout, QHeaderView, QLabel,
-    QLineEdit, QMessageBox, QPushButton, QSizePolicy, QSpinBox, QStackedWidget, QStyleFactory,
-    QTreeWidget, QTreeWidgetItem, QTextEdit, QVBoxLayout, QWidget,
+    QAbstractItemView, QApplication, QComboBox, QFileDialog, QFrame, QGridLayout,
+    QHBoxLayout, QHeaderView, QLabel, QLineEdit, QMenu, QMessageBox, QProgressBar,
+    QPushButton, QSizePolicy, QSpinBox, QStackedWidget, QStyleFactory,
+    QTableWidget, QTableWidgetItem, QTreeWidget, QTreeWidgetItem, QTextEdit,
+    QVBoxLayout, QWidget,
 )
 
 if TYPE_CHECKING:
@@ -49,6 +52,119 @@ QTreeWidget::item:selected:!active {
     color: #FFFFFF;
 }
 """
+
+
+class _CopyableTree(QTreeWidget):
+    """QTreeWidget with Ctrl+C copy and right-click context menu."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+
+    def keyPressEvent(self, event) -> None:
+        mod = event.modifiers()
+        key = event.key()
+        if key == Qt.Key.Key_C and mod == Qt.KeyboardModifier.ControlModifier:
+            self._copy_selection()
+        elif key == Qt.Key.Key_A and mod == Qt.KeyboardModifier.ControlModifier:
+            self.selectAll()
+        else:
+            super().keyPressEvent(event)
+
+    def contextMenuEvent(self, event) -> None:
+        item = self.itemAt(event.pos())
+        if not item:
+            return
+        menu = QMenu(self)
+        col = self.currentColumn()
+        act_cell = menu.addAction("Копировать ячейку")
+        act_row  = menu.addAction("Копировать строку")
+        act_sel  = menu.addAction("Копировать выделенное")
+        act_all  = menu.addAction("Копировать всё")
+        chosen = menu.exec(event.globalPos())
+        if chosen == act_cell:
+            QApplication.clipboard().setText(item.text(col if col >= 0 else 0))
+        elif chosen == act_row:
+            texts = [item.text(c) for c in range(self.columnCount())]
+            QApplication.clipboard().setText("\t".join(texts))
+        elif chosen == act_sel:
+            self._copy_selection()
+        elif chosen == act_all:
+            self.selectAll()
+            self._copy_selection()
+
+    def _copy_selection(self) -> None:
+        items = self.selectedItems()
+        if not items:
+            return
+        # selectedItems() returns all selected cells — group by row
+        seen: dict[int, QTreeWidgetItem] = {}
+        for it in items:
+            idx = self.indexOfTopLevelItem(it)
+            if idx >= 0:
+                seen[idx] = it
+        ordered = [seen[k] for k in sorted(seen)]
+        lines = []
+        for it in ordered:
+            lines.append("\t".join(it.text(c) for c in range(self.columnCount())))
+        QApplication.clipboard().setText("\n".join(lines))
+
+
+class _CopyableTable(QTableWidget):
+    """QTableWidget with Ctrl+C copy and right-click context menu."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+
+    def keyPressEvent(self, event) -> None:
+        mod = event.modifiers()
+        key = event.key()
+        if key == Qt.Key.Key_C and mod == Qt.KeyboardModifier.ControlModifier:
+            self._copy_selection()
+        elif key == Qt.Key.Key_A and mod == Qt.KeyboardModifier.ControlModifier:
+            self.selectAll()
+        else:
+            super().keyPressEvent(event)
+
+    def contextMenuEvent(self, event) -> None:
+        index = self.indexAt(event.pos())
+        if not index.isValid():
+            return
+        menu = QMenu(self)
+        act_cell = menu.addAction("Копировать ячейку")
+        act_row  = menu.addAction("Копировать строку")
+        act_sel  = menu.addAction("Копировать выделенное")
+        act_all  = menu.addAction("Копировать всё")
+        chosen = menu.exec(event.globalPos())
+        if chosen == act_cell:
+            item = self.item(index.row(), index.column())
+            QApplication.clipboard().setText(item.text() if item else "")
+        elif chosen == act_row:
+            texts = []
+            for c in range(self.columnCount()):
+                it = self.item(index.row(), c)
+                texts.append(it.text() if it else "")
+            QApplication.clipboard().setText("\t".join(texts))
+        elif chosen == act_sel:
+            self._copy_selection()
+        elif chosen == act_all:
+            self.selectAll()
+            self._copy_selection()
+
+    def _copy_selection(self) -> None:
+        ranges = self.selectedRanges()
+        if not ranges:
+            return
+        rows = sorted({r for rng in ranges for r in range(rng.topRow(), rng.bottomRow() + 1)})
+        lines = []
+        for row in rows:
+            texts = []
+            for c in range(self.columnCount()):
+                it = self.item(row, c)
+                texts.append(it.text() if it else "")
+            lines.append("\t".join(texts))
+        QApplication.clipboard().setText("\n".join(lines))
 
 
 class _Bridge(QObject):
@@ -540,7 +656,7 @@ class _IpconfigPanel(QWidget):
         btn_row.addStretch(1)
         root.addLayout(btn_row)
 
-        self._tree = QTreeWidget()
+        self._tree = _CopyableTree()
         self._tree.setObjectName("IpconfigTree")
         self._tree.setColumnCount(2)
         self._tree.setHeaderLabels([_t("tools_ipconfig_col_param"), _t("tools_ipconfig_col_value")])
@@ -834,7 +950,7 @@ class _NetstatPanel(QWidget):
         btn_row.addWidget(self.btn_clear, 0, Qt.AlignmentFlag.AlignVCenter)
         root.addLayout(btn_row)
 
-        self._table = QTreeWidget()
+        self._table = _CopyableTree()
         self._table.setObjectName("NetstatTable")
         self._table.setStyle(QStyleFactory.create("Fusion"))
         self._table.setStyleSheet(_TREE_SS_LIGHT if not dark else _TREE_SS_DARK)
@@ -940,19 +1056,88 @@ class _NetstatPanel(QWidget):
         self._table.setStyleSheet(_TREE_SS_LIGHT if not dark else _TREE_SS_DARK)
 
 
-class _ArpPanel(_ToolPanel):
+class _ArpBridge(QObject):
+    rows_ready = Signal(list)   # list of (iface, ip, mac, type)
+    finished   = Signal(bool, str)
+
+
+class _ArpPanel(QWidget):
     def __init__(self, dark: bool = True, i18n=None) -> None:
-        super().__init__("ARP таблица", dark, i18n=i18n)
-        self._form.addStretch(1)
+        super().__init__()
+        self._dark = dark
+        self._i18n = i18n
+        self._bridge = _ArpBridge()
+        self._bridge.rows_ready.connect(self._on_rows_ready)
+        self._bridge.finished.connect(self._on_finished)
+        self._build()
+
+    def _tr(self, key: str) -> str:
+        return self._i18n.get(key) if self._i18n else key
+
+    def _build(self) -> None:
+        _f = QFont()
+        _f.setWeight(QFont.Weight.DemiBold)
+        root = QVBoxLayout(self)
+        root.setContentsMargins(18, 16, 18, 14)
+        root.setSpacing(8)
+
+        self._hdr = QLabel(self._tr("tools_arp_title"))
+        self._hdr.setObjectName("ToolPanelTitle")
+        root.addWidget(self._hdr)
+
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(6)
+        self.btn_run = QPushButton(self._tr("tools_btn_run"))
+        self.btn_run.setProperty("role", "primary")
+        self.btn_run.setObjectName("ToolBtn")
+        self.btn_run.setFixedSize(90, 28)
+        self.btn_run.setFont(_f)
+        self.btn_run.clicked.connect(self._on_run)
+        self.btn_clear = QPushButton(self._tr("tools_btn_clear"))
+        self.btn_clear.setProperty("role", "action")
+        self.btn_clear.setObjectName("ToolBtn")
+        self.btn_clear.setFixedSize(90, 28)
+        self.btn_clear.setFont(_f)
+        self.btn_clear.clicked.connect(self._on_clear)
+        btn_row.addWidget(self.btn_run)
+        btn_row.addStretch(1)
+        btn_row.addWidget(self.btn_clear)
+        root.addLayout(btn_row)
+
+        self._table = _CopyableTree()
+        self._table.setObjectName("NetstatTable")
+        self._table.setStyle(QStyleFactory.create("Fusion"))
+        self._table.setStyleSheet(_TREE_SS_LIGHT if not self._dark else _TREE_SS_DARK)
+        self._table.setRootIsDecorated(False)
+        self._table.setAlternatingRowColors(True)
+        self._table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self._table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self._table.setColumnCount(4)
+        self._table.setHeaderLabels(["IP-адрес", "MAC-адрес", "Тип", "Интерфейс"])
+        self._table.header().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        self._table.header().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        self._table.header().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        self._table.header().setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
+        root.addWidget(self._table, 1)
+
+        self._status = QLabel("")
+        self._status.setObjectName("ToolStatus")
+        root.addWidget(self._status)
 
     def retranslate(self) -> None:
         self._hdr.setText(self._tr("tools_arp_title"))
+        self.btn_run.setText(self._tr("tools_btn_run"))
+        self.btn_clear.setText(self._tr("tools_btn_clear"))
 
     def _on_run(self) -> None:
-        self._output.clear()
-        self._set_running(True)
-        self._status.setText("Получение ARP таблицы...")
+        self._table.setRowCount(0) if hasattr(self._table, "setRowCount") else None
+        self.btn_run.setEnabled(False)
+        self._status.setText("")
         threading.Thread(target=self._worker, daemon=True).start()
+
+    def _on_clear(self) -> None:
+        self._table.clear()
+        self._status.setText("")
 
     def _worker(self) -> None:
         try:
@@ -961,15 +1146,49 @@ class _ArpPanel(_ToolPanel):
                 capture_output=True, encoding="cp866", errors="replace",
                 creationflags=0x08000000, timeout=10,
             )
-            lines = result.stdout.splitlines()
-            count = 0
-            for line in lines:
-                self._bridge.output.emit(line, False)
-                if re.match(r"\s+\d+\.\d+\.\d+\.\d+", line):
-                    count += 1
-            self._bridge.finished.emit(True, f"Записей в ARP: {count}")
-        except Exception as e:
-            self._bridge.finished.emit(False, str(e))
+            rows = []
+            iface = ""
+            for line in result.stdout.splitlines():
+                # Interface header: "Интерфейс: 192.168.1.1 --- 0x3"
+                m_iface = re.match(
+                    r"^\s*(?:Interface|Интерфейс)\s*[:：]\s*([\d.]+)", line, re.IGNORECASE
+                )
+                if m_iface:
+                    iface = m_iface.group(1)
+                    continue
+                # Data row: "  192.168.1.1   aa-bb-cc-dd-ee-ff   динамический"
+                m_row = re.match(
+                    r"^\s*([\d.]+)\s+([\da-fA-F]{2}[-:][\da-fA-F]{2}[-:][\da-fA-F]{2}"
+                    r"[-:][\da-fA-F]{2}[-:][\da-fA-F]{2}[-:][\da-fA-F]{2})\s+(\S+)",
+                    line,
+                )
+                if m_row:
+                    rows.append((iface, m_row.group(1), m_row.group(2), m_row.group(3)))
+            self._bridge.rows_ready.emit(rows)
+            self._bridge.finished.emit(True, f"Записей в ARP: {len(rows)}")
+        except Exception as exc:
+            self._bridge.finished.emit(False, str(exc))
+
+    def _on_rows_ready(self, rows: list) -> None:
+        self._table.clear()
+        for iface, ip, mac, kind in rows:
+            item = QTreeWidgetItem([ip, mac, kind, iface])
+            item.setFont(0, QFont("Consolas", 9))
+            item.setFont(1, QFont("Consolas", 9))
+            self._table.addTopLevelItem(item)
+        self._table.resizeColumnToContents(0)
+        self._table.resizeColumnToContents(1)
+        self._table.resizeColumnToContents(2)
+
+    def _on_finished(self, success: bool, msg: str) -> None:
+        self.btn_run.setEnabled(True)
+        color = "#22C55E" if success else "#EF4444"
+        self._status.setText(msg)
+        self._status.setStyleSheet(f"color: {color}; font-size: 12px;")
+
+    def refresh_theme(self, dark: bool) -> None:
+        self._dark = dark
+        self._table.setStyleSheet(_TREE_SS_LIGHT if not dark else _TREE_SS_DARK)
 
 
 class _HttpCheckPanel(_ToolPanel):
@@ -1217,7 +1436,7 @@ class _RouteTablePanel(QWidget):
         btn_row.addWidget(self.btn_clear, 0, Qt.AlignmentFlag.AlignVCenter)
         root.addLayout(btn_row)
 
-        self._table = QTreeWidget()
+        self._table = _CopyableTree()
         self._table.setObjectName("NetstatTable")
         self._table.setStyle(QStyleFactory.create("Fusion"))
         self._table.setStyleSheet(_TREE_SS_LIGHT if not dark else _TREE_SS_DARK)
@@ -1941,7 +2160,7 @@ class _DnsCachePanel(QWidget):
         btn_row.addStretch(1)
         root.addLayout(btn_row)
 
-        self._tree = QTreeWidget()
+        self._tree = _CopyableTree()
         self._tree.setObjectName("ToolTree")
         self._tree.setStyle(QStyleFactory.create("Fusion"))
         self._tree.setStyleSheet(_TREE_SS_LIGHT if not dark else _TREE_SS_DARK)
@@ -2078,6 +2297,562 @@ class _DnsCachePanel(QWidget):
         self._tree.setStyleSheet(_TREE_SS_LIGHT if not dark else _TREE_SS_DARK)
 
 
+# ── IP Batch Check ────────────────────────────────────────────────────────────
+
+# Each worker spawns a ping.exe subprocess — keep under OS process limit.
+# Windows starts degrading around 100+ simultaneous child processes.
+_BATCH_MAX_WORKERS = 100
+_BATCH_DEFAULT_WORKERS = 50
+
+
+def _safe_workers(n_ips: int) -> int:
+    """Return a safe worker count for *n_ips* addresses.
+
+    Rules:
+    - Never more than _BATCH_MAX_WORKERS (subprocess limit)
+    - Never more than the number of IPs (no idle threads)
+    - Scale down for small batches: no point in 50 threads for 10 IPs
+    """
+    return min(_BATCH_MAX_WORKERS, max(1, n_ips, min(n_ips, _BATCH_DEFAULT_WORKERS)))
+
+
+class _IpBatchBridge(QObject):
+    row_done   = Signal(int, str, str, str)   # row_idx, status, ms, hostname
+    finished   = Signal(int, int)             # total, ok_count
+    progress   = Signal(int, int, int)        # done, total, ok_count
+
+
+def _ping_one(ip: str, timeout: int = 1) -> tuple[bool, str]:
+    """Ping *ip* once. Returns (reachable, rtt_ms_str)."""
+    try:
+        r = subprocess.run(
+            ["ping", "-n", "1", "-w", str(timeout * 1000), ip],
+            capture_output=True, text=True, timeout=timeout + 2,
+        )
+        if r.returncode == 0:
+            m = re.search(r"[Вв]ремя[<=](\d+)\s*мс|[Tt]ime[<=](\d+)\s*ms|[Tt]ime=(\d+)ms", r.stdout)
+            ms = m.group(1) or m.group(2) or m.group(3) if m else "0"
+            return True, ms
+    except Exception:
+        pass
+    return False, ""
+
+
+def _resolve_one(ip: str) -> str:
+    """Reverse-DNS lookup for *ip*. Returns hostname or empty string."""
+    try:
+        return socket.gethostbyaddr(ip)[0]
+    except Exception:
+        return ""
+
+
+class _IpBatchPanel(QWidget):
+    """Batch ping + reverse-DNS for a list of IPs loaded from CSV/Excel."""
+
+    def __init__(self, dark: bool = True, i18n=None) -> None:
+        super().__init__()
+        self._dark = dark
+        self._i18n = i18n
+        self._rows: list[dict] = []      # original rows from file
+        self._headers: list[str] = []    # column names
+        self._ip_col: str = ""           # selected IP column
+        self._stop_flag = False
+        self._done_count = 0
+        self._bridge = _IpBatchBridge()
+        self._bridge.row_done.connect(self._on_row_done)
+        self._bridge.finished.connect(self._on_finished)
+        self._bridge.progress.connect(self._on_progress)
+        self._build()
+
+    def _tr(self, key: str, **kwargs) -> str:
+        s = self._i18n.get(key) if self._i18n else key
+        return s.format(**kwargs) if kwargs else s
+
+    # ── UI ────────────────────────────────────────────────────────
+
+    @staticmethod
+    def _step_label(n: int, text: str) -> QLabel:
+        lbl = QLabel(f"  {n}. {text}")
+        lbl.setStyleSheet("color: #94A3B8; font-size: 11px; font-weight: 600;")
+        return lbl
+
+    @staticmethod
+    def _divider() -> QFrame:
+        d = QFrame()
+        d.setFrameShape(QFrame.Shape.HLine)
+        d.setObjectName("ToolDivider")
+        return d
+
+    def _build(self) -> None:
+        _f = QFont()
+        _f.setWeight(QFont.Weight.DemiBold)
+
+        root = QVBoxLayout(self)
+        root.setContentsMargins(18, 14, 18, 14)
+        root.setSpacing(0)
+
+        hdr = QLabel(self._tr("tools_batch_title"))
+        hdr.setObjectName("ToolPanelTitle")
+        root.addWidget(hdr)
+        root.addSpacing(10)
+
+        # ── Step 1 ────────────────────────────────────────────────
+        self._lbl_step1 = self._step_label(1, self._tr("tools_batch_step1"))
+        root.addWidget(self._lbl_step1)
+        root.addSpacing(5)
+
+        row1 = QHBoxLayout()
+        row1.setSpacing(8)
+        self._btn_open = QPushButton(self._tr("tools_batch_open_btn"))
+        self._btn_open.setProperty("role", "action")
+        self._btn_open.setObjectName("ToolBtn")
+        self._btn_open.setFixedSize(130, 28)
+        self._btn_open.setFont(_f)
+        self._btn_open.clicked.connect(self._on_open)
+        row1.addWidget(self._btn_open)
+        self._lbl_file = QLabel(self._tr("tools_batch_no_file"))
+        self._lbl_file.setObjectName("ToolStatus")
+        row1.addWidget(self._lbl_file, 1)
+        root.addLayout(row1)
+        root.addSpacing(10)
+        root.addWidget(self._divider())
+        root.addSpacing(10)
+
+        # ── Step 2 ────────────────────────────────────────────────
+        self._lbl_step2 = self._step_label(2, self._tr("tools_batch_step2"))
+        root.addWidget(self._lbl_step2)
+        root.addSpacing(5)
+
+        row2 = QHBoxLayout()
+        row2.setSpacing(8)
+        self._lbl_col = QLabel(self._tr("tools_batch_col_label"))
+        row2.addWidget(self._lbl_col)
+        self._col_combo = QComboBox()
+        self._col_combo.setObjectName("ToolCombo")
+        self._col_combo.setMinimumWidth(200)
+        self._col_combo.setEnabled(False)
+        self._col_combo.currentTextChanged.connect(self._on_col_changed)
+        row2.addWidget(self._col_combo)
+        row2.addStretch(1)
+        root.addLayout(row2)
+        root.addSpacing(10)
+        root.addWidget(self._divider())
+        root.addSpacing(10)
+
+        # ── Step 3 ────────────────────────────────────────────────
+        self._lbl_step3 = self._step_label(3, self._tr("tools_batch_step3"))
+        root.addWidget(self._lbl_step3)
+        root.addSpacing(5)
+
+        row3 = QHBoxLayout()
+        row3.setSpacing(8)
+        self._lbl_timeout = QLabel(self._tr("tools_batch_timeout_label"))
+        row3.addWidget(self._lbl_timeout)
+        self._ed_timeout = QLineEdit("1")
+        self._ed_timeout.setObjectName("ToolInput")
+        self._ed_timeout.setFixedWidth(44)
+        self._ed_timeout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        row3.addWidget(self._ed_timeout)
+        self._lbl_timeout_hint = QLabel(self._tr("tools_batch_timeout_hint"))
+        self._lbl_timeout_hint.setStyleSheet("color: #64748B; font-size: 11px;")
+        row3.addWidget(self._lbl_timeout_hint)
+        row3.addSpacing(24)
+        self._lbl_workers = QLabel(self._tr("tools_batch_workers_label"))
+        row3.addWidget(self._lbl_workers)
+        self._ed_workers = QLineEdit(str(_BATCH_DEFAULT_WORKERS))
+        self._ed_workers.setObjectName("ToolInput")
+        self._ed_workers.setFixedWidth(44)
+        self._ed_workers.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        row3.addWidget(self._ed_workers)
+        lbl_w = QLabel(f"(1–{_BATCH_MAX_WORKERS})")
+        lbl_w.setStyleSheet("color: #64748B; font-size: 11px;")
+        row3.addWidget(lbl_w)
+        row3.addStretch(1)
+        root.addLayout(row3)
+        root.addSpacing(10)
+        root.addWidget(self._divider())
+        root.addSpacing(10)
+
+        # ── Step 4 ────────────────────────────────────────────────
+        self._lbl_step4 = self._step_label(4, self._tr("tools_batch_step4"))
+        root.addWidget(self._lbl_step4)
+        root.addSpacing(3)
+
+        row4 = QHBoxLayout()
+        row4.setSpacing(6)
+        row4.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        self.btn_run = QPushButton(self._tr("tools_batch_run_btn"))
+        self.btn_run.setProperty("role", "primary")
+        self.btn_run.setObjectName("ToolBtn")
+        self.btn_run.setFixedSize(90, 28)
+        self.btn_run.setFont(_f)
+        self.btn_run.setEnabled(False)
+        self.btn_run.clicked.connect(self._on_run)
+        self.btn_stop = QPushButton(self._tr("tools_batch_stop_btn"))
+        self.btn_stop.setProperty("role", "action")
+        self.btn_stop.setObjectName("ToolBtn")
+        self.btn_stop.setFixedSize(80, 28)
+        self.btn_stop.setFont(_f)
+        self.btn_stop.setEnabled(False)
+        self.btn_stop.clicked.connect(self._on_stop)
+        self._status = QLabel("")
+        self._status.setObjectName("ToolStatus")
+        row4.addWidget(self.btn_run)
+        row4.addWidget(self.btn_stop)
+        row4.addSpacing(12)
+        row4.addWidget(self._status, 1)
+        root.addLayout(row4)
+        root.addSpacing(14)
+
+        # Progress bar
+        self._progress = QProgressBar()
+        self._progress.setRange(0, 100)
+        self._progress.setValue(0)
+        self._progress.setFixedHeight(5)
+        self._progress.setTextVisible(False)
+        root.addWidget(self._progress)
+        root.addSpacing(10)
+
+        # ── Results table ─────────────────────────────────────────
+        self._table = _CopyableTable(0, 0)
+        self._table.setObjectName("NetstatTable")
+        self._table.horizontalHeader().setStretchLastSection(True)
+        self._table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self._table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self._table.setAlternatingRowColors(True)
+        self._table.verticalHeader().setDefaultSectionSize(22)
+        root.addWidget(self._table, 1)
+
+        # ── Save button ───────────────────────────────────────────
+        row5 = QHBoxLayout()
+        row5.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self._btn_export = QPushButton(self._tr("tools_batch_save_btn"))
+        self._btn_export.setProperty("role", "action")
+        self._btn_export.setObjectName("ToolBtn")
+        self._btn_export.setFixedHeight(28)
+        self._btn_export.setFont(_f)
+        self._btn_export.setEnabled(False)
+        self._btn_export.clicked.connect(self._on_export)
+        row5.addWidget(self._btn_export)
+        root.addSpacing(6)
+        root.addLayout(row5)
+
+    # ── File loading ─────────────────────────────────────────────
+
+    def _on_open(self) -> None:
+        path, _ = QFileDialog.getOpenFileName(
+            self, self._tr("tools_batch_dlg_open"),
+            "", self._tr("tools_batch_dlg_filter")
+        )
+        if not path:
+            return
+        try:
+            self._rows, self._headers = self._load_file(path)
+        except Exception as exc:
+            self._status.setText(self._tr("tools_batch_err_read", err=exc))
+            self._status.setStyleSheet("color: #EF4444; font-size: 12px;")
+            return
+
+        self._lbl_file.setText(self._tr("tools_batch_loaded", name=Path(path).name, n=len(self._rows)))
+        self._col_combo.setEnabled(True)
+        self._col_combo.blockSignals(True)
+        self._col_combo.clear()
+        self._col_combo.addItems(self._headers)
+        # auto-select first column that looks like IPs
+        auto = next(
+            (h for h in self._headers if re.search(r"ip|addr|хост|host", h, re.IGNORECASE)),
+            self._headers[0] if self._headers else "",
+        )
+        self._col_combo.setCurrentText(auto)
+        self._col_combo.blockSignals(False)
+        self._ip_col = self._col_combo.currentText()
+
+        self._build_table(self._rows, self._headers, self._ip_col)
+        self.btn_run.setEnabled(bool(self._rows))
+        self._btn_export.setEnabled(False)
+        self._progress.setValue(0)
+        # Auto-tune worker count based on batch size
+        self._ed_workers.setText(str(_safe_workers(len(self._rows))))
+        self._status.setText(self._tr("tools_batch_status_loaded", n=len(self._rows)))
+        self._status.setStyleSheet("color: #94A3B8; font-size: 12px;")
+
+    @staticmethod
+    def _load_file(path: str) -> tuple[list[dict], list[str]]:
+        p = path.lower()
+        if p.endswith(".csv"):
+            # Try utf-8-sig first, fall back to cp1251 for Windows-exported files
+            for enc in ("utf-8-sig", "cp1251", "utf-8"):
+                try:
+                    with open(path, newline="", encoding=enc) as f:
+                        sample = f.read(4096)
+                    # Auto-detect delimiter: count candidates in header line
+                    first_line = sample.splitlines()[0] if sample else ""
+                    dialect_delim = max(",", ";", "\t", "|",
+                                        key=lambda d: first_line.count(d))
+                    with open(path, newline="", encoding=enc) as f:
+                        reader = csv.DictReader(f, delimiter=dialect_delim)
+                        rows = list(reader)
+                        headers = list(reader.fieldnames) if reader.fieldnames else (
+                            list(rows[0].keys()) if rows else []
+                        )
+                    return rows, headers
+                except UnicodeDecodeError:
+                    continue
+            raise ValueError("Не удалось определить кодировку CSV")
+        # Excel (.xlsx / .xls)
+        try:
+            import openpyxl
+        except ImportError as exc:
+            raise ImportError("Установите openpyxl: pip install openpyxl") from exc
+        wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+        ws = wb.active
+        all_rows = list(ws.iter_rows(values_only=True))
+        wb.close()
+        if not all_rows:
+            return [], []
+        headers = [str(c) if c is not None else f"col{i}" for i, c in enumerate(all_rows[0])]
+        rows = [
+            {headers[i]: (str(cell) if cell is not None else "") for i, cell in enumerate(row)}
+            for row in all_rows[1:]
+        ]
+        return rows, headers
+
+    def _on_col_changed(self, col: str) -> None:
+        self._ip_col = col
+        if self._rows:
+            self._build_table(self._rows, self._headers, col)
+            self._btn_export.setEnabled(False)
+
+    def _build_table(self, rows: list[dict], headers: list[str], ip_col: str) -> None:
+        """Rebuild results table: original columns + Status, RTT, Hostname."""
+        extra = [
+            self._tr("tools_batch_col_status"),
+            self._tr("tools_batch_col_rtt"),
+            self._tr("tools_batch_col_hostname"),
+        ]
+        all_cols = headers + extra
+        self._table.setRowCount(0)
+        self._table.setColumnCount(len(all_cols))
+        self._table.setHorizontalHeaderLabels(all_cols)
+        self._table.setRowCount(len(rows))
+        for r_idx, row in enumerate(rows):
+            for c_idx, col in enumerate(headers):
+                item = QTableWidgetItem(str(row.get(col, "")))
+                if col == ip_col:
+                    item.setFont(QFont("Consolas", 9))
+                self._table.setItem(r_idx, c_idx, item)
+            for c_idx, _ in enumerate(extra):
+                self._table.setItem(r_idx, len(headers) + c_idx, QTableWidgetItem(""))
+        self._table.resizeColumnsToContents()
+        self._table.horizontalHeader().setStretchLastSection(True)
+
+    # ── Run / Stop ────────────────────────────────────────────────
+
+    def _on_run(self) -> None:
+        if not self._ip_col or not self._rows:
+            return
+        self._stop_flag = False
+        self._done_count = 0
+        self._btn_export.setEnabled(False)
+        self.btn_run.setEnabled(False)
+        self.btn_stop.setEnabled(True)
+        self._progress.setValue(0)
+        # Reset result columns
+        n_orig = len(self._headers)
+        for r_idx in range(len(self._rows)):
+            for c in range(3):
+                self._table.setItem(r_idx, n_orig + c, QTableWidgetItem(""))
+        try:
+            timeout = max(1, min(10, int(self._ed_timeout.text())))
+        except ValueError:
+            timeout = 1
+        self._ed_timeout.setText(str(timeout))
+        try:
+            workers = max(1, min(_BATCH_MAX_WORKERS, int(self._ed_workers.text())))
+        except ValueError:
+            workers = _BATCH_DEFAULT_WORKERS
+        self._ed_workers.setText(str(workers))
+        threading.Thread(
+            target=self._worker,
+            args=(list(self._rows), self._ip_col, self._headers, timeout, workers),
+            daemon=True,
+        ).start()
+
+    def _on_stop(self) -> None:
+        self._stop_flag = True
+
+    def _worker(
+        self, rows: list[dict], ip_col: str, headers: list[str], timeout: int, max_workers: int
+    ) -> None:
+        total = len(rows)
+        ok_count = 0
+        lock = threading.Lock()
+
+        def _check(idx: int, row: dict):
+            if self._stop_flag:
+                return idx, "—", "", ""
+            ip = str(row.get(ip_col, "")).strip()
+            if not ip:
+                return idx, "—", "", ""
+            reachable, ms = _ping_one(ip, timeout)
+            hostname = _resolve_one(ip) if reachable else ""
+            status = "OK" if reachable else "Timeout"
+            return idx, status, ms, hostname
+
+        # Hard cap: never exceed _BATCH_MAX_WORKERS regardless of UI value,
+        # and never create more threads than there are IPs to check.
+        effective = min(max_workers, _BATCH_MAX_WORKERS, len(rows))
+        with ThreadPoolExecutor(max_workers=effective) as pool:
+            futures = {pool.submit(_check, i, row): i for i, row in enumerate(rows)}
+            for fut in as_completed(futures):
+                if self._stop_flag:
+                    pool.shutdown(wait=False, cancel_futures=True)
+                    break
+                idx, status, ms, hostname = fut.result()
+                with lock:
+                    if status == "OK":
+                        ok_count += 1
+                    done = self._done_count + 1
+                    self._done_count = done
+                self._bridge.row_done.emit(idx, status, ms, hostname)
+                self._bridge.progress.emit(done, total, ok_count)
+
+        self._bridge.finished.emit(total, ok_count)
+
+    # ── Signals ───────────────────────────────────────────────────
+
+    def _on_row_done(self, row_idx: int, status: str, ms: str, hostname: str) -> None:
+        n = len(self._headers)
+        ok = status == "OK"
+        color = "#22C55E" if ok else ("#94A3B8" if status == "—" else "#EF4444")
+        for c_off, text in enumerate([status, ms, hostname]):
+            item = QTableWidgetItem(text)
+            if c_off == 0:
+                item.setForeground(QColor(color))
+                item.setFont(QFont("Consolas", 9))
+            self._table.setItem(row_idx, n + c_off, item)
+
+    def _on_progress(self, done: int, total: int, ok: int) -> None:
+        pct = int(done / total * 100) if total else 0
+        self._progress.setValue(pct)
+        self._status.setText(self._tr("tools_batch_progress", done=done, total=total, ok=ok))
+        self._status.setStyleSheet("color: #94A3B8; font-size: 12px;")
+
+    def _on_finished(self, total: int, ok: int) -> None:
+        self.btn_run.setEnabled(True)
+        self.btn_stop.setEnabled(False)
+        self._btn_export.setEnabled(True)
+        stopped = self._stop_flag
+        key = "tools_batch_stopped" if stopped else "tools_batch_done"
+        msg = self._tr(key, ok=ok, total=total)
+        color = "#22C55E" if ok == total and not stopped else "#F59E0B"
+        self._status.setText(msg)
+        self._status.setStyleSheet(f"color: {color}; font-size: 12px;")
+
+    # ── Export ────────────────────────────────────────────────────
+
+    def _on_export(self) -> None:
+        path, chosen = QFileDialog.getSaveFileName(
+            self, self._tr("tools_batch_dlg_save"),
+            "ip_check_results",
+            self._tr("tools_batch_dlg_save_filter"),
+        )
+        if not path:
+            return
+        try:
+            if chosen.startswith("Excel") or path.lower().endswith(".xlsx"):
+                if not path.lower().endswith(".xlsx"):
+                    path += ".xlsx"
+                self._export_xlsx(path)
+            else:
+                if not path.lower().endswith(".csv"):
+                    path += ".csv"
+                self._export_csv(path)
+            self._status.setText(self._tr("tools_batch_saved", name=Path(path).name))
+            self._status.setStyleSheet("color: #22C55E; font-size: 12px;")
+        except Exception as exc:
+            self._status.setText(self._tr("tools_batch_err_save", err=exc))
+            self._status.setStyleSheet("color: #EF4444; font-size: 12px;")
+
+    def _collect_results(self) -> tuple[list[str], list[list[str]]]:
+        """Read current table contents into (headers, data_rows)."""
+        cols = self._table.columnCount()
+        rows = self._table.rowCount()
+        headers = [self._table.horizontalHeaderItem(c).text() for c in range(cols)]
+        data = [
+            [
+                (self._table.item(r, c).text() if self._table.item(r, c) else "")
+                for c in range(cols)
+            ]
+            for r in range(rows)
+        ]
+        return headers, data
+
+    def _export_csv(self, path: str) -> None:
+        headers, data = self._collect_results()
+        with open(path, "w", newline="", encoding="utf-8-sig") as f:
+            writer = csv.writer(f)
+            writer.writerow(headers)
+            writer.writerows(data)
+
+    def _export_xlsx(self, path: str) -> None:
+        try:
+            import openpyxl
+            from openpyxl.styles import Font, PatternFill, Alignment
+        except ImportError as exc:
+            raise ImportError("Установите openpyxl: pip install openpyxl") from exc
+        headers, data = self._collect_results()
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "IP Check"
+        # Header row
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill("solid", fgColor="4F46E5")
+        for c_idx, col in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=c_idx, value=col)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal="center")
+        # Data rows
+        status_col = len(headers) - 2  # "Статус" column (1-based)
+        for r_idx, row in enumerate(data, 2):
+            for c_idx, val in enumerate(row, 1):
+                cell = ws.cell(row=r_idx, column=c_idx, value=val)
+                if c_idx == status_col:
+                    if val == "OK":
+                        cell.font = Font(color="22C55E", bold=True)
+                    elif val == "Timeout":
+                        cell.font = Font(color="EF4444")
+        # Column widths
+        for c_idx, col in enumerate(headers, 1):
+            ws.column_dimensions[openpyxl.utils.get_column_letter(c_idx)].width = max(
+                len(col) + 2,
+                max((len(str(row[c_idx - 1])) for row in data), default=0) + 2,
+                10,
+            )
+        wb.save(path)
+
+    def retranslate(self) -> None:
+        self._lbl_step1.setText(f"  1. {self._tr('tools_batch_step1')}")
+        self._lbl_step2.setText(f"  2. {self._tr('tools_batch_step2')}")
+        self._lbl_step3.setText(f"  3. {self._tr('tools_batch_step3')}")
+        self._lbl_step4.setText(f"  4. {self._tr('tools_batch_step4')}")
+        self._btn_open.setText(self._tr("tools_batch_open_btn"))
+        self._lbl_col.setText(self._tr("tools_batch_col_label"))
+        self._lbl_timeout.setText(self._tr("tools_batch_timeout_label"))
+        self._lbl_timeout_hint.setText(self._tr("tools_batch_timeout_hint"))
+        self._lbl_workers.setText(self._tr("tools_batch_workers_label"))
+        self.btn_run.setText(self._tr("tools_batch_run_btn"))
+        self.btn_stop.setText(self._tr("tools_batch_stop_btn"))
+        self._btn_export.setText(self._tr("tools_batch_save_btn"))
+        if not self._rows:
+            self._lbl_file.setText(self._tr("tools_batch_no_file"))
+
+    def refresh_theme(self, dark: bool) -> None:
+        self._dark = dark
+        self._table.setStyleSheet(_TREE_SS_LIGHT if not dark else _TREE_SS_DARK)
+
+
 # fmt: (group_name,) for headers, (name, icon) for tools
 _TOOLS = [
     ("Диагностика",),
@@ -2096,6 +2871,7 @@ _TOOLS = [
     ("Port Scan",      "\u22a1"),   # ⊡  scan
     ("DNS Cache",      "\u2338"),   # ⌸  cache
     ("Subnet Calc",    "\u229e"),   # ⊞  grid
+    ("tools_nav_ip_batch", "\u2317"),   # ⌗  grid/list
 ]
 
 
@@ -2225,6 +3001,7 @@ class ToolsPage(QWidget):
             _PortScanPanel(self._dark, i18n=_i18n),                    # Утилиты
             _DnsCachePanel(self._dark, i18n=_i18n),
             _SubnetCalcPanel(self._dark, i18n=_i18n),
+            _IpBatchPanel(self._dark, i18n=_i18n),
         ]
         for panel in self._panels:
             self._stack.addWidget(panel)
