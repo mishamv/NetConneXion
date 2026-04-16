@@ -51,6 +51,15 @@ build/
 .eggs/
 *.spec
 
+# ── Кэши инструментов ─────────────────────────────────────────
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+.hypothesis/
+htmlcov/
+.coverage
+coverage.xml
+
 # ── Виртуальное окружение ─────────────────────────────────────
 .venv/
 venv/
@@ -101,3 +110,5 @@ nul
 !data/logo_dark.png
 !data/logo_light.png
 !data/logo_tray.png
+!data/app.ico
+!NetConneXion.spec

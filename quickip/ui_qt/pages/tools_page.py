@@ -468,7 +468,10 @@ class _DnsPanel(_ToolPanel):
         self._output.clear()
         self._set_running(True)
         self._status.setText(f"Looking up {host}...")
-        qtype = self._type.currentText() or "A"
+        _ALLOWED_QTYPES = {"A", "AAAA", "MX", "NS", "PTR", "TXT", "SOA", "CNAME", "SRV"}
+        qtype = self._type.currentText()
+        if qtype not in _ALLOWED_QTYPES:
+            qtype = "A"
         threading.Thread(target=self._worker, args=(host, qtype), daemon=True).start()
 
     @staticmethod
@@ -850,8 +853,9 @@ class _PortScanPanel(_ToolPanel):
 
             def scan_port(port: int) -> None:
                 nonlocal open_count, done_count
-                if not self._running:
-                    return
+                with lock:
+                    if not self._running:
+                        return
                 try:
                     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     s.settimeout(0.5)

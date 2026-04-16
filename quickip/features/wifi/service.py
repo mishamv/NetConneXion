@@ -222,7 +222,9 @@ class WifiService:
         iface = self._get_wifi_interface()
         if iface:
             cmd.append(f"interface={iface}")
-        logger.info(f"Connect cmd: {' '.join(cmd)}")
+        if logger.isEnabledFor(logging.DEBUG):
+            # SSID redacted in logs — shown only at DEBUG level for diagnostics
+            logger.debug("Connect cmd: netsh wlan connect name=*** ssid=***")
         result = self._runner.run(cmd, timeout=15)
         ok = result.success or "successfully" in result.stdout.lower() or "успешно" in result.stdout.lower()
         return ConnectResult(success=ok, message=result.stdout.strip())

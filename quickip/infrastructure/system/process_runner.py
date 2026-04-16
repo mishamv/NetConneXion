@@ -17,6 +17,9 @@ _SENSITIVE_ARG_PATTERNS = re.compile(
     re.IGNORECASE,
 )
 
+# netsh аргументы вида name=<ssid> и ssid=<ssid> маскируются отдельно
+_NETSH_SSID_PATTERN = re.compile(r"^(name|ssid|interface)=(.+)$", re.IGNORECASE)
+
 
 def _redact_command(parts: List[str]) -> str:
     """Возвращает строку команды с маскировкой чувствительных аргументов."""
@@ -26,6 +29,9 @@ def _redact_command(parts: List[str]) -> str:
         if redact_next:
             result.append("***")
             redact_next = False
+        elif _NETSH_SSID_PATTERN.match(part):
+            key = part.split("=", 1)[0]
+            result.append(f"{key}=***")
         elif _SENSITIVE_ARG_PATTERNS.search(part):
             # Если аргумент содержит чувствительное слово и имеет вид --key=value
             if "=" in part:

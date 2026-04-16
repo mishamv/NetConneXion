@@ -199,6 +199,11 @@ class ScannerService:
     @staticmethod
     def _try_resolve(ip: str) -> str:
         try:
-            return socket.gethostbyaddr(ip)[0]
+            old_timeout = socket.getdefaulttimeout()
+            socket.setdefaulttimeout(2)
+            try:
+                return socket.gethostbyaddr(ip)[0]
+            finally:
+                socket.setdefaulttimeout(old_timeout)
         except OSError:
             return ""
