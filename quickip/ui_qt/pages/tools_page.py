@@ -7,7 +7,6 @@ import csv
 import json
 import re
 import socket
-import subprocess
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -174,10 +173,11 @@ class _Bridge(QObject):
 
 
 class _ToolPanel(QWidget):
-    def __init__(self, title: str, dark: bool = True, i18n=None) -> None:
+    def __init__(self, title: str, dark: bool = True, i18n=None, runner=None) -> None:
         super().__init__()
         self._dark = dark
         self._i18n = i18n
+        self._runner = runner
         self._bridge = _Bridge()
         self._running = False
         self._proc = None
@@ -323,8 +323,8 @@ class _PingChart(QWidget):
 
 
 class _PingPanel(_ToolPanel):
-    def __init__(self, dark: bool = True) -> None:
-        super().__init__("Ping", dark)
+    def __init__(self, dark: bool = True, runner=None) -> None:
+        super().__init__("Ping", dark, runner=runner)
         self._host = QLineEdit()
         self._host.setObjectName("ToolInput")
         self._host.setPlaceholderText("Host or IP (e.g. 8.8.8.8)")
@@ -358,10 +358,7 @@ class _PingPanel(_ToolPanel):
     def _worker(self, host: str, count: int) -> None:
         try:
             cmd = ["ping", "-n", str(count), host]
-            self._proc = subprocess.Popen(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                creationflags=0x08000000, encoding="cp866", errors="replace"
-            )
+            self._proc = self._runner.popen(cmd, encoding="cp866", errors="replace")
             times: list = []
             success_count = 0
             for line in self._proc.stdout or []:  # type: ignore[union-attr]
@@ -394,8 +391,8 @@ class _PingPanel(_ToolPanel):
 
 
 class _TraceroutePanel(_ToolPanel):
-    def __init__(self, dark: bool = True, i18n=None) -> None:
-        super().__init__("Traceroute", dark, i18n=i18n)
+    def __init__(self, dark: bool = True, i18n=None, runner=None) -> None:
+        super().__init__("Traceroute", dark, i18n=i18n, runner=runner)
         self._host = QLineEdit()
         self._host.setObjectName("ToolInput")
         self._host.setPlaceholderText(self._tr("tools_placeholder_host"))
@@ -419,10 +416,7 @@ class _TraceroutePanel(_ToolPanel):
     def _worker(self, host: str) -> None:
         try:
             cmd = ["tracert", "-d", "-w", "2000", host]
-            self._proc = subprocess.Popen(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                creationflags=0x08000000, encoding="cp866", errors="replace"
-            )
+            self._proc = self._runner.popen(cmd, encoding="cp866", errors="replace")
             hops = 0
             for line in self._proc.stdout or []:  # type: ignore[union-attr]
                 if not self._running:
@@ -438,8 +432,8 @@ class _TraceroutePanel(_ToolPanel):
 
 
 class _DnsPanel(_ToolPanel):
-    def __init__(self, dark: bool = True, i18n=None) -> None:
-        super().__init__("DNS Lookup", dark, i18n=i18n)
+    def __init__(self, dark: bool = True, i18n=None, runner=None) -> None:
+        super().__init__("DNS Lookup", dark, i18n=i18n, runner=runner)
         self._host = QLineEdit()
         self._host.setObjectName("ToolInput")
         self._host.setPlaceholderText(self._tr("tools_placeholder_domain"))
@@ -492,10 +486,7 @@ class _DnsPanel(_ToolPanel):
     def _worker(self, host: str, qtype: str) -> None:
         try:
             cmd = ["nslookup", f"-type={qtype}", host]
-            self._proc = subprocess.Popen(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                creationflags=0x08000000,
-            )
+            self._proc = self._runner.popen(cmd)
             lines = []
             for raw_line in iter(self._proc.stdout.readline, b""):  # type: ignore[union-attr]
                 line = self._decode_line(raw_line)
@@ -509,8 +500,8 @@ class _DnsPanel(_ToolPanel):
 
 
 class _FlushDnsPanel(_ToolPanel):
-    def __init__(self, dark: bool = True) -> None:
-        super().__init__("Flush DNS Cache", dark)
+    def __init__(self, dark: bool = True, runner=None) -> None:
+        super().__init__("Flush DNS Cache", dark, runner=runner)
         info = QLabel("Clears the Windows DNS resolver cache (ipconfig /flushdns)")
         info.setObjectName("FieldLabel")
         info.setWordWrap(True)
@@ -526,14 +517,10 @@ class _FlushDnsPanel(_ToolPanel):
 
     def _worker(self) -> None:
         try:
-            result = subprocess.run(
-                ["ipconfig", "/flushdns"], capture_output=True, timeout=15,
-                creationflags=0x08000000, encoding="cp866", errors="replace"
-            )
+            result = self._runner.run(["ipconfig", "/flushdns"], timeout=15)
             for line in (result.stdout + result.stderr).splitlines():
                 self._bridge.output.emit(line, False)
-            ok = result.returncode == 0
-            self._bridge.finished.emit(ok, "DNS-кэш очищен" if ok else "Ошибка")
+            self._bridge.finished.emit(result.success, "DNS-кэш очищен" if result.success else "Ошибка")
         except Exception as e:
             self._bridge.finished.emit(False, str(e))
 
@@ -630,10 +617,11 @@ class _IpconfigBridge(QObject):
 
 
 class _IpconfigPanel(QWidget):
-    def __init__(self, dark: bool = True, parent=None, i18n=None) -> None:
+    def __init__(self, dark: bool = True, parent=None, i18n=None, runner=None) -> None:
         super().__init__(parent)
         self._dark = dark
         self._i18n = i18n
+        self._runner = runner
         self._bridge = _IpconfigBridge()
         _t = lambda k: i18n.get(k) if i18n else k  # noqa: E731
 
@@ -703,13 +691,11 @@ class _IpconfigPanel(QWidget):
         try:
             import base64
             encoded = base64.b64encode(_IPCONFIG_PS.encode('utf-16-le')).decode('ascii')
-            result = subprocess.run(
+            result = self._runner.run(
                 ["powershell", "-NoProfile", "-NonInteractive", "-EncodedCommand", encoded],
-                capture_output=True, timeout=30,
-                creationflags=0x08000000,
+                timeout=30,
             )
-            text = result.stdout.decode('utf-8', errors='replace') or \
-                   result.stderr.decode('utf-8', errors='replace')
+            text = result.stdout or result.stderr
             adapters = _parse_ipconfig(text)
             self._bridge.done.emit(adapters)
             self._bridge.status.emit(f"Done — {len(adapters)} adapter(s)")
@@ -896,10 +882,11 @@ class _NetstatBridge(QObject):
 
 
 class _NetstatPanel(QWidget):
-    def __init__(self, dark: bool = True, i18n=None) -> None:
+    def __init__(self, dark: bool = True, i18n=None, runner=None) -> None:
         super().__init__()
         self._dark = dark
         self._i18n = i18n
+        self._runner = runner
         self._bridge = _NetstatBridge()
         self._bridge.rows_ready.connect(self._populate)
         self._bridge.finished.connect(self._on_finished)
@@ -1002,11 +989,7 @@ class _NetstatPanel(QWidget):
 
     def _worker(self) -> None:
         try:
-            result = subprocess.run(
-                ["netstat", "-ano"],
-                capture_output=True, encoding="cp866", errors="replace",
-                creationflags=0x08000000, timeout=15,
-            )
+            result = self._runner.run(["netstat", "-ano"], timeout=15)
             flt = self._filter.currentText()
             rows = []
             for line in result.stdout.splitlines():
@@ -1063,10 +1046,11 @@ class _ArpBridge(QObject):
 
 
 class _ArpPanel(QWidget):
-    def __init__(self, dark: bool = True, i18n=None) -> None:
+    def __init__(self, dark: bool = True, i18n=None, runner=None) -> None:
         super().__init__()
         self._dark = dark
         self._i18n = i18n
+        self._runner = runner
         self._bridge = _ArpBridge()
         self._bridge.rows_ready.connect(self._on_rows_ready)
         self._bridge.finished.connect(self._on_finished)
@@ -1142,11 +1126,7 @@ class _ArpPanel(QWidget):
 
     def _worker(self) -> None:
         try:
-            result = subprocess.run(
-                ["arp", "-a"],
-                capture_output=True, encoding="cp866", errors="replace",
-                creationflags=0x08000000, timeout=10,
-            )
+            result = self._runner.run(["arp", "-a"], timeout=10)
             rows = []
             iface = ""
             for line in result.stdout.splitlines():
@@ -1389,10 +1369,11 @@ class _RouteTableBridge(QObject):
 
 
 class _RouteTablePanel(QWidget):
-    def __init__(self, dark: bool = True, i18n=None) -> None:
+    def __init__(self, dark: bool = True, i18n=None, runner=None) -> None:
         super().__init__()
         self._dark = dark
         self._i18n = i18n
+        self._runner = runner
         self._bridge = _RouteTableBridge()
         self._bridge.rows_ready.connect(self._populate)
         self._bridge.finished.connect(self._on_finished)
@@ -1522,10 +1503,9 @@ class _RouteTablePanel(QWidget):
                     "ConvertTo-Json -Compress"
                 )
                 enc = base64.b64encode(ps.encode("utf-16-le")).decode("ascii")
-                result = subprocess.run(
+                result = self._runner.run(
                     ["powershell", "-NonInteractive", "-EncodedCommand", enc],
-                    capture_output=True, encoding="utf-8", errors="replace",
-                    creationflags=0x08000000, timeout=15,
+                    timeout=15,
                 )
                 if result.stdout.strip():
                     data = json.loads(result.stdout)
@@ -1549,10 +1529,9 @@ class _RouteTablePanel(QWidget):
                     "ConvertTo-Json -Compress"
                 )
                 enc6 = base64.b64encode(ps6.encode("utf-16-le")).decode("ascii")
-                r6 = subprocess.run(
+                r6 = self._runner.run(
                     ["powershell", "-NonInteractive", "-EncodedCommand", enc6],
-                    capture_output=True, encoding="utf-8", errors="replace",
-                    creationflags=0x08000000, timeout=15,
+                    timeout=15,
                 )
                 if r6.stdout.strip():
                     data6 = json.loads(r6.stdout)
@@ -1668,10 +1647,11 @@ class _SignalMonitorPanel(QWidget):
     # Порог «слабый сигнал» для учащения опроса
     _WEAK_DBM = -70.0
 
-    def __init__(self, dark: bool = True, i18n=None) -> None:
+    def __init__(self, dark: bool = True, i18n=None, runner=None) -> None:
         super().__init__()
         self._dark = dark
         self._i18n = i18n
+        self._runner = runner
         self._running = False
         self._bridge = _SignalMonitorBridge()
         self._bridge.updated.connect(self._on_update)
@@ -1931,16 +1911,10 @@ class _SignalMonitorPanel(QWidget):
 
         while self._running:
             try:
-                result = subprocess.run(
-                    ["netsh", "wlan", "show", "interfaces"],
-                    capture_output=True, creationflags=0x08000000, timeout=5,
+                result = self._runner.run(
+                    ["netsh", "wlan", "show", "interfaces"], timeout=5,
                 )
-                # Пробуем UTF-8 (Windows 10+), fallback на cp866
-                try:
-                    stdout = result.stdout.decode("utf-8")
-                except UnicodeDecodeError:
-                    stdout = result.stdout.decode("cp866", errors="replace")
-                d = self._parse(stdout)
+                d = self._parse(result.stdout)
 
                 if not d.get("connected", False):
                     self._bridge.updated.emit({
@@ -2127,10 +2101,11 @@ class _DnsCacheBridge(QObject):
 
 
 class _DnsCachePanel(QWidget):
-    def __init__(self, dark: bool = True, i18n=None) -> None:
+    def __init__(self, dark: bool = True, i18n=None, runner=None) -> None:
         super().__init__()
         self._dark = dark
         self._i18n = i18n
+        self._runner = runner
         self._bridge = _DnsCacheBridge()
 
         root = QVBoxLayout(self)
@@ -2212,10 +2187,7 @@ class _DnsCachePanel(QWidget):
         if reply != QMessageBox.StandardButton.Yes:
             return
         try:
-            subprocess.run(
-                ["ipconfig", "/flushdns"],
-                capture_output=True, creationflags=0x08000000, timeout=5,
-            )
+            self._runner.run(["ipconfig", "/flushdns"], timeout=5)
             self._tree.clear()
             self._status.setText("DNS кэш очищен")
             self._status.setStyleSheet("color: #22C55E; font-size: 12px;")
@@ -2225,15 +2197,8 @@ class _DnsCachePanel(QWidget):
 
     def _worker(self) -> None:
         try:
-            result = subprocess.run(
-                ["ipconfig", "/displaydns"],
-                capture_output=True, creationflags=0x08000000, timeout=15,
-            )
-            try:
-                text = result.stdout.decode("utf-8")
-            except UnicodeDecodeError:
-                text = result.stdout.decode("cp866", errors="replace")
-            rows = self._parse(text)
+            result = self._runner.run(["ipconfig", "/displaydns"], timeout=15)
+            rows = self._parse(result.stdout)
             self._bridge.rows_ready.emit(rows)
             self._bridge.finished.emit(True, f"Записей: {len(rows)}")
         except Exception as e:
@@ -2323,14 +2288,12 @@ class _IpBatchBridge(QObject):
     progress   = Signal(int, int, int)        # done, total, ok_count
 
 
-def _ping_one(ip: str, timeout: int = 1) -> tuple[bool, str]:
+def _ping_one(ip: str, timeout: int = 1, runner=None) -> tuple[bool, str]:
     """Ping *ip* once. Returns (reachable, rtt_ms_str)."""
     try:
-        r = subprocess.run(
-            ["ping", "-n", "1", "-w", str(timeout * 1000), ip],
-            capture_output=True, text=True, timeout=timeout + 2,
-        )
-        if r.returncode == 0:
+        cmd = ["ping", "-n", "1", "-w", str(timeout * 1000), ip]
+        r = runner.run(cmd, timeout=timeout + 2)
+        if r.success:
             m = re.search(r"[Вв]ремя[<=](\d+)\s*мс|[Tt]ime[<=](\d+)\s*ms|[Tt]ime=(\d+)ms", r.stdout)
             ms = m.group(1) or m.group(2) or m.group(3) if m else "0"
             return True, ms
@@ -2350,10 +2313,11 @@ def _resolve_one(ip: str) -> str:
 class _IpBatchPanel(QWidget):
     """Batch ping + reverse-DNS for a list of IPs loaded from CSV/Excel."""
 
-    def __init__(self, dark: bool = True, i18n=None) -> None:
+    def __init__(self, dark: bool = True, i18n=None, runner=None) -> None:
         super().__init__()
         self._dark = dark
         self._i18n = i18n
+        self._runner = runner
         self._rows: list[dict] = []      # original rows from file
         self._headers: list[str] = []    # column names
         self._ip_col: str = ""           # selected IP column
@@ -2695,7 +2659,7 @@ class _IpBatchPanel(QWidget):
             ip = str(row.get(ip_col, "")).strip()
             if not ip:
                 return idx, "—", "", ""
-            reachable, ms = _ping_one(ip, timeout)
+            reachable, ms = _ping_one(ip, timeout, runner=self._runner)
             hostname = _resolve_one(ip) if reachable else ""
             status = "OK" if reachable else "Timeout"
             return idx, status, ms, hostname
@@ -2988,21 +2952,22 @@ class ToolsPage(QWidget):
 
         # Order must match tool entries in _TOOLS (excluding group headers)
         _i18n = self._container.i18n
+        _runner = self._container.process_runner
         self._panels: list = [
-            _PingPanel(self._dark),                                    # Диагностика
-            _TraceroutePanel(self._dark, i18n=_i18n),
-            _DnsPanel(self._dark, i18n=_i18n),
+            _PingPanel(self._dark, runner=_runner),                              # Диагностика
+            _TraceroutePanel(self._dark, i18n=_i18n, runner=_runner),
+            _DnsPanel(self._dark, i18n=_i18n, runner=_runner),
             _HttpCheckPanel(self._dark),
             _SslPanel(self._dark, i18n=_i18n),
-            _IpconfigPanel(self._dark, i18n=_i18n),                    # Локальная сеть
-            _NetstatPanel(self._dark, i18n=_i18n),
-            _ArpPanel(self._dark, i18n=_i18n),
-            _RouteTablePanel(self._dark, i18n=_i18n),
-            _SignalMonitorPanel(self._dark, i18n=_i18n),
-            _PortScanPanel(self._dark, i18n=_i18n),                    # Утилиты
-            _DnsCachePanel(self._dark, i18n=_i18n),
+            _IpconfigPanel(self._dark, i18n=_i18n, runner=_runner),              # Локальная сеть
+            _NetstatPanel(self._dark, i18n=_i18n, runner=_runner),
+            _ArpPanel(self._dark, i18n=_i18n, runner=_runner),
+            _RouteTablePanel(self._dark, i18n=_i18n, runner=_runner),
+            _SignalMonitorPanel(self._dark, i18n=_i18n, runner=_runner),
+            _PortScanPanel(self._dark, i18n=_i18n),                              # Утилиты
+            _DnsCachePanel(self._dark, i18n=_i18n, runner=_runner),
             _SubnetCalcPanel(self._dark, i18n=_i18n),
-            _IpBatchPanel(self._dark, i18n=_i18n),
+            _IpBatchPanel(self._dark, i18n=_i18n, runner=_runner),
         ]
         for panel in self._panels:
             self._stack.addWidget(panel)

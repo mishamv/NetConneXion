@@ -105,6 +105,32 @@ class ProcessRunner:
         # Fallback with replacement
         return raw_bytes.decode('utf-8', errors='replace')
 
+    def popen(
+        self,
+        command: List[str],
+        encoding: Optional[str] = None,
+        errors: str = "replace",
+    ) -> "subprocess.Popen":
+        """Return a Popen object with proper NO_WINDOW flags for streaming output.
+
+        Args:
+            command: Command and arguments as list.
+            encoding: Text-mode encoding (e.g. "cp866"). None = binary mode.
+            errors:   Encoding error handler ("replace" by default).
+        """
+        command_str = _redact_command(command)
+        logger.debug("Popen: %s", command_str)
+        kwargs: dict = dict(
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            startupinfo=self._get_startupinfo(),
+            creationflags=self._get_creation_flags(),
+        )
+        if encoding is not None:
+            kwargs["encoding"] = encoding
+            kwargs["errors"] = errors
+        return subprocess.Popen(command, **kwargs)
+
     def run(
         self,
         command: List[str],
