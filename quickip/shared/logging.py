@@ -29,10 +29,33 @@ class _WinSafeTimedRotatingFileHandler(logging.handlers.TimedRotatingFileHandler
                 self.stream = self._open()
 
     def rotate(self, source: str, dest: str) -> None:
-        """Replace dest if it already exists (Windows won't overwrite via rename)."""
+        """Rename source → dest, falling back to copy+truncate on Windows WinError 32.
+
+        os.rename() fails when the log file is held open by another process
+        (previous app instance, antivirus, Windows Search indexer).  In that
+        case we copy the content to the destination file and truncate the
+        source so the active handle keeps writing to a fresh empty file.
+        """
         if os.path.exists(dest):
-            os.remove(dest)
-        os.rename(source, dest)
+            try:
+                os.remove(dest)
+            except OSError:
+                pass
+        try:
+            os.rename(source, dest)
+        except PermissionError:
+            import shutil
+            try:
+                shutil.copy2(source, dest)
+            except Exception:
+                pass
+            # Truncate source so the open handle (other process) writes into
+            # a fresh file while we start a new log from here.
+            try:
+                with open(source, "w", encoding="utf-8"):
+                    pass
+            except OSError:
+                pass
 
 
 class StructuredFormatter(logging.Formatter):
