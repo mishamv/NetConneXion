@@ -5,7 +5,7 @@ from __future__ import annotations
 import threading
 from typing import Optional, TYPE_CHECKING
 
-from PySide6.QtCore import Qt, QTimer, Signal, QObject, QRectF, QPoint, QSize
+from PySide6.QtCore import Qt, QTimer, Signal, QObject, QRectF, QPoint, QSize, QRunnable, QThreadPool
 from PySide6.QtGui import QColor, QFont, QPainter, QPen
 from PySide6.QtWidgets import (
     QAbstractItemView, QCheckBox, QComboBox, QFrame, QGridLayout, QHBoxLayout,
@@ -110,6 +110,9 @@ class WifiPage(QWidget):
         self._last_connect_ssid: str = ""
         self._last_connect_password: str = ""
         self._current_ssid: str = ""
+
+        self._last_polled_ssid: str = ""
+        self._stable_poll_count: int = 0
 
         self._status_timer = QTimer(self)
         self._status_timer.setInterval(5000)
@@ -567,18 +570,23 @@ class WifiPage(QWidget):
         if getattr(self, '_status_polling', False):
             return
         self._status_polling = True
-        threading.Thread(target=self._status_worker, daemon=True).start()
 
-    def _status_worker(self) -> None:
-        try:
-            s = self._presenter.get_interface_status()
-            self._bridge.status_updated.emit(s)
-        except Exception:
-            self._bridge.status_updated.emit({})
-        finally:
-            self._status_polling = False
+        presenter = self._presenter
+        bridge = self._bridge
+
+        class _Worker(QRunnable):
+            def run(self):
+                try:
+                    s = presenter.get_interface_status()
+                    bridge.status_updated.emit(s)
+                except Exception:
+                    bridge.status_updated.emit({})
+
+        QThreadPool.globalInstance().start(_Worker())
 
     def _render_status(self, status: dict) -> None:
+        self._status_polling = False
+
         # Обработка деталей IP из _fetch_ip_details
         if "_details" in status:
             self._status_details.setText(status["_details"])
@@ -588,22 +596,38 @@ class WifiPage(QWidget):
         ssid = status.get("ssid", "")
         signal = status.get("signal", "")
         is_connected = state in ("connected", "подключено")
+
+        ssid_changed = ssid != self._last_polled_ssid
+
         if is_connected:
             sig_str = f"  {signal}%" if signal else ""
             connected_str = self._tr("wifi_state_connected")
             label = f"{connected_str}: {ssid}{sig_str}" if ssid else connected_str
             self._status_label.setText(label)
             self._status_dot.setProperty("connected", "true")
-            # Запрашиваем IP детали в фоне
             self._current_ssid = ssid
-            threading.Thread(target=self._fetch_ip_details, daemon=True).start()
+            # Fetch IP details only on SSID change or first connect
+            if ssid_changed:
+                self._stable_poll_count = 0
+                threading.Thread(target=self._fetch_ip_details, daemon=True).start()
+            else:
+                self._stable_poll_count += 1
         else:
+            self._stable_poll_count = 0
             self._status_details.setVisible(False)
             if state:
                 self._status_label.setText(self._tr("wifi_state_disconnected"))
             else:
                 self._status_label.setText(self._tr("wifi_no_adapter"))
             self._status_dot.setProperty("connected", "false")
+
+        self._last_polled_ssid = ssid
+
+        # Adaptive interval: slow down when connection is stable
+        new_interval = 5000 if (ssid_changed or self._stable_poll_count < 3) else 15000
+        if self._status_timer.interval() != new_interval:
+            self._status_timer.setInterval(new_interval)
+
         self._status_dot.style().unpolish(self._status_dot)
         self._status_dot.style().polish(self._status_dot)
         # Подсвечиваем строку текущей сети

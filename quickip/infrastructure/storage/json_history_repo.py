@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class JsonHistoryRepository(BaseJsonRepository, HistoryRepository):
     """JSON file-based history storage with atomic writes."""
 
-    def __init__(self, file_path: Optional[Path] = None, max_entries: int = 1000):
+    def __init__(self, file_path: Optional[Path] = None, max_entries: int = 500):
         BaseJsonRepository.__init__(self, file_path or get_history_file())
         self.max_entries = max_entries
         self._entries: List[ProfileHistoryEntry] = []
