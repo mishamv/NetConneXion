@@ -120,6 +120,13 @@ class WifiPage(QWidget):
         self._poll_status()
         self._status_timer.start()
 
+        # Migrate any legacy b64: profiles to DPAPI/keyring on startup (T1555.004)
+        threading.Thread(
+            target=self._presenter.migrate_legacy_profiles,
+            daemon=True,
+            name="wifi_b64_migrate",
+        ).start()
+
     # ── Build UI ──────────────────────────────────────────────────
 
     def _build_ui(self) -> None:

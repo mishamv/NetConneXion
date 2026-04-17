@@ -70,6 +70,32 @@ class WifiService:
 
     # ── Connect / Disconnect ──────────────────────────────────────
 
+    @staticmethod
+    def _validate_ssid(ssid: str) -> None:
+        """Raise ValueError for invalid SSIDs (IEEE 802.11 §7.3.2.1).
+
+        Rules:
+        - 1–32 bytes when UTF-8 encoded (802.11 max SSID length)
+        - No control characters (< 0x20)
+        - No double-quote (") — prevents f-string injection in netsh name=
+        """
+        if not ssid:
+            raise ValueError("SSID must not be empty")
+        encoded = ssid.encode("utf-8")
+        if len(encoded) > 32:
+            raise ValueError(
+                f"SSID '{ssid!r}' exceeds 32 bytes (IEEE 802.11 limit): "
+                f"{len(encoded)} bytes"
+            )
+        if any(b < 0x20 for b in encoded):
+            raise ValueError(
+                f"SSID '{ssid!r}' contains control characters (< 0x20)"
+            )
+        if '"' in ssid:
+            raise ValueError(
+                f"SSID '{ssid!r}' contains a double-quote character"
+            )
+
     def connect(self, ssid: str, profile: WifiProfile) -> ConnectResult:
         """Connect using a WifiProfile.
 
@@ -78,6 +104,7 @@ class WifiService:
         Raises quickip.core.security.vault.VaultPortabilityError if the
         password was encrypted on a different machine/user.
         """
+        self._validate_ssid(ssid)
         password = ""
         if profile.key_protected:
             if profile.key_protected == "kr:":
@@ -118,6 +145,7 @@ class WifiService:
         """Connect using a plaintext password — bypasses vault.
         Used when vault (pywin32) is unavailable or for one-off connections.
         """
+        self._validate_ssid(ssid)
         if len(password) < 8:
             return ConnectResult(
                 success=False,
@@ -136,6 +164,7 @@ class WifiService:
         """Connect to an open (password-free) network.
         Если Windows уже знает этот профиль — просто подключаемся, не перезаписываем.
         """
+        self._validate_ssid(ssid)
         if self._windows_profile_exists(ssid):
             logger.info("Windows profile exists for %s — skipping XML add", ssid)
             return self._connect_by_name(ssid)
@@ -152,6 +181,7 @@ class WifiService:
         return ConnectResult(success=ok, message=result.stdout.strip())
 
     def delete_netsh_profile(self, ssid: str) -> ConnectResult:
+        self._validate_ssid(ssid)
         result = self._runner.run(
             ["netsh", "wlan", "delete", "profile", f"name={ssid}"],
             timeout=10,

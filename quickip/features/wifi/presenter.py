@@ -327,6 +327,22 @@ class WifiPresenter:
             )
         return profile
 
+    def migrate_legacy_profiles(self) -> None:
+        """Migrate all b64:-prefixed profiles to DPAPI/keyring at startup.
+
+        MITRE T1555.004 / T1552.001 — removes plaintext-equivalent base64
+        credentials from wifi_profiles.json before any user interaction.
+        Runs in the calling thread; invoke from a daemon thread to avoid
+        blocking the UI.
+        """
+        profiles = self._profile_repo.list()
+        legacy = [p for p in profiles if p.key_protected.startswith("b64:")]
+        if not legacy:
+            return
+        logger.info("Startup b64: migration — found %d legacy profile(s)", len(legacy))
+        for profile in legacy:
+            self._migrate_b64_profile(profile)
+
     def connect_open_network(self, ssid: str):
         return self._service.connect_open(ssid)
 

@@ -845,48 +845,45 @@ class _PortScanPanel(_ToolPanel):
         threading.Thread(target=self._worker, args=(host, ports), daemon=True).start()
 
     def _worker(self, host: str, ports: list[int]) -> None:
-        try:
-            total = len(ports)
-            lock = threading.Lock()
-            open_count = 0
-            done_count = 0
+        from concurrent.futures import ThreadPoolExecutor, as_completed
 
-            def scan_port(port: int) -> None:
-                nonlocal open_count, done_count
-                with lock:
-                    if not self._running:
-                        return
-                try:
-                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        def probe(port: int) -> tuple[int, str]:
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                     s.settimeout(0.5)
                     if s.connect_ex((host, port)) == 0:
                         try:
                             svc = socket.getservbyport(port)
                         except Exception:
                             svc = ""
-                        line = f"  {port:5d}/tcp  OPEN  {svc}"
-                        with lock:
-                            open_count += 1
-                        self._bridge.output.emit(line, False)
-                    s.close()
-                except Exception:
-                    pass
-                finally:
-                    with lock:
-                        done_count += 1
+                        return port, svc
+            except Exception:
+                pass
+            return port, None  # type: ignore[return-value]
 
-            batch_size = 50
-            for i in range(0, total, batch_size):
-                if not self._running:
-                    break
-                batch = ports[i:i + batch_size]
-                ts = [threading.Thread(target=scan_port, args=(p,), daemon=True) for p in batch]
-                for t in ts:
-                    t.start()
-                for t in ts:
-                    t.join()
-                pct = min(100, int((i + len(batch)) / total * 100))
-                self._bridge.output.emit(f"  [{pct}%] Scanned {i + len(batch)}/{total} ports", False)
+        try:
+            total = len(ports)
+            open_count = 0
+            done_count = 0
+
+            with ThreadPoolExecutor(max_workers=256) as ex:
+                futures = {ex.submit(probe, p): p for p in ports}
+                for fut in as_completed(futures):
+                    if not self._running:
+                        ex.shutdown(wait=False, cancel_futures=True)
+                        break
+                    port, svc = fut.result()
+                    if svc is not None:
+                        open_count += 1
+                        self._bridge.output.emit(
+                            f"  {port:5d}/tcp  OPEN  {svc}", False
+                        )
+                    done_count += 1
+                    if done_count % 256 == 0 or done_count == total:
+                        pct = min(100, int(done_count / total * 100))
+                        self._bridge.output.emit(
+                            f"  [{pct}%] Scanned {done_count}/{total} ports", False
+                        )
 
             self._bridge.finished.emit(True, f"Scan complete: {open_count} open port(s)")
         except Exception as e:

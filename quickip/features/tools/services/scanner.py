@@ -198,12 +198,12 @@ class ScannerService:
 
     @staticmethod
     def _try_resolve(ip: str) -> str:
+        # socket.setdefaulttimeout is process-global — unsafe under concurrent calls.
+        # Use concurrent.futures with a 2-second wall-clock timeout instead.
+        from concurrent.futures import ThreadPoolExecutor, TimeoutError as _TimeoutError
         try:
-            old_timeout = socket.getdefaulttimeout()
-            socket.setdefaulttimeout(2)
-            try:
-                return socket.gethostbyaddr(ip)[0]
-            finally:
-                socket.setdefaulttimeout(old_timeout)
-        except OSError:
+            with ThreadPoolExecutor(max_workers=1) as ex:
+                fut = ex.submit(socket.gethostbyaddr, ip)
+                return fut.result(timeout=2)[0]
+        except (OSError, _TimeoutError):
             return ""
