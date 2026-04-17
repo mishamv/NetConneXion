@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import tempfile
 from dataclasses import dataclass
 from typing import List, TYPE_CHECKING
@@ -49,9 +50,8 @@ class WifiService:
         )
         if result.stdout:
             if logger.isEnabledFor(logging.DEBUG):
-                import re as _re
                 rate_lines = [ln for ln in result.stdout.splitlines()
-                              if _re.search(r"скорост|rates", ln, _re.IGNORECASE)]
+                              if re.search(r"скорост|rates", ln, re.IGNORECASE)]
                 logger.debug("Rate lines sample: %s", rate_lines[:6])
         return parse_networks(result.stdout) if result.stdout else []
 
@@ -264,7 +264,6 @@ class WifiService:
         result = self._runner.run(["netsh", "wlan", "show", "interfaces"], timeout=10)
         if not result.stdout:
             return ""
-        import re
         for line in result.stdout.splitlines():
             m = re.match(r"^\s*(?:Name|Имя)\s*:\s*(.+)$", line.strip(), re.IGNORECASE)
             if m:

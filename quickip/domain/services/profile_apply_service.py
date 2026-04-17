@@ -8,7 +8,7 @@ from quickip.domain.models import IPMode, Profile, ApplyResult, ProfileHistoryEn
 from quickip.domain.interfaces import ProfileRepository, HistoryRepository
 from quickip.infrastructure.system.netsh_client import NetshClient
 from quickip.events.bus import EventBus
-from quickip.events.event_types import ProfileApplied, ProfileApplyFailed
+from quickip.core.events.types import ProfileApplied, ProfileApplyFailed
 
 
 logger = logging.getLogger(__name__)

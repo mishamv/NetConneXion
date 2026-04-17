@@ -4,7 +4,7 @@ import threading
 import logging
 from typing import Callable, Dict, List, Type
 from dataclasses import dataclass
-from quickip.events.event_types import AppEvent
+from quickip.core.events.types import AppEvent
 
 
 logger = logging.getLogger(__name__)

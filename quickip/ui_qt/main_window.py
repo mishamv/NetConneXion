@@ -525,9 +525,6 @@ class QtMainWindow(QMainWindow):
         else:
             self._logo_label.setText("NetConneXion")
 
-    def eventFilter(self, obj, event) -> bool:
-        return super().eventFilter(obj, event)
-
 
 # ── Entry point ───────────────────────────────────────────────────────────────
 
