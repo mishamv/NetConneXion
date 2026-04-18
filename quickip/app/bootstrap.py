@@ -20,8 +20,6 @@ from quickip.infrastructure.system.netsh_client import NetshClient
 from quickip.infrastructure.notify.toast_service import ToastService
 
 # Domain services
-from quickip.domain.services.profile_apply_service import ProfileApplyService
-from quickip.domain.services.diagnostics_service import DiagnosticsService, ConflictCheckService
 from quickip.infrastructure.services.i18n_service import I18nService
 
 logger = logging.getLogger(__name__)
@@ -48,16 +46,6 @@ class ServiceContainer:
         self.process_runner = ProcessRunner()
         self.netsh = NetshClient(self.process_runner)
         self.toast = ToastService(icon_path=icon_path)
-
-        # ── Domain services ──────────────────────────────────────
-        self.profile_apply = ProfileApplyService(
-            profile_repo=self.profile_repo,
-            history_repo=self.history_repo,
-            netsh_client=self.netsh,
-            event_bus=self.event_bus,
-        )
-        self.diagnostics = DiagnosticsService(self.process_runner)
-        self.conflict_check = ConflictCheckService(self.process_runner)
 
         # ── i18n ─────────────────────────────────────────────────
         _locales_dir = str(Path(__file__).resolve().parents[2] / "data" / "locales")

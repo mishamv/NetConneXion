@@ -54,11 +54,6 @@ def get_settings_file() -> Path:
     return get_app_data_dir() / "settings.json"
 
 
-def get_mappings_file() -> Path:
-    """Get path to network_mappings.json."""
-    return get_app_data_dir() / "network_mappings.json"
-
-
 def get_log_dir() -> Path:
     """Get directory for log files."""
     log_dir = get_app_data_dir() / "logs"

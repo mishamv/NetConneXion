@@ -11,50 +11,16 @@ from typing import TYPE_CHECKING, List
 
 from quickip.domain.models import Profile, ApplyResult, ProfileHistoryEntry
 from quickip.core.events.types import ProfileApplied, ProfileApplyFailed
+from quickip.shared.net_utils import prefix_to_mask
+from quickip.shared.ps_scripts import build_net_adapters_ps
 
 if TYPE_CHECKING:
     from quickip.app.bootstrap import ServiceContainer
 
 logger = logging.getLogger(__name__)
 
-# ── PowerShell query for "Current Networks" tab ───────────────────────────────
+_PS_NET_ADAPTERS = build_net_adapters_ps(include_media=False)
 
-_PS_NET_ADAPTERS = (
-    "$adapters = Get-NetAdapter | Select-Object Name,InterfaceDescription,"
-    "Status,MacAddress,LinkSpeed,InterfaceIndex;"
-    "$ips = Get-NetIPAddress | Select-Object InterfaceIndex,IPAddress,"
-    "PrefixLength,AddressFamily,PrefixOrigin;"
-    "$gws = Get-NetRoute -DestinationPrefix '0.0.0.0/0' -ErrorAction SilentlyContinue"
-    " | Select-Object InterfaceIndex,NextHop;"
-    "$dns_map = @{};"
-    "(Get-DnsClientServerAddress -ErrorAction SilentlyContinue) | ForEach-Object {"
-    "  $dns_map[$_.InterfaceIndex] = $_.ServerAddresses -join ', '};"
-    "$result = foreach ($a in $adapters) {"
-    "  $idx = $a.InterfaceIndex;"
-    "  $ip4 = ($ips | Where-Object {"
-    "    $_.InterfaceIndex -eq $idx -and $_.AddressFamily -eq 2} | Select-Object -First 1);"
-    "  $ip6 = ($ips | Where-Object {"
-    "    $_.InterfaceIndex -eq $idx -and $_.AddressFamily -eq 23} | Select-Object -First 1);"
-    "  $gw = ($gws | Where-Object {$_.InterfaceIndex -eq $idx} | Select-Object -First 1);"
-    "  [PSCustomObject]@{"
-    "    Name=$a.Name; Description=$a.InterfaceDescription; Status=$a.Status;"
-    "    Mac=$a.MacAddress; Speed=$a.LinkSpeed;"
-    "    IPv4=if($ip4){$ip4.IPAddress}else{''};"
-    "    Prefix=if($ip4){[int]$ip4.PrefixLength}else{0};"
-    "    IPv6=if($ip6){$ip6.IPAddress}else{''};"
-    "    Gateway=if($gw){$gw.NextHop}else{''};"
-    "    DNS=if($dns_map[$idx]){$dns_map[$idx]}else{''};"
-    "    DHCP=if($ip4){$ip4.PrefixOrigin}else{''}}};"
-    "$result | ConvertTo-Json -Compress"
-)
-
-
-def _prefix_to_mask(prefix: int) -> str:
-    """Convert CIDR prefix length (e.g. 24) to dotted-decimal mask (e.g. 255.255.255.0)."""
-    if not (0 <= prefix <= 32):
-        return ""
-    mask = (0xFFFFFFFF << (32 - prefix)) & 0xFFFFFFFF
-    return ".".join(str((mask >> (8 * i)) & 0xFF) for i in reversed(range(4)))
 
 
 class ProfileService:
@@ -184,7 +150,7 @@ class ProfileService:
                     "mac":         str(row.get("Mac", "")),
                     "speed":       str(row.get("Speed", "")),
                     "ipv4":        str(row.get("IPv4", "")),
-                    "mask":        _prefix_to_mask(prefix),
+                    "mask":        prefix_to_mask(prefix),
                     "ipv6":        str(row.get("IPv6", "")),
                     "gateway":     str(row.get("Gateway", "")),
                     "dns":         str(row.get("DNS", "")),

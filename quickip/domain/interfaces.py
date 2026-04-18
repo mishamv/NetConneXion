@@ -6,7 +6,6 @@ from quickip.domain.models import (
     Profile,
     ProfileHistoryEntry,
     HistoryStats,
-    NetworkMapping,
 )
 
 
@@ -101,39 +100,6 @@ class SettingsRepository(ABC):
         """Persist settings to storage."""
         pass
 
-
-class NetworkMappingRepository(ABC):
-    """Interface for network-to-profile mappings persistence."""
-
-    @abstractmethod
-    def list(self) -> List[NetworkMapping]:
-        """Get all network mappings."""
-        pass
-
-    @abstractmethod
-    def get(self, mapping_id: str) -> Optional[NetworkMapping]:
-        """Get mapping by ID."""
-        pass
-
-    @abstractmethod
-    def find_by_network(self, network_key: str) -> Optional[NetworkMapping]:
-        """Find mapping by network identifier."""
-        pass
-
-    @abstractmethod
-    def save(self, mapping: NetworkMapping) -> None:
-        """Save or update mapping."""
-        pass
-
-    @abstractmethod
-    def delete(self, mapping_id: str) -> None:
-        """Delete mapping."""
-        pass
-
-    @abstractmethod
-    def get_enabled(self) -> List[NetworkMapping]:
-        """Get only enabled mappings."""
-        pass
 
 
 class INotificationService(Protocol):

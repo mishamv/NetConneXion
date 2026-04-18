@@ -121,15 +121,6 @@ class HistoryStats:
     most_used_adapter: Optional[str] = None
 
 
-@dataclass
-class NetworkMapping:
-    """Auto-switch mapping between network and profile."""
-    id: str
-    network_key: str  # SSID or BSSID or gateway MAC
-    profile_id: str
-    enabled: bool = True
-    created_at: str = field(default_factory=lambda: datetime.now().isoformat())
-
 
 @dataclass
 class CommandResult:

@@ -15,6 +15,42 @@ from quickip.shared.paths import get_profiles_file
 logger = logging.getLogger(__name__)
 
 
+def _serialize_profile(profile: Profile) -> dict:
+    return {
+        "id": profile.id,
+        "name": profile.name,
+        "adapter": profile.adapter,
+        "dhcp_ip": profile.is_dhcp_ip,
+        "ip": profile.ipv4,
+        "mask": profile.mask,
+        "gateway": profile.gateway,
+        "dhcp_dns": profile.is_dhcp_dns,
+        "dns_primary": profile.dns_primary,
+        "dns_secondary": profile.dns_secondary,
+        "tags": profile.tags,
+        "created_at": profile.created_at,
+        "updated_at": profile.updated_at,
+    }
+
+
+def _deserialize_profile(data: dict) -> Profile:
+    return Profile(
+        id=data.get("id", str(uuid.uuid4())),
+        name=data["name"],
+        adapter=data["adapter"],
+        ip_mode=IPMode.DHCP if data.get("dhcp_ip", False) else IPMode.STATIC,
+        ipv4=data.get("ip", ""),
+        mask=data.get("mask", ""),
+        gateway=data.get("gateway", ""),
+        dns_mode=DNSMode.DHCP if data.get("dhcp_dns", False) else DNSMode.STATIC,
+        dns_primary=data.get("dns_primary", ""),
+        dns_secondary=data.get("dns_secondary", ""),
+        tags=data.get("tags", []),
+        created_at=data.get("created_at", datetime.now().isoformat()),
+        updated_at=data.get("updated_at", datetime.now().isoformat()),
+    )
+
+
 class JsonProfileRepository(BaseJsonRepository, ProfileRepository):
     """JSON file-based profile storage with atomic writes."""
 
@@ -34,41 +70,8 @@ class JsonProfileRepository(BaseJsonRepository, ProfileRepository):
         self._save_raw([self._serialize(p) for p in self._profiles.values()])
         logger.debug(f"Saved {len(self._profiles)} profiles")
 
-    def _serialize(self, profile: Profile) -> dict:
-        return {
-            "id": profile.id,
-            "name": profile.name,
-            "adapter": profile.adapter,
-            "dhcp_ip": profile.is_dhcp_ip,
-            "ip": profile.ipv4,
-            "mask": profile.mask,
-            "gateway": profile.gateway,
-            "dhcp_dns": profile.is_dhcp_dns,
-            "dns_primary": profile.dns_primary,
-            "dns_secondary": profile.dns_secondary,
-            "tags": profile.tags,
-            "created_at": profile.created_at,
-            "updated_at": profile.updated_at,
-        }
-
-    def _deserialize(self, data: dict) -> Profile:
-        dhcp_ip = data.get("dhcp_ip", False)
-        dhcp_dns = data.get("dhcp_dns", False)
-        return Profile(
-            id=data.get("id", str(uuid.uuid4())),
-            name=data["name"],
-            adapter=data["adapter"],
-            ip_mode=IPMode.DHCP if dhcp_ip else IPMode.STATIC,
-            ipv4=data.get("ip", ""),
-            mask=data.get("mask", ""),
-            gateway=data.get("gateway", ""),
-            dns_mode=DNSMode.DHCP if dhcp_dns else DNSMode.STATIC,
-            dns_primary=data.get("dns_primary", ""),
-            dns_secondary=data.get("dns_secondary", ""),
-            tags=data.get("tags", []),
-            created_at=data.get("created_at", datetime.now().isoformat()),
-            updated_at=data.get("updated_at", datetime.now().isoformat()),
-        )
+    _serialize = staticmethod(_serialize_profile)
+    _deserialize = staticmethod(_deserialize_profile)
 
     def list(self) -> List[Profile]:
         return list(self._profiles.values())
@@ -97,6 +100,11 @@ class JsonProfileRepository(BaseJsonRepository, ProfileRepository):
             if profile.name == name:
                 return profile
         return None
+
+    def replace_all(self, profiles: List[Profile]) -> None:
+        """Atomic bulk replace — write all profiles at once (no per-item save)."""
+        self._profiles = {p.id: p for p in profiles}
+        self._save()
 
     def reload(self) -> None:
         self._load()

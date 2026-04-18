@@ -9,11 +9,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, TYPE_CHECKING
 
-from quickip.domain.models import Profile, IPMode, DNSMode, ImportConflict, ImportReport
+from quickip.domain.models import Profile, ImportConflict, ImportReport
 from quickip.core.events.types import ProfilesImported
+from quickip.infrastructure.storage.json_profile_repo import (
+    _serialize_profile,
+    _deserialize_profile,
+)
 
 if TYPE_CHECKING:
-    from quickip.features.profiles.repository import ProfileRepository
     from quickip.events.bus import EventBus
 
 logger = logging.getLogger(__name__)
@@ -219,34 +222,5 @@ class ImportExportService:
             idx += 1
         return name
 
-    @staticmethod
-    def _serialize(p: Profile) -> dict:
-        return {
-            "id": p.id,
-            "name": p.name,
-            "adapter": p.adapter,
-            "dhcp_ip": p.is_dhcp_ip,
-            "ip": p.ipv4,
-            "mask": p.mask,
-            "gateway": p.gateway,
-            "dhcp_dns": p.is_dhcp_dns,
-            "dns_primary": p.dns_primary,
-            "dns_secondary": p.dns_secondary,
-            "tags": p.tags,
-        }
-
-    @staticmethod
-    def _deserialize(data: dict) -> Profile:
-        return Profile(
-            id=data.get("id", str(uuid.uuid4())),
-            name=data["name"],
-            adapter=data["adapter"],
-            ip_mode=IPMode.DHCP if data.get("dhcp_ip", False) else IPMode.STATIC,
-            ipv4=data.get("ip", ""),
-            mask=data.get("mask", ""),
-            gateway=data.get("gateway", ""),
-            dns_mode=DNSMode.DHCP if data.get("dhcp_dns", False) else DNSMode.STATIC,
-            dns_primary=data.get("dns_primary", ""),
-            dns_secondary=data.get("dns_secondary", ""),
-            tags=data.get("tags", []),
-        )
+    _serialize = staticmethod(_serialize_profile)
+    _deserialize = staticmethod(_deserialize_profile)

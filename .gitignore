@@ -94,6 +94,7 @@ $RECYCLE.BIN/
 *.tar.gz
 Output/
 installer/Output/
+installer/*.exe
 
 # ── Прочее ────────────────────────────────────────────────────
 nul

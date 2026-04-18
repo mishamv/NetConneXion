@@ -9,11 +9,9 @@ import uuid
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Protocol
 
 from quickip.domain.models import Profile, IPMode, DNSMode
-from quickip.shared.paths import get_profiles_file
 from quickip.core.events.types import (
     ProfileCreated, ProfileUpdated, ProfileDeleted, ProfilesChanged,
 )
-from quickip.features.profiles.repository import ProfileRepository
 from quickip.features.profiles.service import ProfileService
 from quickip.features.profiles.import_export import ImportExportService
 
@@ -48,7 +46,7 @@ class ProfilesPresenter:
 
     def __init__(self, container: "ServiceContainer") -> None:
         self._container = container
-        self._repo = ProfileRepository(get_profiles_file())
+        self._repo = container.profile_repo
         self._service = ProfileService(container)
         self._import_export = ImportExportService(self._repo, container.event_bus)  # type: ignore[arg-type]
         self._view: Optional[ProfilesViewProtocol] = None

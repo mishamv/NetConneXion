@@ -43,7 +43,6 @@ a = Analysis(
         'quickip.features.wifi.netsh_parser',
         'quickip.features.wifi.xml_builder',
         'quickip.features.profiles.presenter',
-        'quickip.features.profiles.repository',
         'quickip.features.profiles.service',
         'quickip.features.profiles.import_export',
         'quickip.core.security.vault',

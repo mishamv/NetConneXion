@@ -11,41 +11,16 @@ import logging
 from dataclasses import dataclass
 from typing import List, TYPE_CHECKING
 
+from quickip.shared.net_utils import prefix_to_mask
+
 if TYPE_CHECKING:
     from quickip.infrastructure.system.process_runner import ProcessRunner
 
+from quickip.shared.ps_scripts import build_net_adapters_ps
+
 logger = logging.getLogger(__name__)
 
-# ── PowerShell query ───────────────────────────────────────────────────────────
-
-_PS_ADAPTERS = (
-    "$adapters = Get-NetAdapter | Select-Object Name,InterfaceDescription,"
-    "Status,MacAddress,LinkSpeed,MediaType,InterfaceIndex;"
-    "$ips = Get-NetIPAddress | Select-Object InterfaceIndex,IPAddress,"
-    "PrefixLength,AddressFamily,PrefixOrigin;"
-    "$gws = Get-NetRoute -DestinationPrefix '0.0.0.0/0' -ErrorAction SilentlyContinue"
-    " | Select-Object InterfaceIndex,NextHop;"
-    "$dns_map = @{};"
-    "(Get-DnsClientServerAddress -ErrorAction SilentlyContinue) | ForEach-Object {"
-    "  $dns_map[$_.InterfaceIndex] = $_.ServerAddresses -join ', '};"
-    "$result = foreach ($a in $adapters) {"
-    "  $idx = $a.InterfaceIndex;"
-    "  $ip4 = ($ips | Where-Object {"
-    "    $_.InterfaceIndex -eq $idx -and $_.AddressFamily -eq 2} | Select-Object -First 1);"
-    "  $ip6 = ($ips | Where-Object {"
-    "    $_.InterfaceIndex -eq $idx -and $_.AddressFamily -eq 23} | Select-Object -First 1);"
-    "  $gw = ($gws | Where-Object {$_.InterfaceIndex -eq $idx} | Select-Object -First 1);"
-    "  [PSCustomObject]@{"
-    "    Name=$a.Name; Description=$a.InterfaceDescription; Status=$a.Status;"
-    "    Mac=$a.MacAddress; Speed=$a.LinkSpeed; Media=$a.MediaType;"
-    "    IPv4=if($ip4){$ip4.IPAddress}else{''};"
-    "    Prefix=if($ip4){$ip4.PrefixLength}else{0};"
-    "    IPv6=if($ip6){$ip6.IPAddress}else{''};"
-    "    Gateway=if($gw){$gw.NextHop}else{''};"
-    "    DNS=if($dns_map[$idx]){$dns_map[$idx]}else{''};"
-    "    DHCP=if($ip4){$ip4.PrefixOrigin}else{''}}};"
-    "$result | ConvertTo-Json -Compress"
-)
+_PS_ADAPTERS = build_net_adapters_ps(include_media=True)
 
 
 # ── Data model ────────────────────────────────────────────────────────────────
@@ -67,12 +42,7 @@ class AdapterDetail:
 
     @property
     def subnet_mask(self) -> str:
-        """Convert CIDR prefix length to dotted-decimal subnet mask."""
-        pl = self.prefix_length
-        if not (0 <= pl <= 32):
-            return ""
-        mask = (0xFFFFFFFF << (32 - pl)) & 0xFFFFFFFF
-        return ".".join(str((mask >> (8 * i)) & 0xFF) for i in reversed(range(4)))
+        return prefix_to_mask(self.prefix_length)
 
     @property
     def is_up(self) -> bool:
