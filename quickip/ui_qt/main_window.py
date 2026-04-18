@@ -135,7 +135,6 @@ class QtMainWindow(QMainWindow):
         self._apply_theme()
         self.facade.bootstrap()
         self._connect_status_events()
-        self._update_status_block()
         self._setup_tray()
         # Применяем сохранённый язык ко всем страницам
         if self.container.i18n.get_current_locale() != "ru":
@@ -200,34 +199,6 @@ class QtMainWindow(QMainWindow):
         nav_lay.addStretch(1)
         sb_lay.addWidget(nav, 1)
 
-        # Status block
-        st = QFrame()
-        st.setObjectName("StatusBlock")
-        st_lay = QVBoxLayout(st)
-        st_lay.setContentsMargins(14, 10, 14, 12)
-        st_lay.setSpacing(3)
-        r1 = QHBoxLayout()
-        self._st_dot = QLabel("\u25cf")
-        self._st_dot.setObjectName("StatusDot")
-        self._st_active = QLabel("\u2014")
-        self._st_active.setObjectName("StatusActive")
-        r1.addWidget(self._st_dot)
-        r1.addWidget(self._st_active, 1)
-        st_lay.addLayout(r1)
-        r2 = QHBoxLayout()
-        ak = QLabel(self._tr("status_adapter"))
-        ak.setObjectName("StatusKey")
-        self._st_adapter_key = ak
-        self._st_adapter = QLabel("\u2014")
-        self._st_adapter.setObjectName("StatusValue")
-        r2.addWidget(ak)
-        r2.addStretch(1)
-        r2.addWidget(self._st_adapter)
-        st_lay.addLayout(r2)
-        self._st_ip = QLabel("\u2014")
-        self._st_ip.setObjectName("StatusIP")
-        st_lay.addWidget(self._st_ip)
-        sb_lay.addWidget(st)
 
     def _nav_btn(self, item: _NavItem) -> QPushButton:
         if item.svg:
@@ -292,10 +263,7 @@ class QtMainWindow(QMainWindow):
             from PySide6.QtCore import QTimer
             QTimer.singleShot(100, self.wifi_page.trigger_scan)  # type: ignore[union-attr]
 
-    # ── Status Block ──────────────────────────────────────────────────
-
     def _connect_status_events(self) -> None:
-        """Подписываемся на события для обновления StatusBlock."""
         bus = self.container.event_bus
         bus.subscribe(ProfileApplied, self._on_profile_applied)  # type: ignore[arg-type]
         bus.subscribe(WifiStatusUpdated, self._on_wifi_status_updated)  # type: ignore[arg-type]
@@ -303,16 +271,11 @@ class QtMainWindow(QMainWindow):
         bus.subscribe(LangChanged, self._on_lang_changed)  # type: ignore[arg-type]
 
     def _on_profile_applied(self, event) -> None:
-        """Обновляем StatusBlock, feedback и историю после применения профиля."""
-        from PySide6.QtCore import QTimer
-        # Feedback в profiles_page
         success = getattr(event, 'success', True)
         profile_name = getattr(event, 'profile_name', '')
         duration_ms = getattr(event, 'duration_ms', 0)
         if hasattr(self.profiles_page, 'show_apply_result'):
             self.profiles_page.show_apply_result(success, profile_name, duration_ms)
-        # Обновляем StatusBlock
-        QTimer.singleShot(1500, self._update_status_block)
 
     def _on_theme_changed(self, event) -> None:
         """Обновляем тему при изменении из страницы настроек."""
@@ -328,66 +291,7 @@ class QtMainWindow(QMainWindow):
         QTimer.singleShot(0, self._retranslate_ui)
 
     def _on_wifi_status_updated(self, event) -> None:
-        """Обновляем StatusBlock при изменении Wi-Fi статуса."""
-        from PySide6.QtCore import QTimer
-        QTimer.singleShot(0, self._update_status_block)
-
-    def _update_status_block(self) -> None:
-        """Читает текущий IP/адаптер и обновляет StatusBlock в sidebar."""
-        import threading
-        threading.Thread(target=self._fetch_status_worker, daemon=True).start()
-
-    def _fetch_status_worker(self) -> None:
-        """Фоновый поток — получает IP и адаптер через netsh."""
-        try:
-            import re
-            runner = self.container.process_runner
-            result = runner.run(
-                ["netsh", "interface", "ipv4", "show", "config"],
-                timeout=8,
-            )
-            if not result.stdout:
-                return
-
-            # Парсим все интерфейсы, ищем подключённый (с IP не 0.0.0.0)
-            blocks = re.split(r'Настройка интерфейса|Configuration for interface', result.stdout)
-            best = {}
-            for block in blocks:
-                ip_m = re.search(r'IP.адрес[^:]*:[^\\d]*(\\d+\\.\\d+\\.\\d+\\.\\d+)', block, re.IGNORECASE)
-                if not ip_m or ip_m.group(1) == '0.0.0.0':
-                    continue
-                iface_m = re.search(r'"([^"]+)"', block)
-                iface = iface_m.group(1) if iface_m else '—'
-                gw_m = re.search(r'Основной шлюз[^:]*:[^\\d]*(\\d+\\.\\d+\\.\\d+\\.\\d+)', block, re.IGNORECASE)
-                best = {
-                    'ip': ip_m.group(1),
-                    'adapter': iface,
-                    'connected': bool(gw_m),
-                }
-                if gw_m:
-                    break  # нашли интерфейс со шлюзом — это активное подключение
-
-            if best:
-                from PySide6.QtCore import QTimer
-                # Переносим обновление в main thread через замыкание
-                _info = best
-                QTimer.singleShot(0, lambda i=_info: self._apply_status_block(i))
-        except Exception:
-            pass
-
-    def _apply_status_block(self, info: dict) -> None:
-        """Применяет данные к виджетам StatusBlock (main thread)."""
-        ip      = info.get('ip', '—')
-        adapter = info.get('adapter', '—')
-        connected = info.get('connected', False)
-
-        self._st_active.setText(ip)
-        self._st_adapter.setText(adapter[:20])
-        self._st_ip.setText('')
-
-        self._st_dot.setProperty("connected", "true" if connected else "false")
-        self._st_dot.style().unpolish(self._st_dot)
-        self._st_dot.style().polish(self._st_dot)
+        pass
 
     # ── Theme ─────────────────────────────────────────────────────────
 
@@ -414,9 +318,6 @@ class QtMainWindow(QMainWindow):
         page_tr = {"profiles": "page_profiles", "wifi": "page_wifi",
                    "tools": "page_tools", "settings": "page_settings"}
         self._page_title.setText(self._tr(page_tr.get(self._current_page_key, "page_profiles")))
-
-        # Статус-блок
-        self._st_adapter_key.setText(self._tr("status_adapter"))
 
         # Кнопка темы
         is_dark = self.theme_mode == "dark"
