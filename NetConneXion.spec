@@ -99,7 +99,7 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=str(ROOT / 'data' / 'app.ico'),      # иконка exe
-    uac_admin=True,                  # запрос UAC при старте (нужен для netsh)
+    uac_admin=False,                 # elevation через ShellExecuteW в main()
     version=str(ROOT / 'version_info.txt') if (ROOT / 'version_info.txt').exists() else None,
 )
 

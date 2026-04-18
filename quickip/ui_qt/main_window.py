@@ -443,17 +443,21 @@ def _relaunch_as_admin() -> None:
     import ctypes
     import sys
 
-    # sys.executable = путь к python.exe в .venv
-    # Передаём явный модульный запуск с правильным рабочим каталогом
-    project_dir = str(Path(__file__).parent.parent.parent)
-    args = '-m quickip.ui_qt.main_window'
+    if getattr(sys, "frozen", False):
+        # PyInstaller exe — sys.executable уже и есть NetConneXion.exe
+        exe = sys.executable
+        args = None
+        cwd = str(Path(exe).parent)
+    else:
+        # Режим разработки — запуск через python -m quickip
+        exe = sys.executable
+        args = "-m quickip"
+        cwd = str(Path(__file__).parent.parent.parent)
 
-    ret = ctypes.windll.shell32.ShellExecuteW(
-        None, "runas", sys.executable, args, project_dir, 1
-    )
+    ret = ctypes.windll.shell32.ShellExecuteW(None, "runas", exe, args, cwd, 1)
     if ret > 32:   # успешно запущен новый процесс — завершаем текущий
         sys.exit(0)
-    # Если пользователь отклонил UAC (ret <= 32) — продолжаем без прав
+    # Пользователь отклонил UAC или политика запрещает elevation — продолжаем без прав
 
 
 def main() -> int:
