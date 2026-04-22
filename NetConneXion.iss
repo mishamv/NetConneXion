@@ -68,6 +68,12 @@ Name: "desktopicon";  \
   Description: "{cm:CreateDesktopIcon}"; \
   GroupDescription: "{cm:AdditionalIcons}"
 
+; ── Directories (explicit ACL so non-admin users can launch the exe) ─────────
+
+[Dirs]
+Name: "{app}"; Permissions: users-readexec
+Name: "{commonappdata}\NetConneXion"; Permissions: users-modify
+
 ; ── Files ────────────────────────────────────────────────────────────────────
 
 [Files]

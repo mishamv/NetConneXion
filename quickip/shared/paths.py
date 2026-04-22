@@ -24,12 +24,12 @@ def get_app_data_dir() -> Path:
         data_dir.mkdir(exist_ok=True)
         return data_dir
 
-    # Standard installation mode: use AppData
+    # Standard installation mode: use ProgramData (shared, writable by elevated process)
     if sys.platform == "win32":
         import os
-        appdata = Path(os.getenv('APPDATA', ''))
-        if appdata:
-            app_dir = appdata / "QuickIPChange"
+        programdata = Path(os.getenv('PROGRAMDATA', ''))
+        if programdata:
+            app_dir = programdata / "NetConneXion"
             app_dir.mkdir(parents=True, exist_ok=True)
             return app_dir
 

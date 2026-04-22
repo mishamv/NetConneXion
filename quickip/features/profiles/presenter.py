@@ -101,7 +101,7 @@ class ProfilesPresenter:
             filtered.append(name)
 
         self._view.update_adapter_filter_values(
-            [all_adapters_label] + sorted(adapter_values)
+            [all_adapters_label] + sorted(adapter_values | set(self._adapters))
         )
 
         if not filtered:

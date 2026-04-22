@@ -21,6 +21,17 @@ if TYPE_CHECKING:
     from quickip.app.bootstrap import ServiceContainer
 
 
+def _apply_dark_titlebar(widget, dark: bool) -> None:
+    """Применяет тёмный/светлый заголовок окна через Windows DWM API."""
+    try:
+        import ctypes
+        hwnd = int(widget.winId())
+        value = ctypes.c_int(1 if dark else 0)
+        ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 20, ctypes.byref(value), ctypes.sizeof(value))
+    except Exception:
+        pass
+
+
 class _WifiBridge(QObject):
     """Emits signals from background threads into the Qt main thread."""
     scan_done       = Signal(list)
@@ -786,8 +797,9 @@ class WifiPage(QWidget):
         from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton
         dlg = QDialog(self)
         dlg.setWindowTitle(self._tr("dlg_connect_title"))
-        dlg.setFixedSize(380, 140)
+        dlg.setMinimumWidth(380)
         dlg.setWindowFlags(dlg.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
+        QTimer.singleShot(0, lambda: _apply_dark_titlebar(dlg, self._dark_mode))
 
         lay = QVBoxLayout(dlg)
         lay.setContentsMargins(24, 20, 24, 16)
@@ -806,12 +818,14 @@ class WifiPage(QWidget):
 
         btn_cancel = QPushButton(self._tr("btn_cancel"))
         btn_cancel.setProperty("role", "action")
-        btn_cancel.setFixedSize(80, 32)
+        btn_cancel.setMinimumWidth(80)
+        btn_cancel.setFixedHeight(32)
         btn_cancel.clicked.connect(dlg.reject)
 
         btn_ok = QPushButton(self._tr("btn_connect_action"))
         btn_ok.setProperty("role", "primary")
-        btn_ok.setFixedSize(90, 32)
+        btn_ok.setMinimumWidth(100)
+        btn_ok.setFixedHeight(32)
         btn_ok.clicked.connect(dlg.accept)
         btn_ok.setDefault(True)
 

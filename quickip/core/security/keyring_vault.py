@@ -14,7 +14,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-_SERVICE = "QuickIPChange"  # matches %APPDATA%\QuickIPChange folder name
+_SERVICE = "NetConneXion"
 
 
 class KeyringUnavailableError(Exception):

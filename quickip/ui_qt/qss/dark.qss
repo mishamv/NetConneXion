@@ -159,8 +159,11 @@ QComboBox#AdapterFilter {
     font-size: 12px;
 }
 
-QComboBox#AdapterFilter:focus {
+QComboBox#AdapterFilter:focus,
+QComboBox#AdapterFilter:on {
     border-color: rgba(99, 102, 241, 0.50);
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.45);
 }
 
 QComboBox#AdapterFilter::drop-down {
@@ -291,9 +294,10 @@ QComboBox#EditorCombo {
     min-height: 34px;
 }
 
-QComboBox#EditorCombo:focus {
+QComboBox#EditorCombo:focus,
+QComboBox#EditorCombo:on {
     border-bottom: 1px solid rgba(99, 102, 241, 0.70);
-    background: rgba(99, 102, 241, 0.06);
+    background: rgba(255, 255, 255, 0.07);
 }
 QLineEdit, QComboBox {
     background: rgba(255, 255, 255, 0.05); /* поля ввода dark */
@@ -305,6 +309,11 @@ QLineEdit, QComboBox {
 
 QLineEdit:focus, QComboBox:focus {
     border-color: rgba(99, 102, 241, 0.50); /* фокус — indigo */
+    background: rgba(99, 102, 241, 0.07);
+}
+
+QComboBox:on {
+    border-color: rgba(99, 102, 241, 0.50);
     background: rgba(99, 102, 241, 0.07);
 }
 
@@ -323,9 +332,11 @@ QComboBox::down-arrow {
     border-bottom: 2px solid rgba(255, 255, 255, 0.35);
 }
 
-QComboBox QAbstractItemView {
+QComboBox QAbstractItemView,
+QComboBox#EditorCombo QAbstractItemView {
     background: #111827;      /* выпадающий список dark */
     border: 1px solid rgba(255, 255, 255, 0.10);
+    outline: none;
     selection-background-color: rgba(99, 102, 241, 0.25);
     selection-color: #FFFFFF;
     color: rgba(255, 255, 255, 0.82);
@@ -786,8 +797,10 @@ QComboBox#ToolCombo {
     border-radius: 6px;
 }
 
-QComboBox#ToolCombo:focus {
+QComboBox#ToolCombo:focus,
+QComboBox#ToolCombo:on {
     border-color: rgba(99, 102, 241, 0.60);
+    background: rgba(255, 255, 255, 0.05);
 }
 
 QComboBox#ToolCombo::drop-down {

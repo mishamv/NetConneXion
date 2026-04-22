@@ -396,6 +396,7 @@ class ProfilesPage(QWidget):
                       self.gw_edit, self.dns1_edit, self.dns2_edit):
             field.textChanged.connect(self._mark_dirty)
         self.adapter_combo.currentTextChanged.connect(self._mark_dirty)
+        self.adapter_combo.activated.connect(lambda: self.adapter_combo.clearFocus())
         self.dhcp_ip_cb.toggled.connect(self._mark_dirty)
         self.dhcp_dns_cb.toggled.connect(self._mark_dirty)
 
@@ -501,15 +502,14 @@ class ProfilesPage(QWidget):
         self._initialized = True  # с этого момента изменения формы считаются dirty
 
     def _set_adapter_values(self, values: List[str]) -> None:
+        _all_labels = {"Все адаптеров", "All adapters", "Все адаптеры"}
         cur = self.adapter_combo.currentText()
         self.adapter_combo.clear()
-        self.adapter_combo.addItems([v for v in values if v])
+        self.adapter_combo.addItems([v for v in values if v and v not in _all_labels])
         # Восстанавливаем выбор только если значение есть в списке
         idx = self.adapter_combo.findText(cur)
         if idx >= 0:
             self.adapter_combo.setCurrentIndex(idx)
-
-        _all_labels = {"Все адаптеры", "All adapters"}
         cur_f = self.adapter_filter.currentText()
         self.adapter_filter.blockSignals(True)
         self.adapter_filter.clear()

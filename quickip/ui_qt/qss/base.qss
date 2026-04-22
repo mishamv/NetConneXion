@@ -211,7 +211,8 @@ QComboBox#AdapterFilter {
     font-size: 12px;
 }
 
-QComboBox#AdapterFilter:focus {
+QComboBox#AdapterFilter:focus,
+QComboBox#AdapterFilter:on {
     border-color: #A5B4FC;
     background: #FFFFFF;
 }
@@ -362,6 +363,11 @@ QLineEdit, QComboBox {
 
 QLineEdit:focus, QComboBox:focus {
     border-color: #A5B4FC;   /* рамка при фокусе — indigo-300 */
+    background: #FFFFFF;
+}
+
+QComboBox:on {
+    border-color: #A5B4FC;
     background: #FFFFFF;
 }
 
