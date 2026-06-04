@@ -26,6 +26,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QColor, QIcon, QPalette, QPixmap
+from PySide6 import QtSvg as _QtSvg  # noqa: F401 — registers the SVG image plugin
 from PySide6.QtWidgets import (
     QApplication, QFrame, QHBoxLayout, QLabel, QMainWindow,
     QMenu, QPushButton, QSizePolicy, QStackedWidget, QSystemTrayIcon,
@@ -178,7 +179,7 @@ class QtMainWindow(QMainWindow):
         nav_lay.addWidget(net_lbl)
 
         for item in [
-            _NavItem("profiles", self._tr("nav_profiles"), "\u25A3"),
+            _NavItem("profiles", self._tr("nav_profiles"), "", svg="nav-profiles.svg"),
             _NavItem("wifi",     "Wi-Fi",                  "",    svg="nav-wifi.svg"),
             _NavItem("tools",    self._tr("nav_tools"),    "\u2692"),
         ]:

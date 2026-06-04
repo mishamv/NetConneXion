@@ -5,6 +5,7 @@
 
 import sys
 from pathlib import Path
+from PyInstaller.utils.hooks import collect_data_files
 
 ROOT = Path(SPEC).parent  # корень проекта
 
@@ -19,6 +20,8 @@ a = Analysis(
         (str(ROOT / 'data'),                          'data'),
         (str(ROOT / 'quickip' / 'ui_qt' / 'qss'),    'quickip/ui_qt/qss'),
         (str(ROOT / 'data' / 'locales'),              'data/locales'),
+        # openpyxl — шаблоны и данные (обязательно для записи xlsx)
+        *collect_data_files('openpyxl'),
     ],
     hiddenimports=[
         # pywin32 — DPAPI vault

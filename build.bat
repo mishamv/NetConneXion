@@ -27,6 +27,20 @@ if errorlevel 1 (
     python Scripts\pywin32_postinstall.py -install 2>nul
 )
 
+:: Проверяем openpyxl
+python -c "import openpyxl" >nul 2>&1
+if errorlevel 1 (
+    echo [INFO] openpyxl not found, installing...
+    pip install "openpyxl>=3.1"
+)
+
+:: Проверяем pillow (для иконки)
+python -c "import PIL" >nul 2>&1
+if errorlevel 1 (
+    echo [INFO] pillow not found, installing...
+    pip install pillow
+)
+
 :: Завершаем процесс если запущен.
 :: NetConneXion.exe запускается с UAC (admin), поэтому taskkill требует прав admin.
 :: Если скрипт уже запущен от admin — используем taskkill напрямую.

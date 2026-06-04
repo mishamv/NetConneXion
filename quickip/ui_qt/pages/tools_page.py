@@ -2568,7 +2568,7 @@ class _IpBatchPanel(QWidget):
         try:
             import openpyxl
         except ImportError as exc:
-            raise ImportError("Установите openpyxl: pip install openpyxl") from exc
+            raise ImportError("openpyxl не найден (обратитесь к разработчику)") from exc
         wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
         ws = wb.active
         all_rows = list(ws.iter_rows(values_only=True))
@@ -2765,7 +2765,7 @@ class _IpBatchPanel(QWidget):
             import openpyxl
             from openpyxl.styles import Font, PatternFill, Alignment
         except ImportError as exc:
-            raise ImportError("Установите openpyxl: pip install openpyxl") from exc
+            raise ImportError("openpyxl не найден (обратитесь к разработчику)") from exc
         headers, data = self._collect_results()
         wb = openpyxl.Workbook()
         ws = wb.active
