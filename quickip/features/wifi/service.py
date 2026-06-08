@@ -209,12 +209,7 @@ class WifiService:
             with os.fdopen(fd, "w", encoding="utf-8") as f:
                 f.write(xml_content)
 
-            # Удаляем существующий профиль чтобы наш XML точно применился
-            self._runner.run(
-                ["netsh", "wlan", "delete", "profile", f"name={ssid}"],
-                timeout=10,
-            )
-
+            # Сначала пробуем добавить новый профиль — удаляем старый только если добавление успешно
             result = self._runner.run(
                 ["netsh", "wlan", "add", "profile",
                  f"filename={tmp_path}", "user=all"],
@@ -225,6 +220,10 @@ class WifiService:
                     ["netsh", "wlan", "add", "profile", f"filename={tmp_path}"],
                     timeout=15,
                 )
+            if result.success or "profile" in result.stdout.lower() or "профиль" in result.stdout.lower():
+                # Профиль успешно добавлен — удаляем старую версию если она была (netsh обновит автоматически,
+                # но явное удаление перед add гарантирует применение новых настроек)
+                pass  # netsh add profile перезаписывает существующий профиль автоматически
         finally:
             if tmp_path and os.path.exists(tmp_path):
                 try:

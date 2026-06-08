@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import logging
+import re
 import threading
+import traceback
 from typing import Optional, TYPE_CHECKING
 
 from PySide6.QtCore import Qt, QTimer, Signal, QObject, QRectF, QPoint, QSize, QRunnable, QThreadPool
@@ -121,6 +124,7 @@ class WifiPage(QWidget):
         self._last_connect_ssid: str = ""
         self._last_connect_password: str = ""
         self._current_ssid: str = ""
+        self._poll_lock = threading.Lock()
 
         self._last_polled_ssid: str = ""
         self._stable_poll_count: int = 0
@@ -481,13 +485,10 @@ class WifiPage(QWidget):
     def _scan_worker(self) -> None:
         try:
             nets = self._presenter.scan_networks()
-            import logging
-            logging.getLogger(__name__).info(f"Scan complete: {len(nets)} networks found")
+            logging.getLogger(__name__).info("Scan complete: %d networks found", len(nets))
             self._bridge.scan_done.emit(nets)
         except Exception:
-            import traceback
-            import logging
-            logging.getLogger(__name__).error(f"Scan error: {traceback.format_exc()}")
+            logging.getLogger(__name__).error("Scan error: %s", traceback.format_exc())
             self._bridge.scan_done.emit([])
 
     def _render_networks(self, networks: list) -> None:
@@ -578,12 +579,12 @@ class WifiPage(QWidget):
     # ── Status ────────────────────────────────────────────────────
 
     def _poll_status(self) -> None:
-        if getattr(self, '_status_polling', False):
+        if not self._poll_lock.acquire(blocking=False):
             return
-        self._status_polling = True
 
         presenter = self._presenter
         bridge = self._bridge
+        lock = self._poll_lock
 
         class _Worker(QRunnable):
             def run(self):
@@ -592,11 +593,12 @@ class WifiPage(QWidget):
                     bridge.status_updated.emit(s)
                 except Exception:
                     bridge.status_updated.emit({})
+                finally:
+                    lock.release()
 
         QThreadPool.globalInstance().start(_Worker())
 
     def _render_status(self, status: dict) -> None:
-        self._status_polling = False
 
         # Обработка деталей IP из _fetch_ip_details
         if "_details" in status:
@@ -647,21 +649,18 @@ class WifiPage(QWidget):
 
     def _fetch_ip_details(self) -> None:
         """Получает IP, шлюз, DNS для текущего Wi-Fi адаптера."""
+        _logger = logging.getLogger(__name__)
         try:
-            import re as _re
-            import logging as _log
-            _logger = _log.getLogger(__name__)
             result = self._presenter.get_wifi_interface_config(
                 self._presenter.get_wifi_interface_name()
             )
             if not result.stdout:
                 return
-            # Логируем вывод для диагностики
             _logger.info("netsh ipv4 config output:\n%s", result.stdout[:800])
             fields: dict = {}
             dns_list: list = []
             _last_key = None
-            _ip_pat = _re.compile(r"^\d{1,3}(?:\.\d{1,3}){3}$")
+            _ip_pat = re.compile(r"^\d{1,3}(?:\.\d{1,3}){3}$")
             for line in result.stdout.splitlines():
                 stripped = line.strip()
                 matched = False
@@ -673,7 +672,7 @@ class WifiPage(QWidget):
                              r"Серверы DNS.*?DHCP|DNS Servers.*?DHCP|"
                              r"Стат\.\s*наст\.\s*серверы DNS|Статически настроенный DNS"),
                 ]:
-                    m = _re.match(rf"^(?:{pat})\s*[:\.]?\s*(.+)$", stripped, _re.IGNORECASE)
+                    m = re.match(rf"^(?:{pat})\s*[:\.]?\s*(.+)$", stripped, re.IGNORECASE)
                     if m:
                         val = m.group(1).strip().rstrip(".")
                         if val and val not in ("0.0.0.0", "Нет", "No", "-"):
@@ -707,8 +706,6 @@ class WifiPage(QWidget):
                 detail_text = "  ·  ".join(parts)
                 self._bridge.status_updated.emit({"_details": detail_text})
         except Exception:
-            import traceback
-            import logging
             logging.getLogger(__name__).error("_fetch_ip_details error: %s", traceback.format_exc())
 
     def _highlight_connected(self, ssid: str) -> None:
@@ -1214,7 +1211,8 @@ class WifiPage(QWidget):
 
     def showEvent(self, event) -> None:
         self._status_timer.start()
-        self._poll_status()
+        # Запускаем poll с задержкой — даём таймеру встать раньше первого срабатывания
+        QTimer.singleShot(100, self._poll_status)
         if not self._shown_once:
             self._shown_once = True
             if self._container.settings_repo.get("wifi_auto_scan", True):

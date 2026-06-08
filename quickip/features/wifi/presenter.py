@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import logging
-import queue
 import threading
 import uuid
 from datetime import datetime
@@ -12,7 +11,7 @@ from pathlib import Path
 from typing import Callable, List, Optional, TYPE_CHECKING
 
 from quickip.core.events.types import (
-    WifiNetworksUpdated, WifiStatusUpdated, WifiProfileSaved, WifiProfileDeleted,
+    WifiNetworksUpdated, WifiProfileSaved, WifiProfileDeleted,
 )
 from quickip.features.wifi.repository import (
     WifiProfileRepository, WifiOptionsRepository,
@@ -25,9 +24,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-_POLL_INTERVAL_MS = 3000  # status poll interval in milliseconds
-
-
 class WifiPresenter:
     """Coordinates Wi-Fi service + repositories; all UI calls route here."""
 
@@ -37,9 +33,6 @@ class WifiPresenter:
         self._profile_repo = WifiProfileRepository()
         self._options_repo = WifiOptionsRepository()
         self._view = None
-        self._status_poll_id = None   # root.after handle
-        self._root = None             # tk root ref for after() calls
-        self._status_queue: queue.Queue = queue.Queue(maxsize=1)  # thread-safe
 
     def bind_view(self, view) -> None:
         self._view = view
@@ -62,60 +55,6 @@ class WifiPresenter:
                 if callback:
                     callback([])
         threading.Thread(target=_work, daemon=True, name="wifi_scan").start()
-
-    # ── Status polling ────────────────────────────────────────────
-
-    def start_status_polling(self, root) -> None:
-        """Start polling interface status every 3 s via root.after()."""
-        self._root = root
-        self._stop_polling = False
-        self._poll_status()
-
-    def stop_status_polling(self) -> None:
-        self._stop_polling = True
-        if self._root and self._status_poll_id:
-            try:
-                self._root.after_cancel(self._status_poll_id)
-            except Exception:
-                pass
-        self._status_poll_id = None
-
-    def _poll_status(self) -> None:
-        if getattr(self, "_stop_polling", True):
-            return
-
-        # ── Deliver any result queued by the previous worker (main thread) ──
-        try:
-            status = self._status_queue.get_nowait()
-            self._container.event_bus.publish(  # type: ignore[arg-type]
-                WifiStatusUpdated(
-                    adapter=status.get("name", ""),
-                    ssid=status.get("ssid", ""),
-                    connected=status.get("state", "").lower() == "connected",
-                )
-            )
-            if self._view and hasattr(self._view, "update_status"):
-                self._view.update_status(status)
-        except queue.Empty:
-            pass
-
-        # ── Spawn worker; result goes into queue (no tkinter calls in thread) ─
-        def _work() -> None:
-            try:
-                status = self._service.get_interface_status()
-                try:
-                    self._status_queue.put_nowait(status)
-                except queue.Full:
-                    pass
-            except Exception:
-                logger.exception("WifiPresenter status poll error")
-
-        threading.Thread(target=_work, daemon=True, name="wifi_status").start()
-
-        if self._root and not getattr(self, "_stop_polling", True):
-            self._status_poll_id = self._root.after(
-                _POLL_INTERVAL_MS, self._poll_status
-            )
 
     # ── Connect / Disconnect ──────────────────────────────────────
 

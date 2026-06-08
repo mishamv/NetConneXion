@@ -18,6 +18,7 @@ from quickip.infrastructure.storage.json_profile_repo import (
 
 if TYPE_CHECKING:
     from quickip.events.bus import EventBus
+    from quickip.features.profiles.repository import ProfileRepository
 
 logger = logging.getLogger(__name__)
 

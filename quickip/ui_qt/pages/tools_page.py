@@ -4,10 +4,15 @@ from __future__ import annotations
 
 import base64
 import csv
+import datetime
 import json
 import re
 import socket
+import ssl
 import threading
+import time
+import urllib.error
+import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -361,21 +366,25 @@ class _PingPanel(_ToolPanel):
             self._proc = self._runner.popen(cmd, encoding="cp866", errors="replace")
             times: list = []
             success_count = 0
-            for line in self._proc.stdout or []:  # type: ignore[union-attr]
-                if not self._running:
-                    break
-                line = line.rstrip()
-                self._bridge.output.emit(line, False)
-                m = re.search(r"[=<](\d+)\s*мс|time[=<](\d+)\s*ms", line, re.IGNORECASE)
-                if m:
-                    ms = float(m.group(1) or m.group(2))
-                    times.append(ms)
-                    success_count += 1
-                    self._bridge.chart_update.emit(list(times))
-                elif re.search(r"timeout|\u043d\u0435\u0434\u043e\u0441\u0442\u0438\u0436\u0438\u043c|timed out", line, re.IGNORECASE):
-                    times.append(0)
-                    self._bridge.chart_update.emit(list(times))
-            self._proc.wait()
+            try:
+                for line in self._proc.stdout or []:  # type: ignore[union-attr]
+                    if not self._running:
+                        break
+                    line = line.rstrip()
+                    self._bridge.output.emit(line, False)
+                    m = re.search(r"[=<](\d+)\s*мс|time[=<](\d+)\s*ms", line, re.IGNORECASE)
+                    if m:
+                        ms = float(m.group(1) or m.group(2))
+                        times.append(ms)
+                        success_count += 1
+                        self._bridge.chart_update.emit(list(times))
+                    elif re.search(r"timeout|\u043d\u0435\u0434\u043e\u0441\u0442\u0438\u0436\u0438\u043c|timed out", line, re.IGNORECASE):
+                        times.append(0)
+                        self._bridge.chart_update.emit(list(times))
+            finally:
+                if self._proc.stdout:
+                    self._proc.stdout.close()
+                self._proc.wait()
             valid = [t for t in times if t > 0]
             if valid:
                 avg = sum(valid) / len(valid)
@@ -418,14 +427,18 @@ class _TraceroutePanel(_ToolPanel):
             cmd = ["tracert", "-d", "-w", "2000", host]
             self._proc = self._runner.popen(cmd, encoding="cp866", errors="replace")
             hops = 0
-            for line in self._proc.stdout or []:  # type: ignore[union-attr]
-                if not self._running:
-                    break
-                line = line.rstrip()
-                self._bridge.output.emit(line, False)
-                if re.match(r"\s*\d+\s", line):
-                    hops += 1
-            self._proc.wait()
+            try:
+                for line in self._proc.stdout or []:  # type: ignore[union-attr]
+                    if not self._running:
+                        break
+                    line = line.rstrip()
+                    self._bridge.output.emit(line, False)
+                    if re.match(r"\s*\d+\s", line):
+                        hops += 1
+            finally:
+                if self._proc.stdout:
+                    self._proc.stdout.close()
+                self._proc.wait()
             self._bridge.finished.emit(True, f"Completed: {hops} hops")
         except Exception as e:
             self._bridge.finished.emit(False, str(e))
@@ -488,11 +501,15 @@ class _DnsPanel(_ToolPanel):
             cmd = ["nslookup", f"-type={qtype}", host]
             self._proc = self._runner.popen(cmd)
             lines = []
-            for raw_line in iter(self._proc.stdout.readline, b""):  # type: ignore[union-attr]
-                line = self._decode_line(raw_line)
-                lines.append(line)
-                self._bridge.output.emit(line, False)
-            self._proc.wait()
+            try:
+                for raw_line in iter(self._proc.stdout.readline, b""):  # type: ignore[union-attr]
+                    line = self._decode_line(raw_line)
+                    lines.append(line)
+                    self._bridge.output.emit(line, False)
+            finally:
+                if self._proc.stdout:
+                    self._proc.stdout.close()
+                self._proc.wait()
             ok = any("Address" in ln or "Name" in ln or "\u0410\u0434\u0440\u0435\u0441" in ln for ln in lines)
             self._bridge.finished.emit(ok, "Готово" if ok else "Записи не найдены")
         except Exception as e:
@@ -689,7 +706,6 @@ class _IpconfigPanel(QWidget):
 
     def _worker(self) -> None:
         try:
-            import base64
             encoded = base64.b64encode(_IPCONFIG_PS.encode('utf-16-le')).decode('ascii')
             result = self._runner.run(
                 ["powershell", "-NoProfile", "-NonInteractive", "-EncodedCommand", encoded],
@@ -1115,7 +1131,8 @@ class _ArpPanel(QWidget):
         self.btn_clear.setText(self._tr("tools_btn_clear"))
 
     def _on_run(self) -> None:
-        self._table.setRowCount(0) if hasattr(self._table, "setRowCount") else None
+        self._table.clear()
+        self._table.setHeaderLabels(["IP-адрес", "MAC-адрес", "Тип", "Интерфейс"])
         self.btn_run.setEnabled(False)
         self._status.setText("")
         threading.Thread(target=self._worker, daemon=True).start()
@@ -1197,10 +1214,6 @@ class _HttpCheckPanel(_ToolPanel):
 
     def _worker(self, url: str) -> None:
         try:
-            import urllib.request
-            import urllib.error
-            import time
-            import ssl
 
             ctx = ssl.create_default_context()  # TLS verification enabled by default
 
@@ -1290,9 +1303,6 @@ class _SslPanel(_ToolPanel):
         threading.Thread(target=self._worker, args=(host,), daemon=True).start()
 
     def _worker(self, host: str) -> None:
-        import ssl
-        import socket
-        import datetime
         try:
             if ":" in host:
                 hostname, port_s = host.rsplit(":", 1)
@@ -1465,7 +1475,6 @@ class _RouteTablePanel(QWidget):
         self._table.setUpdatesEnabled(True)
 
     @staticmethod
-    @staticmethod
     def _clean(s: str) -> str:
         """Оставляет только ASCII-печатные символы из имён адаптеров Windows."""
         return "".join(c for c in s if 0x20 <= ord(c) <= 0x7E).strip()
@@ -1569,6 +1578,10 @@ class _SignalGraph(QWidget):
         self._dark = True
         self.setMinimumHeight(90)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+    @property
+    def count(self) -> int:
+        return len(self._values)
 
     def push(self, dbm: float) -> None:
         self._values.append(dbm)
@@ -1765,8 +1778,7 @@ class _SignalMonitorPanel(QWidget):
         self._btn_start.setEnabled(False)
         self._btn_stop.setEnabled(True)
         self._log.clear()
-        import threading as _t
-        _t.Thread(target=self._poll_loop, daemon=True).start()
+        threading.Thread(target=self._poll_loop, daemon=True).start()
 
     def _stop(self) -> None:
         self._running = False
@@ -1812,12 +1824,11 @@ class _SignalMonitorPanel(QWidget):
         interval = "1" if dbm < self._WEAK_DBM else "2"
         self._status.setText(
             self._tr("tools_signal_status").format(
-                interval=interval, count=len(self._graph._values)
+                interval=interval, count=self._graph.count
             )
         )
 
     def _on_roam(self, d: dict) -> None:
-        import datetime
         ts = datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]
         old_b = d.get("old_bssid", "?")
         new_b = d.get("new_bssid", "?")
@@ -1884,9 +1895,8 @@ class _SignalMonitorPanel(QWidget):
             band = "2.4 GHz"
 
         # BSSID — ищем и "BSSID" и "AP BSSID"
-        import re as _re
-        bssid_m = _re.search(r"(?:AP\s+)?BSSID\s*:\s*([0-9a-fA-F]{2}(?:[:\-][0-9a-fA-F]{2}){5})",
-                             output, _re.IGNORECASE)
+        bssid_m = re.search(r"(?:AP\s+)?BSSID\s*:\s*([0-9a-fA-F]{2}(?:[:\-][0-9a-fA-F]{2}){5})",
+                            output, re.IGNORECASE)
         bssid = bssid_m.group(1) if bssid_m else ""
 
         return {
@@ -2279,7 +2289,7 @@ def _safe_workers(n_ips: int) -> int:
     - Never more than the number of IPs (no idle threads)
     - Scale down for small batches: no point in 50 threads for 10 IPs
     """
-    return min(_BATCH_MAX_WORKERS, max(1, n_ips, min(n_ips, _BATCH_DEFAULT_WORKERS)))
+    return min(_BATCH_MAX_WORKERS, max(1, min(n_ips, _BATCH_DEFAULT_WORKERS)))
 
 
 class _IpBatchBridge(QObject):
