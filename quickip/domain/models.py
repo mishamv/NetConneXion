@@ -34,6 +34,9 @@ class Profile:
     tags: List[str] = field(default_factory=list)
     created_at: str = field(default_factory=lambda: datetime.now().isoformat())
     updated_at: str = field(default_factory=lambda: datetime.now().isoformat())
+    # Auto-switch: SSID Wi-Fi сети, при подключении к которой применяется этот профиль.
+    # Пустая строка — авто-переключение отключено.
+    auto_switch_ssid: str = ""
 
     @property
     def is_dhcp_ip(self) -> bool:

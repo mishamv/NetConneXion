@@ -232,5 +232,177 @@ class TestVaultEntropy(unittest.TestCase):
             assert len(entropy) == 32
 
 
+# ---------------------------------------------------------------------------
+# NEW: WifiService.connect() blocks b64 profiles
+# ---------------------------------------------------------------------------
+
+class TestB64Blocked(unittest.TestCase):
+    """WifiService.connect() must refuse b64-encoded profiles (T1552.001)."""
+
+    def _make_service(self, vault_available: bool = True):
+        from quickip.features.wifi.service import WifiService
+        container = MagicMock()
+        container.process_runner = MagicMock()
+        container.vault_available = vault_available
+        return WifiService(container)
+
+    def _make_profile(self, key_protected: str):
+        from quickip.features.wifi.repository import WifiProfile
+        return WifiProfile(
+            id="test-id", ssid="TestNet", auth="WPA2-Personal",
+            cipher="AES", key_protected=key_protected,
+        )
+
+    def test_b64_profile_blocked_vault_available(self):
+        """b64: profile должен быть отклонён даже при доступном vault."""
+        import base64
+        svc = self._make_service(vault_available=True)
+        profile = self._make_profile("b64:" + base64.b64encode(b"password").decode())
+        result = svc.connect("TestNet", profile)
+        self.assertFalse(result.success)
+        self.assertIn("b64", result.message.lower())
+
+    def test_b64_profile_blocked_no_vault(self):
+        """b64: profile должен быть отклонён и без vault."""
+        import base64
+        svc = self._make_service(vault_available=False)
+        profile = self._make_profile("b64:" + base64.b64encode(b"password").decode())
+        result = svc.connect("TestNet", profile)
+        self.assertFalse(result.success)
+
+    def test_dpapi_profile_not_blocked(self):
+        """dpapi2: профиль не блокируется b64-проверкой.
+
+        win32crypt недоступен на Linux — мокируем весь модуль,
+        проверяем только что b64-блок-сообщение НЕ возвращается.
+        """
+        import types
+        mock_win32 = types.ModuleType("win32crypt")
+        mock_pywintypes = types.ModuleType("pywintypes")
+        mock_pywintypes.error = Exception
+
+        _B64_BLOCK_MSG = "b64"  # маркер, который присутствует в b64-блокировке
+
+        svc = self._make_service(vault_available=True)
+        profile = self._make_profile("dpapi2:AAAA")
+
+        with patch.dict(sys.modules, {"win32crypt": mock_win32,
+                                       "pywintypes": mock_pywintypes}):
+            # CryptUnprotectData выбрасывает ошибку (невалидный blob) — это не b64-блок
+            mock_win32.CryptUnprotectData = MagicMock(
+                side_effect=mock_pywintypes.error("bad blob")
+            )
+            try:
+                result = svc.connect("TestNet", profile)
+                # Если вернулся ConnectResult — убеждаемся что это не b64-ошибка
+                self.assertNotIn(_B64_BLOCK_MSG, (result.message or "").lower())
+            except Exception as exc:
+                # VaultUnavailableError или другое — главное, это не b64-блок
+                self.assertNotIn(_B64_BLOCK_MSG, str(exc).lower())
+
+
+# ---------------------------------------------------------------------------
+# NEW: build_profile_xml rejects WEP
+# ---------------------------------------------------------------------------
+
+class TestWepBlocked(unittest.TestCase):
+
+    def test_wep_raises_value_error(self):
+        from quickip.features.wifi.xml_builder import build_profile_xml
+        with self.assertRaises(ValueError) as ctx:
+            build_profile_xml(ssid="TestNet", auth="WEP", cipher="WEP", password="secret")
+        self.assertIn("WEP", str(ctx.exception))
+
+    def test_wpa2_builds_ok(self):
+        from quickip.features.wifi.xml_builder import build_profile_xml
+        xml = build_profile_xml(ssid="TestNet", auth="WPA2-Personal",
+                                cipher="AES", password="password123")
+        self.assertIn("WPA2PSK", xml)
+        self.assertIn("TestNet", xml)
+
+    def test_wep_not_in_auth_options(self):
+        from quickip.features.wifi.repository import AUTH_OPTIONS
+        self.assertNotIn("WEP", AUTH_OPTIONS)
+
+
+# ---------------------------------------------------------------------------
+# NEW: validate_ipv4 / validate_ipv4_mask / validate_profile_network_fields
+# ---------------------------------------------------------------------------
+
+class TestNetUtils(unittest.TestCase):
+
+    def setUp(self):
+        from quickip.shared.net_utils import (
+            validate_ipv4, validate_ipv4_mask, validate_profile_network_fields
+        )
+        self.validate_ipv4 = validate_ipv4
+        self.validate_mask = validate_ipv4_mask
+        self.validate_fields = validate_profile_network_fields
+
+    # validate_ipv4
+    def test_valid_ip(self):
+        self.validate_ipv4("192.168.1.1")
+
+    def test_empty_ip_raises(self):
+        with self.assertRaises(ValueError):
+            self.validate_ipv4("")
+
+    def test_invalid_ip_raises(self):
+        with self.assertRaises(ValueError):
+            self.validate_ipv4("999.0.0.1")
+
+    def test_text_not_ip_raises(self):
+        with self.assertRaises(ValueError):
+            self.validate_ipv4("not-an-ip")
+
+    def test_injection_attempt_raises(self):
+        with self.assertRaises(ValueError):
+            self.validate_ipv4("192.168.1.1; rm -rf /")
+
+    # validate_ipv4_mask
+    def test_valid_mask_24(self):
+        self.validate_mask("255.255.255.0")
+
+    def test_valid_mask_16(self):
+        self.validate_mask("255.255.0.0")
+
+    def test_valid_mask_32(self):
+        self.validate_mask("255.255.255.255")
+
+    def test_valid_mask_0(self):
+        self.validate_mask("0.0.0.0")
+
+    def test_invalid_mask_holey(self):
+        with self.assertRaises(ValueError):
+            self.validate_mask("255.0.255.0")  # дырявая маска
+
+    def test_empty_mask_raises(self):
+        with self.assertRaises(ValueError):
+            self.validate_mask("")
+
+    # validate_profile_network_fields
+    def test_valid_profile_fields(self):
+        self.validate_fields("192.168.1.100", "255.255.255.0",
+                             "192.168.1.1", "8.8.8.8", "8.8.4.4")
+
+    def test_invalid_ip_in_profile_raises(self):
+        with self.assertRaises(ValueError):
+            self.validate_fields("300.0.0.1", "255.255.255.0", "", "", "")
+
+    def test_invalid_gateway_raises(self):
+        with self.assertRaises(ValueError):
+            self.validate_fields("192.168.1.1", "255.255.255.0",
+                                 "not-a-gateway", "", "")
+
+    def test_invalid_dns_raises(self):
+        with self.assertRaises(ValueError):
+            self.validate_fields("192.168.1.1", "255.255.255.0",
+                                 "192.168.1.1", "bad-dns", "")
+
+    def test_empty_optional_fields_ok(self):
+        # gateway, dns — опциональные, пустые строки допустимы
+        self.validate_fields("10.0.0.50", "255.0.0.0", "", "", "")
+
+
 if __name__ == "__main__":
     unittest.main()

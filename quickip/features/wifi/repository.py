@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 AUTH_OPTIONS: List[str] = [
     "Open",
-    "WEP",
+    # "WEP" удалён — взломан с 2001 года, запрещён PCI DSS 4.0 / CIS L1
     "WPA-Personal",
     "WPA2-Personal",
     "WPA3-Personal",
@@ -36,7 +36,7 @@ AUTH_OPTIONS: List[str] = [
 
 CIPHER_OPTIONS: Dict[str, List[str]] = {
     "Open":                  ["None"],
-    "WEP":                   ["WEP"],
+    # "WEP": ["WEP"] удалён
     "WPA-Personal":          ["TKIP", "AES"],
     "WPA2-Personal":         ["AES"],
     "WPA3-Personal":         ["AES"],

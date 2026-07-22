@@ -110,8 +110,8 @@ class ProcessRunner:
         command: List[str],
         encoding: Optional[str] = None,
         errors: str = "replace",
-    ) -> "subprocess.Popen":
-        """Return a Popen object with proper NO_WINDOW flags for streaming output.
+    ) -> "ManagedProcess":
+        """Return a ManagedProcess for streaming output.
 
         Args:
             command: Command and arguments as list.
@@ -129,7 +129,8 @@ class ProcessRunner:
         if encoding is not None:
             kwargs["encoding"] = encoding
             kwargs["errors"] = errors
-        return subprocess.Popen(command, **kwargs)
+        proc = subprocess.Popen(command, **kwargs)
+        return ManagedProcess(proc, command_str)
 
     def run(
         self,
@@ -226,7 +227,7 @@ class ProcessRunner:
         except Exception as e:
             duration_ms = int((time.time() - start_time) * 1000)
             logger.error(f"Command execution error: {e}", exc_info=True)
-            
+
             return CommandResult(
                 success=False,
                 stdout="",
@@ -235,3 +236,88 @@ class ProcessRunner:
                 duration_ms=duration_ms,
                 command=command_str
             )
+
+
+class ManagedProcess:
+    """Wrapper around subprocess.Popen with guaranteed cleanup.
+
+    Replaces raw Popen usage in tool panels. Guarantees that:
+      - cancel() drains stdout, calls terminate(), waits, then kill() if needed.
+      - wait() always closes stdout before joining.
+      - Zombie processes (no wait() after terminate/kill) cannot accumulate.
+
+    Usage (mirrors Popen API for drop-in replacement in _ToolPanel workers):
+
+        proc = runner.popen(cmd, encoding="cp866")
+        for line in proc.stdout or []:
+            ...
+        proc.wait()          # normal finish
+        # or:
+        proc.cancel()        # user pressed Stop
+    """
+
+    def __init__(self, proc: subprocess.Popen, command_str: str = "") -> None:
+        self._proc = proc
+        self._command_str = command_str
+
+    # ── Delegate common Popen attributes ────────────────────────────
+
+    @property
+    def stdout(self):
+        return self._proc.stdout
+
+    @property
+    def returncode(self) -> Optional[int]:
+        return self._proc.returncode
+
+    def wait(self, timeout: Optional[float] = None) -> int:
+        """Wait for the process to finish, closing stdout first."""
+        try:
+            if self._proc.stdout:
+                self._proc.stdout.close()
+        except OSError:
+            pass
+        return self._proc.wait(timeout=timeout)
+
+    # ── Cancellation ─────────────────────────────────────────────────
+
+    def cancel(self, timeout: float = 3.0) -> None:
+        """Stop the process gracefully: terminate → wait → kill.
+
+        Closes stdout, sends SIGTERM (terminate on Windows = TerminateProcess),
+        waits up to *timeout* seconds, then SIGKILL if still running.
+        Always calls wait() to reap the zombie — never leaves orphan processes.
+        """
+        try:
+            if self._proc.stdout:
+                self._proc.stdout.close()
+        except OSError:
+            pass
+
+        if self._proc.poll() is not None:
+            return  # уже завершился
+
+        try:
+            self._proc.terminate()
+        except OSError:
+            pass
+
+        try:
+            self._proc.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            logger.warning("Process did not terminate in %.0fs — killing: %s",
+                           timeout, self._command_str)
+            try:
+                self._proc.kill()
+            except OSError:
+                pass
+            try:
+                self._proc.wait(timeout=2.0)
+            except subprocess.TimeoutExpired:
+                logger.error("Process could not be killed: %s", self._command_str)
+
+    # ── Legacy kill() for backward compat ───────────────────────────
+
+    def kill(self) -> None:
+        """Backward-compatible kill — delegates to cancel()."""
+        self.cancel()

@@ -1,19 +1,31 @@
 """Windows DPAPI credential vault.
 
-Encrypts/decrypts secrets using the Windows Data Protection API so that
-passwords are tied to the current Windows user account and machine.
+Encrypts/decrypts secrets using the Windows Data Protection API.
+
+Two protection scopes:
+  User scope  (default, "dpapi2:"  prefix):
+    Tied to the current Windows user account and machine.
+    Cannot be decrypted by another user — even an admin — without the user key.
+    Use this when all sessions run under the same account.
+
+  Machine scope ("dpapiM:" prefix):
+    Tied to the machine only, not to a specific user.
+    Any user on the same machine can decrypt.
+    Use this when the app is run under different accounts on the same PC
+    (e.g. regular user and an admin account used for elevation).
+    Enabled via protect_text(plaintext, machine_scope=True).
 
 Entropy scheme (v2):
   - App-level seed compiled into the binary (_APP_ENTROPY_SEED)
-  - Per-installation 32-byte random key stored in HKCU registry
+  - Per-installation 32-byte random key stored in HKCU (user) or
+    %PROGRAMDATA%\\NetConneXion\\entropy.key (machine scope)
   - Derived entropy = HMAC-SHA256(seed, machine_key)
-  This means even another process running as the same user cannot decrypt
-  the blob with plain CryptUnprotectData (would need the entropy).
+  This prevents other apps from decrypting blobs with plain CryptUnprotectData.
 
 Backward compatibility:
-  - New blobs are prefixed with "dpapi2:" and use entropy.
+  - New blobs: "dpapi2:" (user) or "dpapiM:" (machine) prefix.
   - Old blobs (plain base64, no prefix) are decrypted without entropy.
-  - All new protect_text() calls use v2 scheme automatically.
+  - All new protect_text() calls default to user scope.
 
 Requires: pywin32 >= 306 (``pip install pywin32``).
 """

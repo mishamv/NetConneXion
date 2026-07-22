@@ -1,0 +1,20 @@
+# ── Development & test dependencies ──────────────────────────────────────────
+# Устанавливаются только в dev/CI окружении, не входят в runtime.
+# Установка: pip install -r requirements.txt -r requirements-dev.txt
+
+# Testing
+pytest>=8.3
+pytest-cov>=5.0
+
+# Linting / formatting
+ruff>=0.5
+
+# Type checking (опционально)
+# mypy>=1.10
+# pyright>=1.1
+
+# Dependency audit
+# pip-audit>=2.7
+
+# Secret scanning (локально)
+# gitleaks (устанавливается отдельно через бинарник)

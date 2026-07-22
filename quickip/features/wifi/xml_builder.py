@@ -18,9 +18,10 @@ _NS = "http://www.microsoft.com/networking/WLAN/profile/v1"
 # Auth option → (XML authentication, XML encryption)
 # Assumption: WPA3-Enterprise maps to WPA2 XML — not fully supported by Windows netsh
 # Assumption: OWE requires Windows 10 build 1903+
+# NOTE: WEP намеренно исключён — взломан с 2001 года (FMS/aircrack, секунды).
+#       Нарушает PCI DSS 4.0 req 6.4.2, CIS Benchmark L1. Используйте WPA2+ минимум.
 AUTH_XML_MAP: dict = {
     "Open":                  ("open",    "none"),
-    "WEP":                   ("open",    "WEP"),
     "WPA-Personal":          ("WPAPSK",  "TKIP"),
     "WPA2-Personal":         ("WPA2PSK", "AES"),
     "WPA3-Personal":         ("WPA3SAE", "AES"),
@@ -46,7 +47,16 @@ def build_profile_xml(
     *password* must be the **plaintext** PSK. The caller is responsible
     for decrypting it from the vault before passing it here.
     For open networks pass password="" to omit the sharedKey element.
+
+    Raises:
+        ValueError: if auth == "WEP" (insecure, not supported).
     """
+    if auth == "WEP":
+        raise ValueError(
+            "WEP не поддерживается — стандарт взломан с 2001 года и "
+            "запрещён политиками безопасности (PCI DSS 4.0, CIS L1). "
+            "Используйте WPA2-Personal или выше."
+        )
     xml_auth, xml_cipher = AUTH_XML_MAP.get(auth, ("WPA2PSK", "AES"))
 
     root = ET.Element("WLANProfile", xmlns=_NS)

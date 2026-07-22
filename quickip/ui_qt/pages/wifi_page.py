@@ -41,6 +41,9 @@ class _WifiBridge(QObject):
     status_updated  = Signal(dict)
     connect_done    = Signal(bool, str)
     disconnect_done = Signal(bool, str)
+    # Emitted when DPAPI decrypt fails cross-user (needs_reauth=True from service).
+    # Carries the SSID so the UI can ask the user to re-enter the password.
+    reauth_needed   = Signal(str)
 
 
 class _SignalDelegate(QStyledItemDelegate):
@@ -460,6 +463,7 @@ class WifiPage(QWidget):
         self._bridge.status_updated.connect(self._render_status)
         self._bridge.connect_done.connect(self._on_connect_result)
         self._bridge.disconnect_done.connect(self._on_disconnect_result)
+        self._bridge.reauth_needed.connect(self._on_reauth_needed)
         self._load_profiles()
 
     # ── Scan ──────────────────────────────────────────────────────
@@ -849,13 +853,97 @@ class WifiPage(QWidget):
                 result = self._presenter.connect_with_ssid(ssid, password)
             else:
                 result = self._presenter.connect_open_network(ssid)
-            _log.info(f"Connect result: success={result.success} msg={result.message!r}")
-            self._bridge.connect_done.emit(result.success, result.message)
+            _log.info(f"Connect result: success={result.success} needs_reauth={result.needs_reauth} msg={result.message!r}")
+            if getattr(result, "needs_reauth", False):
+                # DPAPI cross-user: emit signal → main thread shows password dialog.
+                # Stop spinner first so UI looks responsive.
+                self._bridge.connect_done.emit(False, "")   # clears spinner
+                self._bridge.reauth_needed.emit(ssid)
+            else:
+                self._bridge.connect_done.emit(result.success, result.message)
         except Exception as e:
             import traceback
             import logging
             logging.getLogger(__name__).error(f"Connect error: {traceback.format_exc()}")
             self._bridge.connect_done.emit(False, str(e))
+
+    def _on_reauth_needed(self, ssid: str) -> None:
+        """Показываем диалог повторного ввода пароля (DPAPI cross-user).
+
+        Вызывается на главном потоке через Qt-сигнал.
+        Объясняет пользователю причину (другой аккаунт Windows) и предлагает
+        ввести пароль — после чего профиль пересохраняется под текущим аккаунтом.
+        """
+        from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton
+
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Требуется повторный ввод пароля")
+        dlg.setMinimumWidth(440)
+        dlg.setWindowFlags(dlg.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
+        QTimer.singleShot(0, lambda: _apply_dark_titlebar(dlg, self._dark_mode))
+
+        lay = QVBoxLayout(dlg)
+        lay.setContentsMargins(24, 20, 24, 16)
+        lay.setSpacing(10)
+
+        info = QLabel(
+            f"<b>Сеть «{ssid}»</b><br><br>"
+            "Пароль был сохранён под другим аккаунтом Windows и недоступен "
+            "для текущего пользователя.<br><br>"
+            "Введите пароль ещё раз — он будет зашифрован и сохранён "
+            "для <b>текущего аккаунта</b>, и в следующий раз вводить не придётся."
+        )
+        info.setWordWrap(True)
+        info.setTextFormat(Qt.TextFormat.RichText)
+        lay.addWidget(info)
+
+        pwd_edit = QLineEdit()
+        pwd_edit.setEchoMode(QLineEdit.EchoMode.Password)
+        pwd_edit.setPlaceholderText("Пароль Wi-Fi")
+        lay.addWidget(pwd_edit)
+
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(8)
+        btn_row.addStretch(1)
+        btn_cancel = QPushButton("Отмена")
+        btn_cancel.setProperty("role", "action")
+        btn_cancel.setFixedHeight(32)
+        btn_cancel.clicked.connect(dlg.reject)
+        btn_ok = QPushButton("Подключить и сохранить")
+        btn_ok.setProperty("role", "primary")
+        btn_ok.setFixedHeight(32)
+        btn_ok.clicked.connect(dlg.accept)
+        btn_ok.setDefault(True)
+        btn_row.addWidget(btn_cancel)
+        btn_row.addWidget(btn_ok)
+        lay.addLayout(btn_row)
+        pwd_edit.returnPressed.connect(dlg.accept)
+
+        if dlg.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        password = pwd_edit.text()
+        if not password:
+            return
+
+        # Подключаемся и пересохраняем в фоне
+        self.btn_connect.setEnabled(False)
+        self._start_spinner()
+        threading.Thread(
+            target=self._reauth_worker,
+            args=(ssid, password),
+            daemon=True,
+            name="wifi_reauth",
+        ).start()
+
+    def _reauth_worker(self, ssid: str, password: str) -> None:
+        """Background: connect + re-save profile under current account."""
+        try:
+            result = self._presenter.reauth_connect(ssid, password)
+            self._bridge.connect_done.emit(result.success, result.message)
+        except Exception as exc:
+            logging.getLogger(__name__).exception("reauth_worker error")
+            self._bridge.connect_done.emit(False, str(exc))
 
     def _on_connect_result(self, success: bool, message: str) -> None:
         self._stop_spinner()

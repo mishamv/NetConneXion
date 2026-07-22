@@ -142,3 +142,26 @@ class WifiProfileDeleted(AppEvent):
 class LangChanged(AppEvent):
     """UI language was switched."""
     locale: str  # "ru" or "en"
+
+
+# ── Network auto-switch events ────────────────────────────────────
+
+@dataclass
+class NetworkSsidChanged(AppEvent):
+    """Wi-Fi SSID changed (connect, disconnect, roam).
+
+    Published by NetworkMonitorService when the active SSID changes.
+    AutoSwitchService subscribes to this to auto-apply matching profiles.
+    """
+    ssid: str          # новый SSID; пустая строка = отключено от Wi-Fi
+    prev_ssid: str     # предыдущий SSID
+    adapter: str       # имя Wi-Fi адаптера
+    connected: bool    # True если подключено к сети, False если disconnected
+
+
+@dataclass
+class AutoSwitchTriggered(AppEvent):
+    """Auto-switch applied a profile in response to SSID change."""
+    profile_id: str
+    profile_name: str
+    ssid: str

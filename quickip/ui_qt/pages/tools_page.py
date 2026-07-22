@@ -253,7 +253,9 @@ class _ToolPanel(QWidget):
         self._running = False
         if self._proc:
             try:
-                self._proc.kill()
+                # cancel(): закрывает stdout, terminate() → wait() → kill() если нужно.
+                # Гарантирует отсутствие зомби-процессов (ранее был голый .kill() без wait()).
+                self._proc.cancel()
             except Exception:
                 pass
         self.btn_run.setEnabled(True)

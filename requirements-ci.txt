@@ -1,3 +1,6 @@
-typing_extensions>=4.0
-pytest>=9.0
-ruff
+# CI dependencies — подмножество requirements-dev.txt для GitHub Actions
+# Не включает PySide6 и pywin32 (доступны только на Windows)
+typing_extensions>=4.9
+pytest>=8.3
+pytest-cov>=5.0
+ruff>=0.5

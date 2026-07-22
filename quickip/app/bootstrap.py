@@ -62,11 +62,42 @@ class ServiceContainer:
         from quickip.core.security.keyring_vault import is_available as _kr_available
         self.keyring_available: bool = _kr_available()
 
+        # ── Privilege check ──────────────────────────────────────────
+        # elevation_warning is None when running with full elevated token,
+        # or a human-readable string when running without admin rights.
+        # Checked in the UI to show a warning banner (see main_window.py).
+        from quickip.shared.privilege_check import check_elevation_warning
+        self.elevation_warning: str | None = check_elevation_warning()
+
+        # ── Auto-switch ──────────────────────────────────────────────
+        # NetworkMonitorService + AutoSwitchService создаются здесь, но НЕ запускаются.
+        # Вызовите self.start_auto_switch() после отображения главного окна,
+        # чтобы не блокировать startup и дать UI время инициализироваться.
+        from quickip.features.auto_switch.monitor import NetworkMonitorService
+        from quickip.features.auto_switch.service import AutoSwitchService
+        self.network_monitor = NetworkMonitorService(self)
+        self.auto_switch = AutoSwitchService(self)
+
         logger.debug("ServiceContainer initialised")
 
     def get_adapters(self):
         """Convenience: return current adapter list."""
         return self.netsh.list_adapters()
+
+    def start_auto_switch(self) -> None:
+        """Запустить мониторинг сети и авто-переключение профилей.
+
+        Вызывать после инициализации главного окна. Безопасно вызывать повторно.
+        """
+        self.auto_switch.start()
+        self.network_monitor.start()
+        logger.info("Auto-switch services started")
+
+    def stop_auto_switch(self) -> None:
+        """Остановить мониторинг. Вызывать при завершении приложения."""
+        self.network_monitor.stop()
+        self.auto_switch.stop()
+        logger.info("Auto-switch services stopped")
 
 
 def bootstrap(

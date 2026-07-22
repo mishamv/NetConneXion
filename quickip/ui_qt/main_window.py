@@ -35,6 +35,7 @@ from PySide6.QtWidgets import (
 
 from quickip.app.bootstrap import bootstrap
 from quickip.core.events.types import LangChanged, ProfileApplied, ThemeChanged, WifiStatusUpdated
+from quickip.shared.privilege_check import is_elevated
 from quickip.ui_qt.adapters.profiles_facade import ProfilesFacade
 from quickip.ui_qt.theme import load_qss, _resource_root
 from quickip.ui_qt.widgets.backdrop import BackdropWidget
@@ -140,9 +141,70 @@ class QtMainWindow(QMainWindow):
         # Применяем сохранённый язык ко всем страницам
         if self.container.i18n.get_current_locale() != "ru":
             self._retranslate_ui()
+
+        # ── Elevation warning banner ──────────────────────────────────
+        # Создаём баннер заранее (скрытым); показываем через QTimer после show(),
+        # чтобы не задерживать появление главного окна.
+        self._elevation_banner = self._build_elevation_banner()
+        right.addWidget(self._elevation_banner)
+        self._elevation_banner.setVisible(False)
+
+        from PySide6.QtCore import QTimer
+        if self.container.elevation_warning:
+            QTimer.singleShot(800, self._show_elevation_banner)
+
         # Запустить свёрнутым в трей
         if self.container.settings_repo.get("start_minimized", False):
             self.hide()
+
+    # ── Elevation warning banner ──────────────────────────────────────
+
+    def _build_elevation_banner(self) -> QFrame:
+        """Создаёт скрытую жёлтую полосу-предупреждение снизу окна.
+
+        Показывается только если приложение запущено без прав администратора
+        (т.е. после того как UAC relaunch был отменён пользователем или
+        невозможен по политике).
+        """
+        banner = QFrame()
+        banner.setObjectName("ElevationBanner")
+        banner.setFixedHeight(36)
+        banner.setStyleSheet(
+            "QFrame#ElevationBanner {"
+            "  background: #7c5800;"
+            "  border-radius: 6px;"
+            "  margin: 0 2px 2px 2px;"
+            "}"
+            "QLabel { color: #ffe08a; font-size: 12px; }"
+            "QPushButton {"
+            "  color: #ffe08a; background: transparent;"
+            "  border: 1px solid #ffe08a; border-radius: 4px;"
+            "  padding: 2px 8px; font-size: 11px;"
+            "}"
+            "QPushButton:hover { background: #a07000; }"
+        )
+        lay = QHBoxLayout(banner)
+        lay.setContentsMargins(12, 0, 8, 0)
+        lay.setSpacing(8)
+
+        lbl = QLabel("⚠  Программа запущена без прав администратора — "
+                     "изменение IP и Wi-Fi недоступно.")
+        lbl.setObjectName("ElevationBannerLabel")
+        lay.addWidget(lbl, 1)
+
+        btn_close = QPushButton("✕")
+        btn_close.setFixedSize(28, 24)
+        btn_close.setToolTip("Скрыть предупреждение")
+        btn_close.clicked.connect(lambda: banner.setVisible(False))
+        lay.addWidget(btn_close)
+
+        return banner
+
+    def _show_elevation_banner(self) -> None:
+        """Показывает баннер, если к этому моменту приложение всё ещё без прав."""
+        # Перепроверяем — вдруг relaunch успел отработать в другом потоке
+        if not is_elevated():
+            self._elevation_banner.setVisible(True)
 
     # ── Sidebar ───────────────────────────────────────────────────────
 
@@ -430,15 +492,6 @@ class QtMainWindow(QMainWindow):
 
 # ── Entry point ───────────────────────────────────────────────────────────────
 
-def _is_admin() -> bool:
-    """Проверяет запущено ли приложение от имени администратора."""
-    try:
-        import ctypes
-        return bool(ctypes.windll.shell32.IsUserAnAdmin())
-    except Exception:
-        return False
-
-
 def _relaunch_as_admin() -> None:
     """Перезапускает процесс с правами администратора через UAC."""
     import ctypes
@@ -466,7 +519,9 @@ def main() -> int:
 
     # netsh для изменения сетевых настроек требует прав администратора.
     # Если прав нет — автоматически запускаем UAC и перезапускаем процесс.
-    if not _is_admin():
+    # Если пользователь отменил UAC — приложение продолжит работу без прав;
+    # в этом случае bootstrap() установит elevation_warning и UI покажет баннер.
+    if not is_elevated():
         _relaunch_as_admin()
     w = QtMainWindow()
     w.show()

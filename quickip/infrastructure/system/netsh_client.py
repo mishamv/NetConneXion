@@ -5,6 +5,7 @@ import re
 from typing import List, Optional
 from quickip.domain.models import Profile, CommandResult, AdapterConfig
 from quickip.infrastructure.system.process_runner import ProcessRunner
+from quickip.shared.privilege_check import is_access_denied_error, make_access_denied_message
 
 
 logger = logging.getLogger(__name__)
@@ -178,6 +179,49 @@ class NetshClient:
                 duration_ms=0,
                 command="",
             )
+
+        # C3: валидируем сетевые поля статического профиля перед передачей в netsh
+        if not profile.is_dhcp_ip:
+            from quickip.shared.net_utils import validate_profile_network_fields
+            try:
+                validate_profile_network_fields(
+                    ipv4=profile.ipv4,
+                    mask=profile.mask,
+                    gateway=profile.gateway,
+                    dns_primary="" if profile.is_dhcp_dns else profile.dns_primary,
+                    dns_secondary="" if profile.is_dhcp_dns else profile.dns_secondary,
+                )
+            except ValueError as e:
+                msg = f"Некорректные сетевые настройки профиля: {e}"
+                logger.error(msg)
+                return CommandResult(
+                    success=False,
+                    stdout="",
+                    stderr=msg,
+                    exit_code=-1,
+                    duration_ms=0,
+                    command="",
+                )
+        elif not profile.is_dhcp_dns and (profile.dns_primary or profile.dns_secondary):
+            # DHCP IP, но статический DNS — валидируем только DNS поля
+            from quickip.shared.net_utils import validate_ipv4
+            try:
+                if profile.dns_primary:
+                    validate_ipv4(profile.dns_primary, "основной DNS")
+                if profile.dns_secondary:
+                    validate_ipv4(profile.dns_secondary, "дополнительный DNS")
+            except ValueError as e:
+                msg = f"Некорректный DNS-адрес: {e}"
+                logger.error(msg)
+                return CommandResult(
+                    success=False,
+                    stdout="",
+                    stderr=msg,
+                    exit_code=-1,
+                    duration_ms=0,
+                    command="",
+                )
+
         commands = self._build_commands(profile)
         all_output = []
         all_errors = []
@@ -198,8 +242,22 @@ class NetshClient:
                     logger.debug(f"Ignored non-critical DNS delete failure: {result.stdout}")
                     continue
 
-                error_msg = f"Command failed: {' '.join(cmd)}\nstdout: {result.stdout}\nstderr: {result.stderr}\nexit_code: {result.exit_code}"
-                logger.error(error_msg)
+                # Проверяем до формирования error_msg: если "Access is denied" —
+                # даём пользователю actionable объяснение про UAC/filtered token.
+                if is_access_denied_error(result.stdout, result.stderr):
+                    op = ' '.join(cmd[2:5])  # напр. "interface ipv4 set"
+                    error_msg = make_access_denied_message(op)
+                    logger.error(
+                        "netsh access denied for %r: stdout=%r stderr=%r",
+                        op, result.stdout, result.stderr,
+                    )
+                else:
+                    error_msg = (
+                        f"Command failed: {' '.join(cmd)}\n"
+                        f"stdout: {result.stdout}\nstderr: {result.stderr}\n"
+                        f"exit_code: {result.exit_code}"
+                    )
+                    logger.error(error_msg)
 
                 return CommandResult(
                     success=False,

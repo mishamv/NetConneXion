@@ -69,7 +69,21 @@ class WifiPresenter:
         def _work() -> None:
             try:
                 if profile:
-                    result = self._service.connect(ssid, profile)
+                    current_profile = profile
+                    # Мигрировать b64-профили ДО вызова сервиса (T1552.001).
+                    # WifiService.connect() отклоняет b64 — миграция здесь обязательна.
+                    if current_profile.key_protected.startswith("b64:"):
+                        current_profile = self._migrate_b64_profile(current_profile)
+                        if current_profile.key_protected.startswith("b64:"):
+                            # Миграция не удалась (нет vault/keyring) — блокируем
+                            if callback:
+                                callback(
+                                    False,
+                                    f"Профиль '{ssid}' использует устаревший формат хранения пароля.\n"
+                                    "Пересохраните профиль вручную: Настройки Wi-Fi → редактировать → Сохранить.",
+                                )
+                            return
+                    result = self._service.connect(ssid, current_profile)
                 else:
                     result = self._service.connect_open(ssid)
                 if callback:
@@ -105,17 +119,25 @@ class WifiPresenter:
         auto_connect: bool, connect_hidden: bool, is_adhoc: bool,
         profile_id: Optional[str] = None,
     ) -> None:
-        """Encrypt password with DPAPI vault and persist profile."""
+        """Encrypt password with DPAPI vault (primary) or keyring (fallback) and persist profile.
+
+        Keyring key is profile UUID, not SSID — avoids collisions when two profiles
+        share the same network name but have different passwords.
+        """
+        # UUID нужен до encrypt — keyring использует его как ключ
+        pid = profile_id or str(uuid.uuid4())
         key_protected = ""
         if password:
             if self._container.vault_available:
                 from quickip.core.security.vault import protect_text
                 key_protected = protect_text(password)
+            elif self._container.keyring_available:
+                from quickip.core.security.keyring_vault import protect_text as kr_protect
+                key_protected = kr_protect(pid, password)
             else:
                 raise RuntimeError(
-                    "Шифрование паролей недоступно (pywin32 не установлен)"
+                    "Шифрование паролей недоступно (pywin32 не установлен и keyring недоступен)"
                 )
-        pid = profile_id or str(uuid.uuid4())
         p = WifiProfile(
             id=pid, ssid=ssid, auth=auth, cipher=cipher,
             key_protected=key_protected,
@@ -130,6 +152,16 @@ class WifiPresenter:
         p = self._profile_repo.get(profile_id)
         self._profile_repo.delete(profile_id)
         if p:
+            # Удаляем secret из keyring если профиль использовал его
+            if p.key_protected.startswith("kr:"):
+                _suffix = p.key_protected[3:]
+                if _suffix:
+                    from quickip.core.security.keyring_vault import delete as kr_delete
+                    kr_delete(_suffix)
+                else:
+                    # legacy kr: — удаляем по SSID
+                    from quickip.core.security.keyring_vault import delete_legacy as kr_del_legacy
+                    kr_del_legacy(p.ssid)
             self._container.event_bus.publish(WifiProfileDeleted(profile_id=profile_id))  # type: ignore[arg-type]
 
     def get_system_profiles(self) -> List[str]:
@@ -252,10 +284,11 @@ class WifiPresenter:
         if new_key is None and self._container.keyring_available:
             try:
                 from quickip.core.security.keyring_vault import protect_text as kr_protect
-                new_key = kr_protect(profile.ssid, password)
-                logger.info("Migrated b64: → keyring for SSID=%r", profile.ssid)
+                # Ключ — profile UUID, не SSID: исключает коллизии при одинаковых именах сетей
+                new_key = kr_protect(profile.id, password)
+                logger.info("Migrated b64: → keyring(v2) for profile_id=%r", profile.id)
             except Exception as exc:
-                logger.warning("Keyring migration failed for SSID=%r: %s", profile.ssid, exc)
+                logger.warning("Keyring migration failed for profile_id=%r: %s", profile.id, exc)
 
         if new_key is not None:
             profile.key_protected = new_key
@@ -281,6 +314,60 @@ class WifiPresenter:
         logger.info("Startup b64: migration — found %d legacy profile(s)", len(legacy))
         for profile in legacy:
             self._migrate_b64_profile(profile)
+
+    def reauth_connect(self, ssid: str, password: str) -> "ConnectResult":
+        """Connect using a user-supplied password and re-save the profile under the current account.
+
+        Called after needs_reauth=True from connect_with_profile() — i.e. the stored
+        DPAPI blob was encrypted by a different Windows account and cannot be decrypted here.
+
+        On success:
+          - connects via netsh
+          - re-encrypts the password with the *current* account's vault (DPAPI or keyring)
+          - overwrites the profile so subsequent connects succeed without prompting
+
+        On failure (wrong password, netsh error): returns ConnectResult(success=False).
+        """
+        from quickip.features.wifi.service import ConnectResult  # local import to avoid circular
+        profile = self._profile_repo.find_by_ssid(ssid)
+        auth = profile.auth if profile else "WPA2-Personal"
+        cipher = profile.cipher if profile else "AES"
+
+        result = self._service.connect_with_password(ssid, password, auth=auth, cipher=cipher)
+
+        if result.success and profile:
+            # Re-encrypt and persist under the current account's vault.
+            # save_profile() picks the best available vault automatically.
+            try:
+                self.save_profile(
+                    ssid=ssid,
+                    auth=auth,
+                    cipher=cipher,
+                    password=password,
+                    auto_connect=profile.auto_connect,
+                    connect_hidden=profile.connect_hidden,
+                    is_adhoc=profile.is_adhoc,
+                    profile_id=profile.id,   # reuse existing UUID
+                )
+                logger.info(
+                    "Profile %r re-encrypted under current account after reauth", ssid
+                )
+                result = ConnectResult(
+                    success=True,
+                    message=result.message + "\nПароль сохранён для текущего аккаунта.",
+                )
+            except Exception as exc:
+                # Connection succeeded; re-save failed — non-fatal, warn the user.
+                logger.warning("reauth_connect: re-save failed for %r: %s", ssid, exc)
+                result = ConnectResult(
+                    success=True,
+                    message=(
+                        result.message
+                        + f"\n⚠ Не удалось сохранить пароль для текущего аккаунта: {exc}"
+                    ),
+                )
+
+        return result
 
     def connect_open_network(self, ssid: str):
         return self._service.connect_open(ssid)

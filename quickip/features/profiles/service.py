@@ -5,9 +5,10 @@ from __future__ import annotations
 import json
 import logging
 import platform
+import time
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Tuple
 
 from quickip.domain.models import Profile, ApplyResult, ProfileHistoryEntry
 from quickip.core.events.types import ProfileApplied, ProfileApplyFailed
@@ -23,11 +24,16 @@ _PS_NET_ADAPTERS = build_net_adapters_ps(include_media=False)
 
 
 
+_ADAPTERS_CACHE_TTL = 5.0  # секунд
+
+
 class ProfileService:
     """Consolidates profile application and conflict detection for the profiles feature."""
 
     def __init__(self, container: "ServiceContainer") -> None:
         self._container = container
+        # TTL-кэш для get_adapters_detail: PowerShell запускается ~1–2s, кэшируем на 5s
+        self._adapters_cache: Tuple[float, list] = (0.0, [])
 
     # ── Apply ─────────────────────────────────────────────────────
 
@@ -121,22 +127,33 @@ class ProfileService:
             logger.warning("Failed to list adapters, using defaults")
             return ["Ethernet", "Wi-Fi"]
 
-    def get_adapters_detail(self) -> list:
-        """Return detailed adapter info as a list of dicts for the 'Current Networks' tab."""
+    def get_adapters_detail(self, ttl: float = _ADAPTERS_CACHE_TTL) -> list:
+        """Return detailed adapter info as a list of dicts for the 'Current Networks' tab.
+
+        Результат кэшируется на *ttl* секунд (по умолчанию 5s), чтобы не запускать
+        PowerShell при каждом отображении вкладки (~1–2s cold start на процесс).
+        Передайте ttl=0 для принудительного обновления.
+        """
+        now = time.monotonic()
+        cached_at, cached_data = self._adapters_cache
+        if ttl > 0 and (now - cached_at) < ttl:
+            logger.debug("get_adapters_detail: cache hit (age=%.1fs)", now - cached_at)
+            return cached_data
+
         result = self._container.process_runner.run(
             ["powershell", "-NoProfile", "-NonInteractive", "-Command", _PS_NET_ADAPTERS],
             timeout=20,
         )
         if not result.success:
             logger.warning("get_adapters_detail failed: %s", result.stderr[:80])
-            return []
+            return cached_data  # вернуть устаревший кэш лучше, чем пустой список
         raw = result.stdout.strip()
         if not raw:
-            return []
+            return cached_data
         try:
             data = json.loads(raw)
         except json.JSONDecodeError:
-            return []
+            return cached_data
         if isinstance(data, dict):
             data = [data]
         out = []
@@ -158,4 +175,5 @@ class ProfileService:
                 })
             except Exception:
                 continue
+        self._adapters_cache = (now, out)
         return out

@@ -30,6 +30,7 @@ def _serialize_profile(profile: Profile) -> dict:
         "tags": profile.tags,
         "created_at": profile.created_at,
         "updated_at": profile.updated_at,
+        "auto_switch_ssid": profile.auto_switch_ssid,
     }
 
 
@@ -48,6 +49,7 @@ def _deserialize_profile(data: dict) -> Profile:
         tags=data.get("tags", []),
         created_at=data.get("created_at", datetime.now().isoformat()),
         updated_at=data.get("updated_at", datetime.now().isoformat()),
+        auto_switch_ssid=data.get("auto_switch_ssid", ""),
     )
 
 
