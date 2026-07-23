@@ -50,6 +50,8 @@ a = Analysis(
         'quickip.features.profiles.import_export',
         'quickip.core.security.vault',
         'quickip.core.security.keyring_vault',
+        'quickip.shared.privilege_check',
+        'quickip.features.auto_switch',
         # keyring backends (Windows Credential Manager)
         'keyring',
         'keyring.backends',

@@ -2,52 +2,62 @@
 
 Encrypts/decrypts secrets using the Windows Data Protection API.
 
-Two protection scopes:
-  User scope  (default, "dpapi2:"  prefix):
-    Tied to the current Windows user account and machine.
-    Cannot be decrypted by another user — even an admin — without the user key.
-    Use this when all sessions run under the same account.
+Entropy scheme (v3):
+  - Per-installation 32-byte random app seed stored in
+    %PROGRAMDATA%\\NetConneXion\\entropy_seed.bin  — NOT in source code,
+    NOT compiled into the binary.  Generated once at first launch.
+  - Per-user 32-byte random key stored in HKCU registry.
+  - Derived entropy = HMAC-SHA256(app_seed, user_key)
 
-  Machine scope ("dpapiM:" prefix):
-    Tied to the machine only, not to a specific user.
-    Any user on the same machine can decrypt.
-    Use this when the app is run under different accounts on the same PC
-    (e.g. regular user and an admin account used for elevation).
-    Enabled via protect_text(plaintext, machine_scope=True).
+  This means an attacker who decompiles the binary gets nothing useful:
+  the seed is only on the filesystem of the installed machine.
 
-Entropy scheme (v2):
-  - App-level seed compiled into the binary (_APP_ENTROPY_SEED)
-  - Per-installation 32-byte random key stored in HKCU (user) or
-    %PROGRAMDATA%\\NetConneXion\\entropy.key (machine scope)
-  - Derived entropy = HMAC-SHA256(seed, machine_key)
-  This prevents other apps from decrypting blobs with plain CryptUnprotectData.
+Blob format:
+  "dpapi2:<base64>"  — v2 legacy blobs (entropy = HMAC(hardcoded_seed, user_key))
+  "dpapi3:<base64>"  — v3 blobs      (entropy = HMAC(file_seed, user_key))
+
+  unprotect_text() handles both prefixes transparently.
+  protect_text() always writes v3 blobs.
+
+  When a v2 blob is successfully decrypted, the caller should re-save the
+  profile so it gets upgraded to v3 (the reauth dialog handles this automatically).
 
 Backward compatibility:
-  - New blobs: "dpapi2:" (user) or "dpapiM:" (machine) prefix.
-  - Old blobs (plain base64, no prefix) are decrypted without entropy.
-  - All new protect_text() calls default to user scope.
+  - "dpapi2:" blobs: try with file seed first (in case user re-saved after upgrade),
+    then fall back to the legacy hardcoded seed.
+  - Plain base64 (no prefix): legacy pre-v2, decrypted without entropy.
+  - _LEGACY_SEED will be removed in a future release once all profiles are migrated.
 
 Requires: pywin32 >= 306 (``pip install pywin32``).
 """
+
+from __future__ import annotations
 
 import base64
 import hashlib
 import hmac
 import logging
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# Hardcoded app-level entropy seed (compiled into binary).
-# MITRE T1555.004: prevents mimikatz dpapi::blob without this seed.
-_APP_ENTROPY_SEED = b"NetConneXion-quickip-v2-entropy-2024"
+# ── Constants ─────────────────────────────────────────────────────────────────
 
-# Registry path for per-installation machine key (HKCU)
+# Legacy hardcoded seed — kept ONLY for backward-compat decryption of dpapi2: blobs
+# created before the v3 upgrade.  New protect_text() calls never use this.
+# TODO: remove after all profiles have been re-saved under v3.
+_LEGACY_SEED = b"NetConneXion-quickip-v2-entropy-2024"
+
+# Registry path for per-user installation key (HKCU)
 _REG_KEY_PATH = r"Software\NetConneXion\Security"
 _REG_VALUE_NAME = "EntropyKey"
 
-# Prefix distinguishing v2 (entropy) blobs from legacy (no entropy)
-_V2_PREFIX = "dpapi2:"
+# Blob version prefixes
+_V2_PREFIX = "dpapi2:"   # legacy: HMAC(hardcoded_seed, user_key)
+_V3_PREFIX = "dpapi3:"   # current: HMAC(file_seed, user_key)
 
+
+# ── Exceptions ────────────────────────────────────────────────────────────────
 
 class VaultUnavailableError(Exception):
     """Raised when pywin32 is not installed."""
@@ -57,10 +67,56 @@ class VaultPortabilityError(Exception):
     """Raised when data was encrypted on a different machine or user account."""
 
 
-def _get_or_create_machine_key() -> bytes:
-    """Return per-installation 32-byte key from HKCU registry, creating it if absent."""
+# ── Internal helpers ──────────────────────────────────────────────────────────
+
+def _get_programdata_dir() -> Path:
+    """Return %PROGRAMDATA%\\NetConneXion, creating it if absent."""
+    import os
+    programdata = os.getenv("PROGRAMDATA", "")
+    if not programdata:
+        raise VaultUnavailableError("PROGRAMDATA environment variable not set")
+    app_dir = Path(programdata) / "NetConneXion"
+    app_dir.mkdir(parents=True, exist_ok=True)
+    return app_dir
+
+
+def _get_or_create_app_seed() -> bytes:
+    """Return the per-installation 32-byte random app seed.
+
+    Stored in %PROGRAMDATA%\\NetConneXion\\entropy_seed.bin (raw binary).
+    Generated once at first launch; never stored in source code or binary.
+
+    Falls back to an ephemeral seed (logged as warning) if the file can't
+    be written — e.g. running without write access to PROGRAMDATA.
+    """
     import secrets
-    import winreg
+
+    try:
+        seed_file = _get_programdata_dir() / "entropy_seed.bin"
+        if seed_file.exists():
+            data = seed_file.read_bytes()
+            if len(data) == 32:
+                return data
+            logger.warning(
+                "entropy_seed.bin has unexpected size (%d bytes) — regenerating", len(data)
+            )
+        # Generate and persist
+        new_seed = secrets.token_bytes(32)
+        seed_file.write_bytes(new_seed)
+        logger.info("Generated new app entropy seed at %s", seed_file)
+        return new_seed
+    except OSError as exc:
+        logger.warning(
+            "Cannot persist entropy_seed.bin (%s) — using ephemeral seed. "
+            "DPAPI blobs created now will not survive a restart.", exc
+        )
+        return secrets.token_bytes(32)
+
+
+def _get_or_create_user_key() -> bytes:
+    """Return per-user 32-byte key from HKCU registry, creating it if absent."""
+    import secrets
+    import winreg  # type: ignore
 
     try:
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, _REG_KEY_PATH) as k:
@@ -69,32 +125,42 @@ def _get_or_create_machine_key() -> bytes:
     except FileNotFoundError:
         pass
 
-    machine_key = secrets.token_bytes(32)
+    user_key = secrets.token_bytes(32)
     try:
         with winreg.CreateKey(winreg.HKEY_CURRENT_USER, _REG_KEY_PATH) as k:
             winreg.SetValueEx(
                 k, _REG_VALUE_NAME, 0, winreg.REG_SZ,
-                base64.b64encode(machine_key).decode("ascii"),
+                base64.b64encode(user_key).decode("ascii"),
             )
-        logger.info("Created new DPAPI machine entropy key in HKCU")
+        logger.info("Created new DPAPI user entropy key in HKCU")
     except Exception as exc:
-        logger.warning("Could not persist machine entropy key: %s", exc)
-    return machine_key
+        logger.warning("Could not persist user entropy key: %s", exc)
+    return user_key
 
 
-def _build_entropy() -> bytes:
-    """Derive app-specific DPAPI entropy bytes."""
-    machine_key = _get_or_create_machine_key()
-    return hmac.new(_APP_ENTROPY_SEED, machine_key, hashlib.sha256).digest()
+def _build_entropy(seed: bytes | None = None) -> bytes:
+    """Derive DPAPI entropy from *seed* + per-user key.
 
+    If *seed* is None, the per-installation app seed is loaded from
+    ``entropy_seed.bin`` via :func:`_get_or_create_app_seed`.
+    Pass an explicit seed (e.g. ``_LEGACY_SEED``) to derive legacy entropy.
+    """
+    if seed is None:
+        seed = _get_or_create_app_seed()
+    user_key = _get_or_create_user_key()
+    return hmac.new(seed, user_key, hashlib.sha256).digest()
+
+
+# ── Public API ────────────────────────────────────────────────────────────────
 
 def protect_text(plaintext: str) -> str:
-    """Encrypt *plaintext* using Windows DPAPI with app-specific entropy (v2).
+    """Encrypt *plaintext* using Windows DPAPI with per-installation entropy (v3).
 
-    Returns a "dpapi2:<base64>" string suitable for JSON storage.
+    Returns a "dpapi3:<base64>" string suitable for JSON storage.
+    The app seed comes from entropy_seed.bin — not from the binary.
 
     Raises:
-        VaultUnavailableError: if pywin32 is not installed.
+        VaultUnavailableError: if pywin32 is not installed or PROGRAMDATA unavailable.
     """
     try:
         import win32crypt  # type: ignore
@@ -104,28 +170,32 @@ def protect_text(plaintext: str) -> str:
             "Install it with: pip install pywin32"
         ) from exc
 
-    entropy = _build_entropy()
+    entropy = _build_entropy()  # uses per-installation app seed
     raw = win32crypt.CryptProtectData(
         plaintext.encode("utf-8"),
         None,      # description
-        entropy,   # app-specific entropy — prevents cross-process decryption
+        entropy,   # prevents cross-process/cross-app decryption
         None,      # reserved
         None,      # prompt struct
         0,         # flags
     )
-    return _V2_PREFIX + base64.b64encode(raw).decode("ascii")
+    return _V3_PREFIX + base64.b64encode(raw).decode("ascii")
 
 
 def unprotect_text(ciphertext: str) -> str:
-    """Decrypt a DPAPI *ciphertext* (v2 with entropy, or legacy without).
+    """Decrypt a DPAPI *ciphertext*.
 
-    Handles both:
-    - New "dpapi2:<base64>" blobs (v2, with app entropy)
-    - Old plain base64 blobs (legacy, no entropy — backward compat)
+    Handles all three formats:
+    - "dpapi3:<base64>" — v3: uses per-installation file seed
+    - "dpapi2:<base64>" — v2 legacy: tries file seed first, then hardcoded seed
+    - plain base64      — pre-v2 legacy: no entropy
+
+    After successfully decrypting a v2 blob with the legacy hardcoded seed,
+    the caller should re-save the profile to upgrade it to v3.
 
     Raises:
         VaultUnavailableError: if pywin32 is not installed.
-        VaultPortabilityError: if data was encrypted by a different user/machine.
+        VaultPortabilityError: if data was encrypted on a different machine/account.
     """
     try:
         import win32crypt  # type: ignore
@@ -136,10 +206,9 @@ def unprotect_text(ciphertext: str) -> str:
             "Install it with: pip install pywin32"
         ) from exc
 
-    if ciphertext.startswith(_V2_PREFIX):
-        # v2 blob — decrypt with app-specific entropy
-        raw = base64.b64decode(ciphertext[len(_V2_PREFIX):].encode("ascii"))
-        entropy = _build_entropy()
+    if ciphertext.startswith(_V3_PREFIX):
+        raw = base64.b64decode(ciphertext[len(_V3_PREFIX):].encode("ascii"))
+        entropy = _build_entropy()  # uses per-installation app seed
         try:
             _, plaintext_bytes = win32crypt.CryptUnprotectData(
                 raw, entropy, None, None, 0,
@@ -149,8 +218,33 @@ def unprotect_text(ciphertext: str) -> str:
                 "Credential was encrypted on a different machine or user account "
                 "and cannot be decrypted here."
             ) from exc
+
+    elif ciphertext.startswith(_V2_PREFIX):
+        raw = base64.b64decode(ciphertext[len(_V2_PREFIX):].encode("ascii"))
+        # Try with current file seed first (user may have re-saved after upgrade)
+        try:
+            _, plaintext_bytes = win32crypt.CryptUnprotectData(
+                raw, _build_entropy(), None, None, 0,
+            )
+            logger.debug("Decrypted dpapi2: blob with current file seed")
+        except pywintypes.error:
+            # Fall back to legacy hardcoded seed (pre-v3 blob)
+            try:
+                _, plaintext_bytes = win32crypt.CryptUnprotectData(
+                    raw, _build_entropy(_LEGACY_SEED), None, None, 0,
+                )
+                logger.info(
+                    "Decrypted legacy dpapi2: blob with hardcoded seed — "
+                    "profile will be upgraded to v3 on next save"
+                )
+            except pywintypes.error as exc:
+                raise VaultPortabilityError(
+                    "Credential was encrypted on a different machine or user account "
+                    "and cannot be decrypted here."
+                ) from exc
+
     else:
-        # Legacy blob — no entropy (backward compat for profiles saved before v2)
+        # Pre-v2 legacy blob — no entropy at all
         raw = base64.b64decode(ciphertext.encode("ascii"))
         try:
             _, plaintext_bytes = win32crypt.CryptUnprotectData(

@@ -1,169 +1,187 @@
 /* ═══════════════════════════════════════════════════════════════
-   NetConneXion v2.0 — DARK THEME (D: Slate + Indigo)
-   Накладывается поверх base.qss, переопределяет все цвета.
-   Backdrop: #0F172A  Sidebar: #0C1322  Cards: rgba panels
-   Accent: #6366F1 indigo
+   NetConneXion — DARK THEME
+   Design tokens (from design handoff):
+     App bg:        #12141c
+     Topbar bg:     #181b28
+     Sidebar bg:    #161927
+     Panel/card:    #1c2030 / #181b28
+     Borders:       #232838 / #2a2f42
+     Accent:        #6c7bff
+     Active nav bg: #232a45
+     Text primary:  #e8e9f0
+     Text secondary:#c4c8db
+     Text tertiary: #787fa0
+     Text disabled: #5b6178
+     Success/green: #4ade80
+     Warning/yellow:#facc15
+     Error/red:     #f87171 / #ef4444
    ═══════════════════════════════════════════════════════════════ */
 
 QWidget {
-    color: rgba(226, 232, 240, 0.92); /* глобальный текст — slate-200 */
-    background-color: #0F172A;        /* глобальный фон — slate-900, перекрывает белый QWidget */
+    color: #e8e9f0;
+    background-color: #12141c;
 }
 
 QMainWindow {
-    background-color: #0F172A;
+    background-color: #12141c;
 }
 
 QLabel {
-    background: transparent; /* предотвращает наследование тёмного фона QWidget */
-}
-
-/* ── SIDEBAR ──────────────────────────────────────────────────── */
-QFrame#Sidebar {
-    background: #0C1322;      /* sidebar — тёмно-синий */
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 14px;
-}
-
-QFrame#LogoArea {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-QLabel#LogoIcon {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                stop:0 #6366F1, stop:1 #818CF8); /* иконка — indigo градиент */
-    color: #FFFFFF;
-    border-radius: 8px;
-}
-
-QLabel#LogoName {
-    color: #FFFFFF;
-}
-
-QLabel#LogoVersion {
-    color: rgba(255, 255, 255, 0.25);
-}
-
-QLabel#NavGroupLabel {
-    color: rgba(255, 255, 255, 0.20); /* заголовок группы */
-}
-
-QPushButton#NavBtn {
-    color: rgba(255, 255, 255, 0.45); /* неактивная nav кнопка */
     background: transparent;
-    border: none;
-    border-left: 3px solid transparent;
-}
-
-QPushButton#NavBtn:hover {
-    background: rgba(255, 255, 255, 0.06);
-    color: rgba(255, 255, 255, 0.88);
-    border-left: 3px solid rgba(255, 255, 255, 0.20);
-}
-
-QPushButton#NavBtn[active="true"] {
-    background: rgba(99, 102, 241, 0.18); /* активная nav — indigo tint */
-    color: #A5B4FC;                        /* текст активной — indigo-300 */
-    font-weight: 700;
-    border-left: 3px solid #818CF8;        /* левый акцент-бордер */
-}
-
-QFrame#StatusBlock {
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-QLabel#StatusDot {
-    color: #22C55E;
-}
-
-QLabel#StatusActive {
-    color: rgba(255, 255, 255, 0.75);
-}
-
-QLabel#StatusKey {
-    color: rgba(255, 255, 255, 0.30);
-}
-
-QLabel#StatusValue {
-    color: rgba(255, 255, 255, 0.72);
-}
-
-QLabel#StatusIP {
-    color: #818CF8;           /* IP — indigo-400 */
 }
 
 /* ── TOPBAR ───────────────────────────────────────────────────── */
 QFrame#Topbar {
-    background: #0C1322; /* topbar — непрозрачный тёмно-синий */
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 12px;
+    background: #181b28;
+    border: none;
+    border-bottom: 1px solid #232838;
+    border-radius: 0;
 }
 
-QWidget#RightWidget {
-    background: #0F172A; /* тёмный фон за topbar и contentshell */
+QLabel#LogoIcon {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                stop:0 #4f7cff, stop:1 #38c98a);
+    color: #ffffff;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+QLabel#LogoName {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
 }
 
 QLabel#TopbarTitle {
-    color: #FFFFFF;
+    color: #787fa0;
+    font-size: 13px;
+    font-weight: 500;
 }
 
 QLabel#TopbarSubtitle {
-    color: rgba(255, 255, 255, 0.28);
+    color: #5b6178;
 }
 
-/* ── CONTENT SHELL ────────────────────────────────────────────── */
-QFrame#ContentShell {
-    background: rgba(15, 23, 42, 0.80); /* полупрозрачный slate */
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 14px;
+/* ── SIDEBAR ──────────────────────────────────────────────────── */
+QFrame#Sidebar {
+    background: #161927;
+    border: none;
+    border-right: 1px solid #232838;
+    border-radius: 0;
 }
 
-/* ── LEFT PANEL ───────────────────────────────────────────────── */
-QFrame#LeftPanel {
+QFrame#NavFrame {
     background: transparent;
-    border-right: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 14px 0 14px 14px; /* все углы кроме верхнего правого */
+}
+
+QLabel#NavGroupLabel {
+    color: #565c74;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 8px 10px 6px 10px;
+}
+
+QPushButton#NavBtn {
+    text-align: left;
+    padding: 0 12px 0 12px;
+    min-height: 40px;
+    border-radius: 8px;
+    background: transparent;
+    border: none;
+    border-left: 3px solid transparent;
+    color: #c4c8db;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+QPushButton#NavBtn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #e8e9f0;
+}
+
+QPushButton#NavBtn[active="true"] {
+    background: #232a45;
+    border-left: 3px solid #6c7bff;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* ── CONTENT AREA ─────────────────────────────────────────────── */
+QFrame#ContentShell {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+}
+
+QWidget#RightWidget {
+    background: #12141c;
+}
+
+QWidget#Body {
+    background: #12141c;
+}
+
+QStackedWidget#MainStack {
+    background: #12141c;
+}
+
+/* ── LEFT PANEL (Profiles list) ───────────────────────────────── */
+QFrame#LeftPanel {
+    background: #181b28;
+    border: none;
+    border-right: 1px solid #2a2f42;
+    border-radius: 0;
 }
 
 QFrame#PanelHeader {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid #232838;
 }
 
 QLabel#PanelTitle {
-    color: rgba(255, 255, 255, 0.25);
+    color: #787fa0;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
 }
 
 QLabel#CountPill {
-    background: rgba(99, 102, 241, 0.18); /* счётчик — indigo tint */
-    color: #A5B4FC;
+    background: #232a45;
+    color: #9aa4ff;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 10px;
 }
 
 QLineEdit#ProfilesSearch {
-    background: rgba(255, 255, 255, 0.05); /* поиск */
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    color: rgba(255, 255, 255, 0.78);
+    background: #1c2030;
+    border: 1px solid #2a2f42;
+    color: #e8e9f0;
+    border-radius: 8px;
+    min-height: 34px;
+    font-size: 13px;
 }
 
 QLineEdit#ProfilesSearch:focus {
-    border-color: rgba(99, 102, 241, 0.50);
-    background: rgba(255, 255, 255, 0.07);
+    border-color: #6c7bff;
+    background: #1e2238;
 }
 
 QComboBox#AdapterFilter {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: #1c2030;
+    border: 1px solid #2a2f42;
     border-radius: 8px;
     padding: 0 10px;
     min-height: 32px;
-    color: rgba(255, 255, 255, 0.45);
+    color: #787fa0;
     font-size: 12px;
 }
 
 QComboBox#AdapterFilter:focus,
 QComboBox#AdapterFilter:on {
-    border-color: rgba(99, 102, 241, 0.50);
-    background: rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.45);
+    border-color: #6c7bff;
 }
 
 QComboBox#AdapterFilter::drop-down {
@@ -176,8 +194,8 @@ QComboBox#AdapterFilter::down-arrow {
     image: none;
     width: 8px;
     height: 8px;
-    border-left: 2px solid rgba(255, 255, 255, 0.40);
-    border-bottom: 2px solid rgba(255, 255, 255, 0.40);
+    border-left: 2px solid #787fa0;
+    border-bottom: 2px solid #787fa0;
     margin-top: -4px;
 }
 
@@ -186,63 +204,56 @@ QWidget#ProfileRow {
 }
 
 QWidget#ProfileRow:hover {
-    background: rgba(255, 255, 255, 0.04); /* hover в тёмной теме */
-    border-radius: 10px;
+    background: #1c2030;
+    border-radius: 8px;
 }
 
 QLabel#ProfileName {
-    color: rgba(255, 255, 255, 0.88);
+    color: #e8e9f0;
     font-size: 14px;
     font-weight: 600;
-    letter-spacing: -0.1px;
 }
 
-/* Адаптер + режим — "Ethernet · STATIC" */
-QLabel#ProfileMetaStatic {
-    color: rgba(255, 255, 255, 0.32);
-    font-size: 12px;
-}
-
+QLabel#ProfileMetaStatic,
 QLabel#ProfileMetaDhcp {
-    color: rgba(255, 255, 255, 0.32);
+    color: #787fa0;
     font-size: 12px;
 }
 
 QFrame#ActionsBlock {
     background: transparent;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 0 0 14px 14px;
+    border-top: 1px solid #232838;
+    border-radius: 0;
 }
 
-/* ── RIGHT PANEL ──────────────────────────────────────────────── */
+/* ── RIGHT PANEL (Profile editor) ────────────────────────────── */
 QFrame#RightPanel {
-    background: transparent;
-    border-radius: 0 14px 14px 0;   /* скругление только правых углов */
+    background: #12141c;
+    border-radius: 0;
 }
 
 QFrame#EditorHeader {
-    background: rgba(99, 102, 241, 0.04); /* хедер с лёгким indigo tint */
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    border-top-right-radius: 13px;
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
+    background: transparent;
+    border-bottom: 1px solid #232838;
+    border-radius: 0;
 }
 
-/* Section cards */
+/* Section cards: ОСНОВНЫЕ / СЕТЬ / DNS */
 QFrame#SectionCard {
-    background: rgba(255, 255, 255, 0.03); /* секция dark — полупрозрачная */
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: #1c2030;
+    border: 1px solid #2a2f42;
     border-radius: 12px;
 }
 
 QLabel#SectionTitle {
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.22);
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #787fa0;
 }
 
 QFrame#SectionLine {
-    color: rgba(255, 255, 255, 0.05);
+    color: #232838;
 }
 
 QWidget#SettingsRow {
@@ -251,192 +262,237 @@ QWidget#SettingsRow {
 
 QLabel#SettingsHint {
     font-size: 11px;
-    color: rgba(148, 163, 184, 0.55);
+    color: #565c74;
     background: transparent;
 }
 
 QLabel#FieldLabel {
     font-size: 14px;
-    color: rgba(255, 255, 255, 0.38);
+    color: #c4c8db;
     background: transparent;
 }
 
 /* ── INPUTS ───────────────────────────────────────────────────── */
-/* Поля редактора профиля — без рамки, только нижняя линия */
 QLineEdit#EditorField {
-    background: rgba(255, 255, 255, 0.04);
-    border: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 6px 6px 0 0;
-    color: rgba(255, 255, 255, 0.82);
-    padding: 4px 8px;
+    background: #12141c;
+    border: 1px solid #2a2f42;
+    border-radius: 8px;
+    color: #e8e9f0;
+    padding: 4px 10px;
     min-height: 34px;
 }
 
 QLineEdit#EditorField:focus {
-    border-bottom: 1px solid rgba(99, 102, 241, 0.70);
-    background: rgba(99, 102, 241, 0.06);
+    border-color: #6c7bff;
+    background: #1a1d2e;
 }
 
 QLineEdit#EditorField:disabled {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.20);
-    background: transparent;
+    color: #5b6178;
+    background: #12141c;
+    border-color: #232838;
 }
 
 QComboBox#EditorCombo {
-    background: rgba(255, 255, 255, 0.04);
-    border: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 6px 6px 0 0;
-    color: rgba(255, 255, 255, 0.82);
-    padding: 4px 8px;
+    background: #12141c;
+    border: 1px solid #2a2f42;
+    border-radius: 8px;
+    color: #e8e9f0;
+    padding: 4px 10px;
     min-height: 34px;
 }
 
 QComboBox#EditorCombo:focus,
 QComboBox#EditorCombo:on {
-    border-bottom: 1px solid rgba(99, 102, 241, 0.70);
-    background: rgba(255, 255, 255, 0.07);
+    border-color: #6c7bff;
+    background: #1a1d2e;
 }
+
+/* Global inputs */
 QLineEdit, QComboBox {
-    background: rgba(255, 255, 255, 0.05); /* поля ввода dark */
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.82);
+    background: #1c2030;
+    border: 1px solid #2a2f42;
+    color: #e8e9f0;
     font-size: 14px;
     min-height: 38px;
+    border-radius: 8px;
+    padding: 0 10px;
 }
 
 QLineEdit:focus, QComboBox:focus {
-    border-color: rgba(99, 102, 241, 0.50); /* фокус — indigo */
-    background: rgba(99, 102, 241, 0.07);
+    border-color: #6c7bff;
+    background: #1e2238;
 }
 
 QComboBox:on {
-    border-color: rgba(99, 102, 241, 0.50);
-    background: rgba(99, 102, 241, 0.07);
+    border-color: #6c7bff;
+    background: #1e2238;
 }
 
 QLineEdit:disabled, QComboBox:disabled {
-    background: rgba(255, 255, 255, 0.02);
-    color: rgba(255, 255, 255, 0.20);
-    border-color: rgba(255, 255, 255, 0.05);
+    background: #161927;
+    color: #5b6178;
+    border-color: #232838;
 }
 
 QComboBox::drop-down {
-    border-left: 1px solid rgba(255, 255, 255, 0.07);
+    border-left: 1px solid #232838;
 }
 
 QComboBox::down-arrow {
-    border-left: 2px solid rgba(255, 255, 255, 0.35);
-    border-bottom: 2px solid rgba(255, 255, 255, 0.35);
+    border-left: 2px solid #787fa0;
+    border-bottom: 2px solid #787fa0;
 }
 
 QComboBox QAbstractItemView,
 QComboBox#EditorCombo QAbstractItemView {
-    background: #111827;      /* выпадающий список dark */
-    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: #1c2030;
+    border: 1px solid #2a2f42;
     outline: none;
-    selection-background-color: rgba(99, 102, 241, 0.25);
-    selection-color: #FFFFFF;
-    color: rgba(255, 255, 255, 0.82);
+    selection-background-color: #232a45;
+    selection-color: #e8e9f0;
+    color: #e8e9f0;
 }
 
 /* ── BUTTONS ──────────────────────────────────────────────────── */
 QPushButton {
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    color: rgba(255, 255, 255, 0.65);
+    background: #1c2030;
+    border: 1px solid #2a2f42;
+    color: #c4c8db;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 14px;
+    min-height: 30px;
 }
 
 QPushButton:hover {
-    background: rgba(255, 255, 255, 0.10);
-    border-color: rgba(255, 255, 255, 0.14);
-    color: rgba(255, 255, 255, 0.88);
+    background: #20243a;
+    border-color: #3a3f5c;
+    color: #e8e9f0;
 }
 
 QPushButton:pressed {
-    background: rgba(255, 255, 255, 0.04);
+    background: #161927;
 }
 
 QPushButton[role="primary"] {
-    background: rgba(99, 102, 241, 0.20);
-    border: 1px solid rgba(99, 102, 241, 0.35);
-    color: #A5B4FC;
+    background: #6c7bff;
+    border: none;
+    color: #ffffff;
     font-weight: 700;
-    font-size: 12px;
 }
 
 QPushButton[role="primary"]:hover {
-    background: rgba(99, 102, 241, 0.32);
-    border-color: rgba(99, 102, 241, 0.50);
+    background: #7e8cff;
+    border: none;
+}
+
+QPushButton[role="primary"]:pressed {
+    background: #5a6aee;
 }
 
 QPushButton[role="action"] {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.09);
-    color: rgba(255, 255, 255, 0.65);
+    background: #1c2030;
+    border: 1px solid #2a2f42;
+    color: #c4c8db;
     font-size: 12px;
 }
 
 QPushButton[role="action"]:hover {
-    background: rgba(255, 255, 255, 0.10);
-    color: rgba(255, 255, 255, 0.88);
+    background: #20243a;
+    color: #e8e9f0;
 }
 
 QPushButton[role="delete"] {
     background: rgba(239, 68, 68, 0.12);
     border: 1px solid rgba(239, 68, 68, 0.30);
-    color: #F87171;
+    color: #f87171;
     font-weight: 600;
-    font-size: 12px;
 }
 
 QPushButton[role="delete"]:hover {
-    background: rgba(239, 68, 68, 0.22);  /* темнее при наведении */
+    background: rgba(239, 68, 68, 0.22);
     border-color: rgba(239, 68, 68, 0.50);
-    color: #FCA5A5;
+    color: #fca5a5;
 }
 
 QPushButton[role="delete"]:pressed {
     background: rgba(239, 68, 68, 0.30);
 }
 
+QPushButton:disabled {
+    background: #1c2030;
+    border: none;
+    color: #5b6178;
+}
+
+QPushButton#BtnSave {
+    font-size: 12px;
+    font-weight: 600;
+    min-height: 0;
+    max-height: 9999px;
+}
+
+QPushButton#BtnApply {
+    font-size: 12px;
+    font-weight: 700;
+    min-height: 0;
+    max-height: 9999px;
+}
+
 /* ── SCROLLBARS ───────────────────────────────────────────────── */
+QScrollBar:vertical {
+    width: 5px;
+    background: transparent;
+    margin: 4px 1px;
+}
+
 QScrollBar::handle:vertical {
-    background: rgba(255, 255, 255, 0.12);
+    background: #2a2f42;
+    border-radius: 3px;
+    min-height: 20px;
 }
 
 QScrollBar::handle:vertical:hover {
-    background: rgba(255, 255, 255, 0.22);
+    background: #3a3f5c;
 }
 
-/* ── SPLITTER ─────────────────────────────────────────────────── */
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0;
+    background: transparent;
+}
+
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+    background: transparent;
+}
 
 /* ── PLACEHOLDER ──────────────────────────────────────────────── */
 QLabel#Placeholder {
-    color: rgba(255, 255, 255, 0.15);
+    color: #565c74;
 }
 
 /* ── DIALOGS ──────────────────────────────────────────────────── */
 QDialog {
-    background: #1E293B;
-    color: rgba(255, 255, 255, 0.88);
+    background: #1c2030;
+    color: #e8e9f0;
 }
 
 QDialog QLabel {
-    color: rgba(255, 255, 255, 0.88);
+    color: #e8e9f0;
     font-size: 13px;
     background: transparent;
 }
 
 QMessageBox {
-    background: #1E293B;
-    color: rgba(255, 255, 255, 0.88);
+    background: #1c2030;
+    color: #e8e9f0;
 }
 
 QMessageBox QLabel {
-    color: rgba(255, 255, 255, 0.88);
+    color: #e8e9f0;
     font-size: 13px;
     background: transparent;
 }
@@ -447,7 +503,7 @@ QMessageBox QPushButton {
     font-size: 13px;
 }
 
-/* ── WI-FI PAGE (dark) ────────────────────────────────────────── */
+/* ── WI-FI PAGE ───────────────────────────────────────────────── */
 QTableWidget#WifiNetworkTable,
 QTableWidget#WifiProfileTable {
     background: transparent;
@@ -462,38 +518,47 @@ QTableWidget#WifiProfileTable::item {
     padding: 4px 8px;
     border: none;
     background: transparent;
-    color: rgba(226, 232, 240, 0.82);
+    color: #c4c8db;
 }
 
 QTableWidget#WifiNetworkTable::item:selected,
 QTableWidget#WifiProfileTable::item:selected {
-    background: rgba(99, 102, 241, 0.18);
-    color: rgba(255, 255, 255, 0.92);
+    background: #232a45;
+    color: #e8e9f0;
 }
 
 QHeaderView::section {
     background: transparent;
-    color: rgba(255, 255, 255, 0.28);
-    font-size: 11px;
+    color: #787fa0;
+    font-size: 12px;
     font-weight: 600;
-    padding: 4px 8px;
+    padding: 10px 8px;
     border: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    border-bottom: 1px solid #232838;
 }
 
 QFrame#WifiStatusBar {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid #232838;
+    background: transparent;
 }
 
 QLabel#WifiStatusLabel {
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.50);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #787fa0;
     background: transparent;
+}
+
+QLabel#WifiFeedback {
+    font-size: 13px;
+    color: #c4c8db;
+    padding: 4px 0;
 }
 
 QCheckBox {
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.55);
+    color: #c4c8db;
     spacing: 6px;
     background: transparent;
 }
@@ -502,24 +567,26 @@ QCheckBox::indicator {
     width: 16px;
     height: 16px;
     border-radius: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid #2a2f42;
+    background: #1c2030;
 }
 
 QCheckBox::indicator:checked {
-    background: #6366F1;
-    border-color: #6366F1;
+    background: #6c7bff;
+    border-color: #6c7bff;
 }
 
 QFrame#WifiTopPanel {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    border-bottom: 1px solid #232838;
+    background: #181b28;
 }
 
 QFrame#WifiBottomPanel {
-    background: transparent;
+    background: #181b28;
+    border-top: 1px solid #232838;
 }
 
-/* ── WI-FI TABS (dark) ────────────────────────────────────────── */
+/* ── WI-FI TABS ───────────────────────────────────────────────── */
 QTabWidget#WifiTabs::pane {
     border: none;
     background: transparent;
@@ -527,30 +594,37 @@ QTabWidget#WifiTabs::pane {
 
 QTabWidget#WifiTabs > QTabBar::tab {
     background: transparent;
-    color: rgba(255, 255, 255, 0.30);
-    font-size: 13px;
+    color: #787fa0;
+    font-size: 14px;
     font-weight: 500;
-    padding: 10px 20px;
+    padding: 14px 2px;
+    margin: 0 14px 0 0;
     border: none;
     border-bottom: 2px solid transparent;
-    min-width: 100px;
+    min-width: 0;
 }
 
 QTabWidget#WifiTabs > QTabBar::tab:selected {
-    color: #818CF8;
-    border-bottom: 2px solid #818CF8;
+    color: #8f9aff;
+    border-bottom: 2px solid #6c7bff;
+    font-weight: 600;
 }
 
 QTabWidget#WifiTabs > QTabBar::tab:hover:!selected {
-    color: rgba(255, 255, 255, 0.55);
+    color: #c4c8db;
 }
 
 QTabBar {
     background: transparent;
 }
 
+QFrame#WifiTabBar {
+    border-bottom: 1px solid #232838;
+    background: transparent;
+}
+
 QFrame#WifiProfileToolbar {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    border-bottom: 1px solid #232838;
     background: transparent;
 }
 
@@ -561,14 +635,15 @@ QFrame#WifiProfileToolbar QPushButton {
 
 QLabel#WifiStatusDetails {
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.35);
+    color: #787fa0;
     padding-left: 22px;
     background: transparent;
 }
 
+/* ── CONTEXT MENU ─────────────────────────────────────────────── */
 QMenu {
-    background: #1E2A3A;
-    border: 1px solid rgba(255,255,255,0.10);
+    background: #1c2030;
+    border: 1px solid #2a2f42;
     border-radius: 8px;
     padding: 4px;
 }
@@ -576,71 +651,97 @@ QMenu::item {
     padding: 6px 16px;
     border-radius: 4px;
     font-size: 13px;
-    color: rgba(226,232,240,0.90);
+    color: #e8e9f0;
     background: transparent;
 }
-QMenu::item:selected { background: rgba(99,102,241,0.25); color: #A5B4FC; }
-QMenu::separator { height: 1px; background: rgba(255,255,255,0.08); margin: 3px 8px; }
-
-/* ── TOOLS PAGE (dark) ────────────────────────────────────────── */
-QFrame#ToolsSidebar {
-    border-right: 1px solid rgba(255, 255, 255, 0.07);
+QMenu::item:selected {
+    background: #232a45;
+    color: #9aa4ff;
+}
+QMenu::separator {
+    height: 1px;
+    background: #232838;
+    margin: 3px 8px;
 }
 
-QFrame#ToolNavItem:hover        { background: rgba(255,255,255,0.05); }
-QFrame#ToolNavItem[active="true"] { background: rgba(99,102,241,0.14); }
+/* ── TOOLS PAGE ───────────────────────────────────────────────── */
+QFrame#ToolsSidebar {
+    background: #181b28;
+    border-right: 1px solid #2a2f42;
+}
 
-QFrame#ToolNavBar[active="true"] { background: #818CF8; }
+QFrame#ToolNavItem {
+    background: transparent;
+    border-radius: 0;
+}
+QFrame#ToolNavItem:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+QFrame#ToolNavItem[active="true"] {
+    background: #232a45;
+}
 
-QLabel#ToolNavIcon              { color: rgba(148,163,184,0.60); }
-QLabel#ToolNavIcon[active="true"]{ color: #818CF8; }
+QFrame#ToolNavBar {
+    background: transparent;
+    border-radius: 0 2px 2px 0;
+}
+QFrame#ToolNavBar[active="true"] {
+    background: #6c7bff;
+}
 
-QLabel#ToolNavText              { color: rgba(226,232,240,0.55); }
-QLabel#ToolNavText[active="true"]{ color: #818CF8; font-weight: 600; }
+QLabel#ToolNavIcon {
+    color: #787fa0;
+    font-size: 13px;
+}
+QLabel#ToolNavIcon[active="true"] {
+    color: #9aa4ff;
+}
 
-QLabel#ToolGroupLabel           { color: rgba(255,255,255,0.30); }
+QLabel#ToolNavText {
+    color: #c4c8db;
+    font-size: 13px;
+}
+QLabel#ToolNavText[active="true"] {
+    color: #e8e9f0;
+    font-weight: 600;
+}
 
-QFrame#ToolDivider              { background: rgba(255,255,255,0.07); }
+QLabel#ToolGroupLabel {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #565c74;
+    padding-left: 14px;
+}
+
+QFrame#ToolDivider {
+    background: #232838;
+    max-height: 1px;
+    margin: 0 10px;
+}
 
 QLabel#ToolPanelTitle {
-    color: rgba(226, 232, 240, 0.92);
+    color: #e8e9f0;
+    font-size: 19px;
+    font-weight: 700;
 }
 
-QLabel#SubnetLabel  { color: rgba(148, 163, 184, 0.85); }
-QLabel#SubnetValue  { color: #E2E8F0; }
-
-QFrame#SpeedCard {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-}
-QLabel#SpeedCardTitle { color: rgba(148, 163, 184, 0.85); }
-QLabel#SpeedCardValue { color: #E2E8F0; }
-QLabel#SpeedCardUnit  { color: rgba(148, 163, 184, 0.60); }
-
-QTextEdit#ToolOutput {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: rgba(226, 232, 240, 0.88);
-    selection-background-color: #6366F1;
-    selection-color: #FFFFFF;
-    margin-top: 10px;
-}
-
+/* Netstat / tree tables */
 QTreeWidget#NetstatTable,
 QTreeWidget#ToolTree {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: transparent;
+    border: none;
     border-radius: 8px;
     outline: none;
 }
 QTreeWidget#NetstatTable::item,
 QTreeWidget#ToolTree::item {
-    color: rgba(226,232,240,0.85);
+    color: #c4c8db;
     padding: 3px 6px;
 }
 QTreeWidget#NetstatTable::item:hover,
 QTreeWidget#ToolTree::item:hover {
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.04);
 }
 QTreeWidget#NetstatTable::item:selected,
 QTreeWidget#NetstatTable::item:selected:active,
@@ -648,64 +749,63 @@ QTreeWidget#NetstatTable::item:selected:!active,
 QTreeWidget#ToolTree::item:selected,
 QTreeWidget#ToolTree::item:selected:active,
 QTreeWidget#ToolTree::item:selected:!active {
-    background: #4F46E5;
-    color: #FFFFFF;
+    background: #232a45;
+    color: #e8e9f0;
 }
 QTreeWidget#NetstatTable QHeaderView::section,
 QTreeWidget#ToolTree QHeaderView::section {
-    background: rgba(99,102,241,0.12);
-    color: #818CF8;
-    font-size: 11px;
+    background: #1e2338;
+    color: #9aa4ff;
+    font-size: 12px;
     font-weight: 700;
     padding: 4px 6px;
     border: none;
-    border-bottom: 1px solid rgba(99,102,241,0.25);
+    border-bottom: 1px solid #2a2f42;
 }
 
 QTableWidget#NetstatTable {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: transparent;
+    border: none;
     border-radius: 8px;
     outline: none;
-    gridline-color: rgba(255,255,255,0.07);
+    gridline-color: #232838;
 }
 QTableWidget#NetstatTable::item {
-    color: rgba(226,232,240,0.85);
+    color: #c4c8db;
     padding: 3px 6px;
     border: none;
 }
 QTableWidget#NetstatTable::item:hover {
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.04);
 }
 QTableWidget#NetstatTable::item:selected,
 QTableWidget#NetstatTable::item:selected:active,
 QTableWidget#NetstatTable::item:selected:!active {
-    background: #4F46E5;
-    color: #FFFFFF;
+    background: #232a45;
+    color: #e8e9f0;
 }
 QTableWidget#NetstatTable QHeaderView::section {
-    background: rgba(99,102,241,0.12);
-    color: #818CF8;
-    font-size: 11px;
+    background: #1e2338;
+    color: #9aa4ff;
+    font-size: 12px;
     font-weight: 700;
     padding: 4px 6px;
     border: none;
-    border-bottom: 1px solid rgba(99,102,241,0.25);
-    border-right: 1px solid rgba(99,102,241,0.15);
+    border-bottom: 1px solid #2a2f42;
+    border-right: 1px solid #2a2f42;
 }
 QTableWidget#NetstatTable QHeaderView::section:last {
     border-right: none;
 }
 
 QTreeWidget#IpconfigTree {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    alternate-background-color: rgba(255, 255, 255, 0.05);
+    background: transparent;
+    border: none;
     margin-top: 10px;
     outline: none;
 }
 QTreeWidget#IpconfigTree::item {
-    color: rgba(226, 232, 240, 0.88);
+    color: #e8e9f0;
     border: none;
 }
 QTreeWidget#IpconfigTree::item:hover {
@@ -713,12 +813,12 @@ QTreeWidget#IpconfigTree::item:hover {
 }
 QTreeWidget#IpconfigTree::item:hover:!selected {
     background: transparent;
-    color: rgba(226, 232, 240, 0.88);
+    color: #e8e9f0;
 }
 QTreeWidget#IpconfigTree::item:selected,
 QTreeWidget#IpconfigTree::item:selected:hover {
-    background: rgba(99, 102, 241, 0.18);
-    color: #A5B4FC;
+    background: #232a45;
+    color: #9aa4ff;
 }
 QTreeWidget#IpconfigTree::branch {
     background: transparent;
@@ -742,54 +842,86 @@ QTreeWidget#IpconfigTree::branch:has-children:has-siblings:open {
     background: transparent;
 }
 QTreeWidget#IpconfigTree QHeaderView::section {
-    background: rgba(99, 102, 241, 0.12);
+    background: #1e2338;
     border: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid #232838;
+    border-right: 1px solid #232838;
     padding: 4px 8px;
     font-weight: 600;
-    color: rgba(226, 232, 240, 0.60);
+    color: #787fa0;
 }
 
+QTextEdit#ToolOutput {
+    background: #1c2030;
+    border: 1px solid #232838;
+    border-radius: 8px;
+    color: #e8e9f0;
+    selection-background-color: #6c7bff;
+    selection-color: #ffffff;
+    margin-top: 10px;
+}
+
+QLabel#SubnetLabel  { color: #c4c8db; }
+QLabel#SubnetValue  { color: #e8e9f0; }
+
+QFrame#SpeedCard {
+    background: #1c2030;
+    border: 1px solid #232838;
+    border-radius: 10px;
+}
+QLabel#SpeedCardTitle { color: #787fa0; }
+QLabel#SpeedCardValue { color: #e8e9f0; }
+QLabel#SpeedCardUnit  { color: #565c74; }
+
 QLabel#ToolStatus {
-    color: rgba(255, 255, 255, 0.40);
+    color: #787fa0;
+}
+
+QLabel#ToolPanelSubtitle {
+    color: #787fa0;
+    font-size: 13px;
 }
 
 QLineEdit#ToolInput {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    color: rgba(226, 232, 240, 0.88);
+    background: #1c2030;
+    border: 1px solid #2a2f42;
+    border-radius: 8px;
+    color: #e8e9f0;
 }
 
 QLineEdit#ToolInput:focus {
-    border-color: rgba(99, 102, 241, 0.60);
-    background: rgba(99, 102, 241, 0.06);
+    border-color: #6c7bff;
+    background: #1e2238;
 }
 
 QSpinBox#ToolSpinBox {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    color: rgba(226, 232, 240, 0.88);
+    background: #1c2030;
+    border: 1px solid #2a2f42;
+    color: #e8e9f0;
 }
 
-/* ── TOOLS BUTTONS ANIMATION (dark) ──────────────────────────── */
+QSpinBox#ToolSpinBox:disabled {
+    color: #5b6178;
+    background: #161927;
+}
+
+/* ── TOOLS BUTTONS ────────────────────────────────────────────── */
 QPushButton#ToolBtn[role="primary"]:pressed {
-    background: #3730A3;
-    border-color: #312E81;
+    background: #5a6aee;
 }
 
 QPushButton#ToolBtn[role="action"]:pressed {
-    background: rgba(255, 255, 255, 0.12);
+    background: #161927;
 }
 
 QPushButton#ToolNavBtn:pressed {
-    background: rgba(99, 102, 241, 0.28);
+    background: #232a45;
 }
 
 QComboBox#ToolCombo {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    color: rgba(226, 232, 240, 0.88);
+    background: #1c2030;
+    border: 1px solid #2a2f42;
+    color: #e8e9f0;
     max-width: 180px;
     padding: 0 8px;
     font-size: 13px;
@@ -799,8 +931,8 @@ QComboBox#ToolCombo {
 
 QComboBox#ToolCombo:focus,
 QComboBox#ToolCombo:on {
-    border-color: rgba(99, 102, 241, 0.60);
-    background: rgba(255, 255, 255, 0.05);
+    border-color: #6c7bff;
+    background: #1e2238;
 }
 
 QComboBox#ToolCombo::drop-down {
@@ -809,22 +941,17 @@ QComboBox#ToolCombo::drop-down {
 }
 
 QComboBox#ToolCombo QAbstractItemView {
-    background: #1E2A3A;
-    border: 1px solid rgba(255,255,255,0.10);
-    color: rgba(226,232,240,0.90);
-    selection-background-color: rgba(99,102,241,0.25);
-}
-
-QSpinBox#ToolSpinBox:disabled {
-    color: rgba(255, 255, 255, 0.20);
-    background: rgba(255, 255, 255, 0.02);
+    background: #1c2030;
+    border: 1px solid #2a2f42;
+    color: #e8e9f0;
+    selection-background-color: #232a45;
 }
 
 QSpinBox#SettingsSpinBox {
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: #1c2030;
+    border: 1px solid #2a2f42;
     border-radius: 7px;
-    color: rgba(226, 232, 240, 0.88);
+    color: #e8e9f0;
     font-size: 13px;
     padding: 0 8px;
     min-height: 0;
@@ -836,3 +963,27 @@ QSpinBox#SettingsSpinBox::down-button {
     width: 0;
     border: none;
 }
+
+/* ── EMPTY STATE (Инструменты → Netstat без данных) ──────────── */
+QLabel#EmptyStateIcon {
+    color: #565c74;
+    font-size: 32px;
+}
+
+QLabel#EmptyStateTitle {
+    color: #787fa0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+QLabel#EmptyStateHint {
+    color: #565c74;
+    font-size: 13px;
+}
+
+/* ── STATUS LABELS (реиспользуются на разных страницах) ───────── */
+QLabel#StatusDot   { color: #4ade80; }
+QLabel#StatusActive { color: #e8e9f0; font-size: 13px; }
+QLabel#StatusKey    { color: #787fa0; font-size: 12px; }
+QLabel#StatusValue  { color: #c4c8db; font-size: 12px; }
+QLabel#StatusIP     { color: #6c7bff; font-size: 12px; font-family: "Consolas", monospace; }

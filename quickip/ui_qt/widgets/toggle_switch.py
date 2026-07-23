@@ -61,12 +61,12 @@ class ToggleSwitch(QWidget):
         knob_d = self._H - m * 2
 
         if on:
-            track_color = QColor(99, 102, 241)
+            track_color = QColor(108, 123, 255)   # #6c7bff accent
             border_color = None
         else:
             if self._dark_mode:
-                track_color = QColor(51, 65, 85)
-                border_color = QColor(71, 85, 105)
+                track_color = QColor(42, 47, 66)   # #2a2f42 border
+                border_color = QColor(58, 63, 92)   # #3a3f5c
             else:
                 track_color = QColor(226, 232, 240)
                 border_color = QColor(203, 213, 225)

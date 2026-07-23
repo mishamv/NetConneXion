@@ -22,4 +22,4 @@ class BackdropWidget(QWidget):
         if self._theme_mode == "light":
             painter.fillRect(self.rect(), QColor("#F1F5F9"))  # light: slate-100
         else:
-            painter.fillRect(self.rect(), QColor("#0F172A"))  # dark: slate-900
+            painter.fillRect(self.rect(), QColor("#12141c"))  # dark: design bg

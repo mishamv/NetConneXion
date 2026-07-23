@@ -21,9 +21,18 @@ echo [2/5] Staging all changes...
 git add -A
 
 echo [2/5] Committing...
-git commit -m "Security hardening, performance, multi-user DPAPI fix
+git commit -m "Vault v3: remove hardcoded entropy seed + security hardening
 
-P0 Security:
+Vault v3 entropy scheme:
+- Remove hardcoded _APP_ENTROPY_SEED from source code and binary
+- Per-installation 32-byte random seed stored in
+  %PROGRAMDATA%\NetConneXion\entropy_seed.bin (generated at first launch)
+- Entropy = HMAC-SHA256(file_seed, HKCU_user_key) - nothing useful in source
+- Backward compat: dpapi2: blobs fallback to legacy seed, then VaultPortabilityError
+- New blobs use dpapi3: prefix; protect_text() always writes v3
+- Tests: TestGetOrCreateAppSeed (5 tests) + TestVaultEntropy extended
+
+P0 Security (previous commits):
 - Block b64 credentials (T1552.001) - require re-save
 - Remove WEP from supported auth options
 - SSID quoting in all netsh commands
@@ -49,8 +58,7 @@ Multi-user DPAPI fix:
 - WifiPresenter.reauth_connect(): reconnect + re-encrypt under current account
 - WifiPage: reauth_needed signal + password dialog with account explanation
 
-Tests: 139 passing (test_netsh_parser, test_base_repo, test_p1_features added)
-Split requirements: runtime / dev / ci"
+spec: add quickip.shared.privilege_check + auto_switch hiddenimports"
 
 if errorlevel 1 (
     echo.

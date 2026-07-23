@@ -68,9 +68,9 @@ class ProfileRowWidget(QWidget):
         if self._selected:
             if self._dark_mode:
                 painter.setPen(Qt.PenStyle.NoPen)
-                painter.setBrush(QColor(99, 102, 241, 22))
+                painter.setBrush(QColor(108, 123, 255, 28))   # #6c7bff ~11%
                 painter.drawRoundedRect(r, 9, 9)
-                painter.setPen(QPen(QColor(99, 102, 241, 70), 1))
+                painter.setPen(QPen(QColor(108, 123, 255, 85), 1))
                 painter.setBrush(Qt.BrushStyle.NoBrush)
                 painter.drawRoundedRect(r, 9, 9)
             else:
@@ -85,7 +85,7 @@ class ProfileRowWidget(QWidget):
         margin = 10   # совпадает с contentsMargins top/bottom
         ix, iy, iw, ih = 10, margin, 34, 34
         bg = (
-            QColor(99, 102, 241, 40 if self._selected else 28)
+            QColor(108, 123, 255, 40 if self._selected else 28)  # #6c7bff
             if self._dark_mode
             else QColor(238, 242, 255)
         )
@@ -237,7 +237,7 @@ class ProfilesPage(QWidget):
         actions = QFrame()
         actions.setObjectName("ActionsBlock")
         a_lay = QVBoxLayout(actions)
-        a_lay.setContentsMargins(10, 8, 10, 14)
+        a_lay.setContentsMargins(10, 8, 10, 28)
         a_lay.setSpacing(5)
 
         # Шрифт кнопок блока задан здесь явно (font-size=10pt).

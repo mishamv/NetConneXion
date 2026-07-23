@@ -209,27 +209,131 @@ class TestMigrateLegacyProfiles(unittest.TestCase):
 class TestVaultEntropy(unittest.TestCase):
     """Smoke test _build_entropy returns bytes without crashing."""
 
-    def test_build_entropy_returns_32_bytes(self):
-        # Mock winreg so the test runs on non-Windows / in CI
+    def _make_mock_winreg(self):
+        import base64 as _b64
         mock_winreg = types.ModuleType("winreg")
         mock_winreg.HKEY_CURRENT_USER = 0
         mock_winreg.REG_SZ = 1
-        import base64 as _b64
-        _stored_key = _b64.b64encode(b"\x42" * 32).decode()
+        stored_key = _b64.b64encode(b"\x42" * 32).decode()
+        ctx = MagicMock()
+        ctx.__enter__ = MagicMock(return_value=ctx)
+        ctx.__exit__ = MagicMock(return_value=False)
+        mock_winreg.OpenKey = MagicMock(return_value=ctx)
+        mock_winreg.QueryValueEx = MagicMock(return_value=(stored_key, mock_winreg.REG_SZ))
+        return mock_winreg
 
-        mock_key_ctx = MagicMock()
-        mock_key_ctx.__enter__ = MagicMock(return_value=mock_key_ctx)
-        mock_key_ctx.__exit__ = MagicMock(return_value=False)
-        mock_winreg.OpenKey = MagicMock(return_value=mock_key_ctx)
-        mock_winreg.QueryValueEx = MagicMock(return_value=(_stored_key, mock_winreg.REG_SZ))
-
+    def test_build_entropy_returns_32_bytes(self):
+        # Mock winreg so the test runs on non-Windows / in CI
+        # Patch _get_or_create_app_seed so no PROGRAMDATA access is needed
+        mock_winreg = self._make_mock_winreg()
         with patch.dict(sys.modules, {"winreg": mock_winreg}):
             from importlib import reload
             import quickip.core.security.vault as vault_mod
             reload(vault_mod)
-            entropy = vault_mod._build_entropy()
+            with patch.object(vault_mod, "_get_or_create_app_seed", return_value=b"\x01" * 32):
+                entropy = vault_mod._build_entropy()
             assert isinstance(entropy, bytes)
             assert len(entropy) == 32
+
+    def test_build_entropy_explicit_seed(self):
+        """Passing an explicit seed uses that seed, not the app seed from disk."""
+        mock_winreg = self._make_mock_winreg()
+        with patch.dict(sys.modules, {"winreg": mock_winreg}):
+            from importlib import reload
+            import quickip.core.security.vault as vault_mod
+            reload(vault_mod)
+            seed_a = b"\xAA" * 32
+            seed_b = b"\xBB" * 32
+            with patch.object(vault_mod, "_get_or_create_app_seed", side_effect=AssertionError("should not be called")):
+                ent_a = vault_mod._build_entropy(seed_a)
+                ent_b = vault_mod._build_entropy(seed_b)
+            assert ent_a != ent_b, "Different seeds must produce different entropy"
+            assert len(ent_a) == 32 and len(ent_b) == 32
+
+    def test_build_entropy_legacy_seed_differs_from_app_seed(self):
+        """LEGACY_SEED entropy must differ from per-installation entropy."""
+        mock_winreg = self._make_mock_winreg()
+        with patch.dict(sys.modules, {"winreg": mock_winreg}):
+            from importlib import reload
+            import quickip.core.security.vault as vault_mod
+            reload(vault_mod)
+            fixed_app_seed = b"\xCC" * 32
+            with patch.object(vault_mod, "_get_or_create_app_seed", return_value=fixed_app_seed):
+                ent_app = vault_mod._build_entropy()
+            ent_legacy = vault_mod._build_entropy(vault_mod._LEGACY_SEED)
+            assert ent_app != ent_legacy
+
+
+# ---------------------------------------------------------------------------
+# Vault v3: _get_or_create_app_seed filesystem behaviour
+# ---------------------------------------------------------------------------
+
+class TestGetOrCreateAppSeed(unittest.TestCase):
+    """_get_or_create_app_seed() reads/creates entropy_seed.bin correctly."""
+
+    def _vault(self):
+        import quickip.core.security.vault as v
+        return v
+
+    def test_returns_existing_32_byte_file(self):
+        """If entropy_seed.bin exists with 32 bytes, return it unchanged."""
+        import os
+        existing_seed = b"\xDE\xAD" * 16
+        vault = self._vault()
+        with patch.dict(os.environ, {"PROGRAMDATA": "C:\\ProgramData"}):
+            with patch("quickip.core.security.vault.Path") as MockPath:
+                mock_dir = MagicMock()
+                mock_dir.__truediv__ = lambda s, n: mock_dir
+                mock_dir.mkdir = MagicMock()
+                mock_seed_file = MagicMock()
+                mock_seed_file.exists.return_value = True
+                mock_seed_file.read_bytes.return_value = existing_seed
+                mock_dir.__truediv__ = MagicMock(side_effect=lambda n: mock_seed_file if n == "entropy_seed.bin" else mock_dir)
+                MockPath.return_value = mock_dir
+                result = vault._get_or_create_app_seed()
+        assert result == existing_seed
+
+    def test_generates_and_saves_new_seed_if_missing(self, *_):
+        """If entropy_seed.bin is missing, generate 32 random bytes and save."""
+        import os, tempfile
+        vault = self._vault()
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.dict(os.environ, {"PROGRAMDATA": tmp}):
+                seed = vault._get_or_create_app_seed()
+            assert isinstance(seed, bytes)
+            assert len(seed) == 32
+            seed_path = __import__("pathlib").Path(tmp) / "NetConneXion" / "entropy_seed.bin"
+            assert seed_path.exists()
+            assert seed_path.read_bytes() == seed
+
+    def test_returns_ephemeral_seed_on_os_error(self):
+        """If write fails, still returns a 32-byte seed without raising."""
+        import os
+        vault = self._vault()
+        with patch.dict(os.environ, {"PROGRAMDATA": "C:\\ProgramData"}):
+            with patch("quickip.core.security.vault._get_programdata_dir", side_effect=OSError("permission denied")):
+                seed = vault._get_or_create_app_seed()
+        assert isinstance(seed, bytes)
+        assert len(seed) == 32
+
+    def test_v3_prefix_in_protect_text(self):
+        """protect_text() must produce dpapi3: blobs, not dpapi2:."""
+        mock_win32crypt = types.ModuleType("win32crypt")
+        mock_win32crypt.CryptProtectData = MagicMock(return_value=b"\x00" * 16)
+        mock_winreg = types.ModuleType("winreg")
+        mock_winreg.HKEY_CURRENT_USER = 0
+        mock_winreg.REG_SZ = 1
+        import base64 as _b
+        ctx = MagicMock()
+        ctx.__enter__ = MagicMock(return_value=ctx)
+        ctx.__exit__ = MagicMock(return_value=False)
+        mock_winreg.OpenKey = MagicMock(return_value=ctx)
+        mock_winreg.QueryValueEx = MagicMock(return_value=(_b.b64encode(b"\x01" * 32).decode(), 1))
+        import quickip.core.security.vault as vault_mod
+        with patch.dict(sys.modules, {"win32crypt": mock_win32crypt, "winreg": mock_winreg}):
+            with patch.object(vault_mod, "_get_or_create_app_seed", return_value=b"\x02" * 32):
+                result = vault_mod.protect_text("secret")
+        assert result.startswith("dpapi3:"), f"Expected dpapi3: prefix, got: {result[:12]!r}"
 
 
 # ---------------------------------------------------------------------------
