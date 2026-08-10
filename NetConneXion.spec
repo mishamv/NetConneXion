@@ -19,7 +19,7 @@ a = Analysis(
         # Ресурсы приложения
         (str(ROOT / 'data'),                          'data'),
         (str(ROOT / 'quickip' / 'ui_qt' / 'qss'),    'quickip/ui_qt/qss'),
-        (str(ROOT / 'data' / 'locales'),              'data/locales'),
+        (str(ROOT / 'quickip' / 'ui_qt' / 'assets'), 'quickip/ui_qt/assets'),
         # openpyxl — шаблоны и данные (обязательно для записи xlsx)
         *collect_data_files('openpyxl'),
     ],

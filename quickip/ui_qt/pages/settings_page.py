@@ -26,6 +26,8 @@ class SettingsPage(QWidget):
 
     def __init__(self, container: "ServiceContainer") -> None:
         super().__init__()
+        # Stable page selector for theme/QSS rules.
+        self.setObjectName("SettingsPage")
         self._container = container
         self._presenter = SettingsPresenter(container)
         self._build()
@@ -40,6 +42,7 @@ class SettingsPage(QWidget):
         root.setSpacing(0)
 
         scroll = QScrollArea()
+        scroll.setObjectName("SettingsScroll")
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -47,6 +50,7 @@ class SettingsPage(QWidget):
         root.addWidget(scroll)
 
         body = QWidget()
+        body.setObjectName("SettingsBody")
         lay = QVBoxLayout(body)
         lay.setContentsMargins(24, 20, 42, 20)  # 42px справа — отступ под скроллбар
         lay.setSpacing(16)

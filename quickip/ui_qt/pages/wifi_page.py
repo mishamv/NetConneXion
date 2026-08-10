@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 
 from quickip.features.wifi.presenter import WifiPresenter
 from quickip.features.wifi.repository import AUTH_OPTIONS, CIPHER_OPTIONS
+from quickip.ui_qt.palette import color, semantic_color
 
 if TYPE_CHECKING:
     from quickip.app.bootstrap import ServiceContainer
@@ -69,11 +70,11 @@ class _SignalDelegate(QStyledItemDelegate):
 
             # Цвет по уровню сигнала
             if pct >= 70:
-                color = QColor("#22C55E")
+                color = QColor(semantic_color("STATUS_SUCCESS"))
             elif pct >= 45:
-                color = QColor("#F59E0B")
+                color = QColor(semantic_color("STATUS_WARNING"))
             else:
-                color = QColor("#EF4444")
+                color = QColor(semantic_color("STATUS_ERROR"))
 
             dim = QColor(color)
             dim.setAlpha(45)
@@ -116,6 +117,8 @@ class WifiPage(QWidget):
 
     def __init__(self, container: "ServiceContainer") -> None:
         super().__init__()
+        # Stable page selector for theme/QSS rules.
+        self.setObjectName("WifiPage")
         self._container = container
         self._presenter = WifiPresenter(container)
         self._bridge = _WifiBridge()
@@ -140,13 +143,6 @@ class WifiPage(QWidget):
         self._connect_signals()
         self._poll_status()
         self._status_timer.start()
-
-        # Migrate any legacy b64: profiles to DPAPI/keyring on startup (T1555.004)
-        threading.Thread(
-            target=self._presenter.migrate_legacy_profiles,
-            daemon=True,
-            name="wifi_b64_migrate",
-        ).start()
 
     # ── Build UI ──────────────────────────────────────────────────
 
@@ -173,6 +169,11 @@ class WifiPage(QWidget):
         self._right.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self._build_right()
         self._tabs.addTab(self._right, "Сохранённые профили")
+        # Keep both navigation tabs available even if a platform style tries
+        # to collapse a two-page document-mode tab bar.
+        self._tabs.tabBar().setVisible(True)
+        self._tabs.setTabVisible(0, True)
+        self._tabs.setTabVisible(1, True)
 
         root.addWidget(self._tabs, 1)
 
@@ -181,45 +182,40 @@ class WifiPage(QWidget):
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(0)
 
-        # Header
+        # Compact overview: title + count + connection state.
         hdr = QFrame()
-        hdr.setObjectName("PanelHeader")
-        hl = QHBoxLayout(hdr)
-        hl.setContentsMargins(13, 10, 13, 8)
+        hdr.setObjectName("WifiOverviewBar")
+        hv = QVBoxLayout(hdr)
+        hv.setContentsMargins(16, 8, 16, 8)
+        hv.setSpacing(3)
+
+        hl = QHBoxLayout()
+        hl.setContentsMargins(0, 0, 0, 0)
+        hl.setSpacing(9)
         t = QLabel("Wi-Fi сети")
         t.setObjectName("PanelTitle")
         self._lbl_networks_title = t
         hl.addWidget(t)
-        hl.addStretch(1)
         self._net_count = QLabel("0")
         self._net_count.setObjectName("CountPill")
         hl.addWidget(self._net_count)
-        lay.addWidget(hdr)
+        hl.addStretch(1)
 
-        # Status bar
-        sf = QFrame()
-        sf.setObjectName("WifiStatusBar")
-        sv = QVBoxLayout(sf)
-        sv.setContentsMargins(13, 8, 13, 8)
-        sv.setSpacing(3)
-        # Первая строка: dot + SSID
-        row1 = QHBoxLayout()
-        row1.setSpacing(8)
-        row1.setContentsMargins(0, 0, 0, 0)
         self._status_dot = QLabel("\u25cf")
         self._status_dot.setObjectName("StatusDot")
         self._status_dot.setFixedWidth(14)
-        row1.addWidget(self._status_dot)
+        hl.addWidget(self._status_dot)
         self._status_label = QLabel("Проверка...")
         self._status_label.setObjectName("WifiStatusLabel")
-        row1.addWidget(self._status_label, 1)
-        sv.addLayout(row1)
-        # Вторая строка: IP, шлюз, DNS
+        hl.addWidget(self._status_label)
+        hv.addLayout(hl)
+
+        # Optional second line: IP, gateway and DNS when connected.
         self._status_details = QLabel("")
         self._status_details.setObjectName("WifiStatusDetails")
         self._status_details.setVisible(False)
-        sv.addWidget(self._status_details)
-        lay.addWidget(sf)
+        hv.addWidget(self._status_details)
+        lay.addWidget(hdr)
 
         # Network table
         self._net_table = QTableWidget()
@@ -293,7 +289,18 @@ class WifiPage(QWidget):
         self._net_feedback.setObjectName("WifiFeedback")
         self._net_feedback.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._net_feedback.setFixedHeight(24)
+        self._net_feedback.hide()
         lay.addWidget(self._net_feedback)
+
+    def _show_net_feedback(self, text: str) -> None:
+        """Show the transient Wi-Fi message without reserving an empty row."""
+        self._net_feedback.setText(text)
+        self._net_feedback.setVisible(bool(text))
+
+    def _clear_net_feedback(self) -> None:
+        """Hide the transient Wi-Fi message and release its layout space."""
+        self._net_feedback.clear()
+        self._net_feedback.hide()
 
     def _build_right(self) -> None:
         lay = QVBoxLayout(self._right)
@@ -502,9 +509,11 @@ class WifiPage(QWidget):
             self.btn_scan.setEnabled(True)
         self._net_count.setText(str(len(networks)))
         if not networks:
-            self._net_feedback.setText("Сети не найдены")
-            self._net_feedback.setStyleSheet("color: #94A3B8; font-size: 12px;")
-            QTimer.singleShot(3000, lambda: self._net_feedback.setText(""))
+            self._show_net_feedback("Сети не найдены")
+            self._net_feedback.setStyleSheet(
+                f'color: {semantic_color("TEXT_MUTED")}; font-size: 12px;'
+            )
+            QTimer.singleShot(3000, self._clear_net_feedback)
             self._net_table.setRowCount(0)
             return
 
@@ -532,9 +541,9 @@ class WifiPage(QWidget):
                 enc = f"{net.auth} - {net.cipher}" if net.auth and net.cipher else net.auth or "\u2014"
                 auth_lower = (net.auth or "").lower()
                 if "open" in auth_lower or "wep" in auth_lower:
-                    enc_color = QColor("#EF4444")
+                    enc_color = QColor(semantic_color("STATUS_ERROR"))
                 elif "wpa3" in auth_lower:
-                    enc_color = QColor("#22C55E")
+                    enc_color = QColor(semantic_color("STATUS_SUCCESS"))
                 else:
                     enc_color = None
 
@@ -718,8 +727,9 @@ class WifiPage(QWidget):
         """
         self._net_table.setSortingEnabled(False)
         self._net_table.setUpdatesEnabled(False)
-        connected_color = QColor(99, 102, 241, 40)
-        connected_fg    = QColor("#6366F1")
+        connected_color = QColor(color("light", "LIGHT_CUSTOM_CONNECTED_ROW"))
+        connected_color.setAlpha(40)
+        connected_fg    = QColor(semantic_color("LIGHT_CONNECTED"))
         try:
             for row in range(self._net_table.rowCount()):
                 ssid_item = self._net_table.item(row, 1)
@@ -732,7 +742,7 @@ class WifiPage(QWidget):
                     if is_current:
                         cell.setBackground(connected_color)
                     else:
-                        cell.setBackground(QColor(0, 0, 0, 0))
+                        cell.setBackground(QColor(Qt.GlobalColor.transparent))
                 if ssid_item:
                     display = ssid_item.text()
                     if display.startswith("● "):
@@ -950,7 +960,7 @@ class WifiPage(QWidget):
         self.btn_connect.setEnabled(True)
         self.btn_connect.setText(self._tr("btn_connect"))
         if success:
-            self._net_feedback.setText("")
+            self._clear_net_feedback()
             QTimer.singleShot(1500, self._poll_status)
             if self._last_connect_ssid and self._last_connect_password:
                 QTimer.singleShot(1000, self._offer_save_profile)
@@ -996,7 +1006,7 @@ class WifiPage(QWidget):
         self.btn_disconnect.setEnabled(True)
         QTimer.singleShot(1000, self._poll_status)
         if success:
-            self._net_feedback.setText("")
+            self._clear_net_feedback()
 
     # ── Profiles ──────────────────────────────────────────────────
 
@@ -1129,7 +1139,7 @@ class WifiPage(QWidget):
     # ── Feedback ──────────────────────────────────────────────────
 
     def _show_feedback(self, msg: str, error: bool = False) -> None:
-        color = "#EF4444" if error else "#22C55E"
+        color = semantic_color("STATUS_ERROR" if error else "STATUS_SUCCESS")
         self._feedback.setText(msg)
         self._feedback.setStyleSheet(f"color: {color}; font-size: 12px;")
         QTimer.singleShot(3000, lambda: self._feedback.setText(""))
@@ -1151,9 +1161,21 @@ class WifiPage(QWidget):
             msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
             msg.setDefaultButton(QMessageBox.StandardButton.Yes)
             if msg.exec() == QMessageBox.StandardButton.Yes:
-                self._ed_ssid.setText(ssid)
-                # Пароль не подставляем в поле — пользователь вводит сам
-                self._tabs.setCurrentIndex(1)
+                try:
+                    self._presenter.save_profile(
+                        ssid=ssid,
+                        auth="WPA2-Personal",
+                        cipher="AES",
+                        password=self._last_connect_password,
+                        auto_connect=True,
+                        connect_hidden=False,
+                        is_adhoc=False,
+                    )
+                    self._load_profiles()
+                    self._show_feedback(self._tr("feedback_profile_saved"))
+                    self._tabs.setCurrentIndex(1)
+                except Exception as exc:
+                    self._show_feedback(str(exc), error=True)
         finally:
             self._clear_connect_context()
 
@@ -1226,9 +1248,11 @@ class WifiPage(QWidget):
             daemon=True
         ).start()
         self._load_profiles()
-        self._net_feedback.setText(f"Deleted: {ssid}")
-        self._net_feedback.setStyleSheet("color: #94A3B8; font-size: 12px;")
-        QTimer.singleShot(3000, lambda: self._net_feedback.setText(""))
+        self._show_net_feedback(f"Deleted: {ssid}")
+        self._net_feedback.setStyleSheet(
+            f'color: {semantic_color("TEXT_MUTED")}; font-size: 12px;'
+        )
+        QTimer.singleShot(3000, self._clear_net_feedback)
 
     # ── Theme / lifecycle ─────────────────────────────────────────
 

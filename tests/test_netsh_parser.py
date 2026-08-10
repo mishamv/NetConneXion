@@ -130,6 +130,33 @@ class TestParseNetworks(unittest.TestCase):
         self.assertEqual(len(result), 0)
 
 
+    def test_parses_every_bssid_for_same_ssid(self):
+        raw = """\
+SSID 1 : MeshNetwork
+Authentication          : WPA2-Personal
+Encryption              : CCMP
+ BSSID 1                : aa:bb:cc:dd:ee:01
+      Signal             : 82%
+      Radio type         : 802.11ax
+      Channel            : 36
+ BSSID 2                : aa:bb:cc:dd:ee:02
+      Signal             : 61%
+      Radio type         : 802.11ac
+      Channel            : 44
+"""
+        result = parse_networks(raw)
+
+        self.assertEqual(len(result), 2)
+        self.assertEqual(
+            [network.bssid for network in result],
+            ["aa:bb:cc:dd:ee:01", "aa:bb:cc:dd:ee:02"],
+        )
+        self.assertEqual([network.signal_pct for network in result], [82, 61])
+        self.assertEqual([network.channel for network in result], [36, 44])
+        self.assertTrue(all(network.ssid == "MeshNetwork" for network in result))
+        self.assertTrue(all(network.auth == "WPA2-Personal" for network in result))
+
+
 # ── parse_interface_status ────────────────────────────────────────────────────
 
 _IFACE_STATUS_EN = """\

@@ -3,7 +3,7 @@
 Covers:
   - ScannerService._expand_target: host limit enforcement, lazy generator
   - ManagedProcess: cancel() terminates process, no zombie; kill() backward-compat
-  - keyring_vault UUID scheme: protect/unprotect/migrate_legacy
+  - keyring_vault UUID scheme: protect/unprotect/delete
   - WifiService.scan_networks: cached result returned during active scan
 """
 
@@ -231,40 +231,6 @@ class TestKeyringVaultUUID(unittest.TestCase):
             kv.delete("some-uuid")
         mock_kr.delete_password.assert_called_once_with("NetConneXion", "wifi:some-uuid")
 
-    def test_unprotect_legacy_looks_up_by_ssid(self):
-        mock_kr = self._make_mock_keyring()
-        with patch.dict(__import__("sys").modules, {"keyring": mock_kr}):
-            from importlib import reload
-            import quickip.core.security.keyring_vault as kv
-            reload(kv)
-            result = kv.unprotect_legacy("HomeNetwork")
-        mock_kr.get_password.assert_called_once_with("NetConneXion", "HomeNetwork")
-        self.assertEqual(result, "secret123")
-
-    def test_migrate_legacy_kr_rewrites_key(self):
-        mock_kr = self._make_mock_keyring()
-        mock_kr.get_password.side_effect = lambda svc, user: (
-            "oldpassword" if user == "HomeNetwork" else None
-        )
-        with patch.dict(__import__("sys").modules, {"keyring": mock_kr}):
-            from importlib import reload
-            import quickip.core.security.keyring_vault as kv
-            reload(kv)
-            sentinel = kv.migrate_legacy_kr("HomeNetwork", "new-uuid-9999")
-        self.assertEqual(sentinel, "kr:new-uuid-9999")
-        # Должны были записать под новым ключом и удалить старый
-        mock_kr.set_password.assert_called_once_with("NetConneXion", "wifi:new-uuid-9999", "oldpassword")
-        mock_kr.delete_password.assert_called_once_with("NetConneXion", "HomeNetwork")
-
-    def test_migrate_legacy_kr_returns_none_if_not_found(self):
-        mock_kr = self._make_mock_keyring()
-        mock_kr.get_password.return_value = None
-        with patch.dict(__import__("sys").modules, {"keyring": mock_kr}):
-            from importlib import reload
-            import quickip.core.security.keyring_vault as kv
-            reload(kv)
-            result = kv.migrate_legacy_kr("NoSuchSSID", "any-uuid")
-        self.assertIsNone(result)
 
 
 # ── WifiService scan_networks cache ───────────────────────────────────────────
@@ -360,7 +326,7 @@ class TestNeedsReauthFlow(unittest.TestCase):
         container.vault_available = vault_available
         return WifiService(container)
 
-    def _make_profile(self, key_protected="dpapi2:AAAA=="):
+    def _make_profile(self, key_protected="dpapi3:AAAA=="):
         from quickip.features.wifi.repository import WifiProfile
         return WifiProfile(
             id="test-uuid-001",
@@ -380,7 +346,7 @@ class TestNeedsReauthFlow(unittest.TestCase):
         container.vault_available = True
         svc = WifiService(container)
 
-        profile = self._make_profile("dpapi2:FAKEFAKE==")
+        profile = self._make_profile("dpapi3:FAKEFAKE==")
 
         # Патчим unprotect_text в точке импорта внутри service.py
         with patch("quickip.core.security.vault.unprotect_text",
@@ -401,7 +367,7 @@ class TestNeedsReauthFlow(unittest.TestCase):
         container.vault_available = True
         svc = WifiService(container)
 
-        profile = self._make_profile("dpapi2:GOODBLOB==")
+        profile = self._make_profile("dpapi3:GOODBLOB==")
 
         # unprotect_text возвращает пароль, netsh — успех
         runner_result = MagicMock()

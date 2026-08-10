@@ -4,8 +4,7 @@ Uses the system keyring (Windows Credential Manager on Windows) via the
 ``keyring`` library. Secrets are keyed by **profile UUID**, not SSID.
 
 Key format in ``key_protected``:
-  - New (>= v2): ``"kr:<profile_uuid>"``  ← stored as username ``"wifi:<uuid>"``
-  - Legacy (v1): ``"kr:"``                ← stored as username ``"<ssid>"``
+  ``"kr:<profile_uuid>"`` — stored as username ``"wifi:<uuid>"``.
 
 Using UUID avoids collisions when two profiles share the same SSID but have
 different passwords (e.g. home vs office network with same name), and makes
@@ -124,26 +123,6 @@ def unprotect_text(profile_id: str) -> str:
     return secret
 
 
-def unprotect_legacy(ssid: str) -> str:
-    """Read a v1 (legacy) keyring entry stored under the SSID directly.
-
-    Used only during migration from old ``"kr:"`` sentinel to ``"kr:<uuid>"``.
-    Raises KeyringSecretNotFoundError if not found.
-    """
-    try:
-        import keyring
-    except ImportError as exc:
-        raise KeyringUnavailableError(
-            "keyring package is required."
-        ) from exc
-
-    secret = keyring.get_password(_SERVICE, ssid)
-    if secret is None:
-        raise KeyringSecretNotFoundError(
-            f"No legacy keyring secret found for SSID={ssid!r}."
-        )
-    return secret
-
 
 # ── Delete ────────────────────────────────────────────────────────────────────
 
@@ -156,41 +135,3 @@ def delete(profile_id: str) -> None:
         logger.info("Keyring secret deleted for profile_id=%r", profile_id)
     except Exception:
         pass  # best-effort
-
-
-def delete_legacy(ssid: str) -> None:
-    """Remove a v1 (legacy) keyring entry stored under the SSID directly."""
-    try:
-        import keyring
-        keyring.delete_password(_SERVICE, ssid)
-        logger.debug("Legacy keyring entry deleted for SSID=%r", ssid)
-    except Exception:
-        pass
-
-
-# ── Migration ─────────────────────────────────────────────────────────────────
-
-def migrate_legacy_kr(ssid: str, profile_id: str) -> str | None:
-    """Migrate a v1 ``"kr:"`` entry to v2 ``"kr:<profile_id>"``.
-
-    Reads the old SSID-keyed entry, re-stores it under the profile UUID,
-    deletes the old entry, and returns the new ``key_protected`` sentinel.
-
-    Returns ``None`` if the legacy entry is not found (already migrated or
-    was never stored).
-    """
-    try:
-        plaintext = unprotect_legacy(ssid)
-    except (KeyringUnavailableError, KeyringSecretNotFoundError):
-        return None
-
-    try:
-        new_sentinel = protect_text(profile_id, plaintext)
-        delete_legacy(ssid)
-        logger.info(
-            "Migrated keyring entry SSID=%r → profile_id=%r", ssid, profile_id
-        )
-        return new_sentinel
-    except Exception as exc:
-        logger.warning("Failed to migrate keyring for SSID=%r: %s", ssid, exc)
-        return None

@@ -36,6 +36,7 @@ from quickip.core.events.types import LangChanged, ProfileApplied, ThemeChanged,
 from quickip.shared.privilege_check import is_elevated
 from quickip.ui_qt.adapters.profiles_facade import ProfilesFacade
 from quickip.ui_qt.theme import load_qss, _resource_root
+from quickip.ui_qt.palette import color, semantic_color
 from quickip.ui_qt.widgets.backdrop import BackdropWidget
 from quickip.ui_qt.pages.profiles_page import ProfilesPage
 from quickip.ui_qt.pages.tools_page import ToolsPage
@@ -106,18 +107,6 @@ class QtMainWindow(QMainWindow):
         tb.addWidget(self._logo_label)
         tb.addWidget(self._logo_name)
 
-        # Vertical separator
-        _sep = QFrame()
-        _sep.setFixedSize(1, 20)
-        _sep.setStyleSheet("background: #232838;")
-        tb.addSpacing(16)
-        tb.addWidget(_sep)
-        tb.addSpacing(16)
-
-        # Page title (right of separator)
-        self._page_title = QLabel(self._tr("page_profiles"))
-        self._page_title.setObjectName("TopbarTitle")
-        tb.addWidget(self._page_title)
         tb.addStretch(1)
 
         # Theme toggle
@@ -195,16 +184,16 @@ class QtMainWindow(QMainWindow):
         banner.setFixedHeight(36)
         banner.setStyleSheet(
             "QFrame#ElevationBanner {"
-            "  background: #7c5800;"
+            f"  background: {semantic_color('ELEVATION_BG')};"
             "  border-radius: 0;"
             "}"
-            "QLabel { color: #ffe08a; font-size: 12px; }"
+            f"QLabel {{ color: {semantic_color('ELEVATION_TEXT')}; font-size: 12px; }}"
             "QPushButton {"
-            "  color: #ffe08a; background: transparent;"
-            "  border: 1px solid #ffe08a; border-radius: 4px;"
+            f"  color: {semantic_color('ELEVATION_TEXT')}; background: transparent;"
+            f"  border: 1px solid {semantic_color('ELEVATION_TEXT')}; border-radius: 4px;"
             "  padding: 2px 8px; font-size: 11px;"
             "}"
-            "QPushButton:hover { background: #a07000; }"
+            f"QPushButton:hover {{ background: {semantic_color('ELEVATION_BG_HOVER')}; }}"
         )
         lay = QHBoxLayout(banner)
         lay.setContentsMargins(16, 0, 8, 0)
@@ -293,7 +282,8 @@ class QtMainWindow(QMainWindow):
             from quickip.ui_qt.pages.wifi_page import WifiPage
             self.wifi_page = WifiPage(self.container)
         except Exception:
-            import logging, traceback
+            import logging
+            import traceback
             logging.getLogger(__name__).error(
                 "WifiPage init failed:\n%s", traceback.format_exc()
             )
@@ -310,13 +300,9 @@ class QtMainWindow(QMainWindow):
 
     def _switch_page(self, key: str) -> None:
         idx = {"profiles": 0, "wifi": 1, "tools": 2, "settings": 3}.get(key, 0)
-        page_keys = {
-            "profiles": "page_profiles", "wifi": "page_wifi",
-            "tools": "page_tools", "settings": "page_settings",
-        }
         self._current_page_key = key
         self.stack.setCurrentIndex(idx)
-        self._page_title.setText(self._tr(page_keys.get(key, "page_profiles")))
+        # page title is now shown inside each page's own header
         for k, btn in self.nav_buttons.items():
             btn.setProperty("active", "true" if k == key else "false")
             btn.style().unpolish(btn)
@@ -368,13 +354,7 @@ class QtMainWindow(QMainWindow):
                 parts = btn.text().split("  ", 1)
                 prefix = parts[0] + "  " if len(parts) == 2 else ""
                 btn.setText(prefix + self._tr(tr_key))
-        page_tr = {
-            "profiles": "page_profiles", "wifi": "page_wifi",
-            "tools": "page_tools", "settings": "page_settings",
-        }
-        self._page_title.setText(
-            self._tr(page_tr.get(self._current_page_key, "page_profiles"))
-        )
+        # page title is now shown inside each page's own header
         is_dark = self.theme_mode == "dark"
         self.btn_theme.setText(
             self._tr("btn_theme_light") if is_dark else self._tr("btn_theme_dark")
@@ -442,14 +422,23 @@ class QtMainWindow(QMainWindow):
             if hasattr(pg, "refresh_theme"):
                 pg.refresh_theme(is_dark)  # type: ignore[union-attr]
 
-        ph = QColor(255, 255, 255, 70) if is_dark else QColor(30, 41, 59, 100)
+        placeholder_theme = "dark" if is_dark else "light"
+        placeholder_prefix = "DARK" if is_dark else "LIGHT"
+        ph = QColor(
+            color(
+                placeholder_theme,
+                f"{placeholder_prefix}_CUSTOM_TOPBAR_PLACEHOLDER",
+            )
+        )
+        ph.setAlpha(70 if is_dark else 100)
         pal = self.profiles_page.search.palette()
         pal.setColor(QPalette.ColorRole.PlaceholderText, ph)
         self.profiles_page.search.setPalette(pal)
 
     def _apply_windows_titlebar(self, dark: bool) -> None:
         try:
-            import ctypes, ctypes.wintypes
+            import ctypes
+            import ctypes.wintypes
             hwnd = int(self.winId())
             DWMWA_USE_IMMERSIVE_DARK_MODE = 20
             value = ctypes.c_int(1 if dark else 0)
@@ -481,7 +470,8 @@ class QtMainWindow(QMainWindow):
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 def _relaunch_as_admin() -> None:
-    import ctypes, sys
+    import ctypes
+    import sys
     if getattr(sys, "frozen", False):
         exe = sys.executable
         args = None

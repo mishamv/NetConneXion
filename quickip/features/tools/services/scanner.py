@@ -32,7 +32,7 @@ import threading
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Callable, Generator, Iterable, List, Optional, TYPE_CHECKING
+from typing import Callable, Iterable, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from quickip.infrastructure.system.process_runner import ProcessRunner

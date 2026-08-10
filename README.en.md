@@ -1,135 +1,130 @@
 # NetConneXion
 
-A modern Windows desktop application for managing network profiles and Wi-Fi connections, built with PySide6 / Qt6.
+NetConneXion is a Windows desktop application that combines network profile management, Wi‑Fi controls, and a collection of network diagnostic tools.
 
-![Platform](https://img.shields.io/badge/platform-Windows-blue)
-![Python](https://img.shields.io/badge/python-3.10%2B-blue)
-![UI](https://img.shields.io/badge/UI-PySide6%20%2F%20Qt6-green)
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
+![PySide6](https://img.shields.io/badge/GUI-PySide6-41CD52)
+![Platform](https://img.shields.io/badge/Platform-Windows-0078D6)
 
-[Русский](README.md)
-
----
+[Русская версия](README.md)
 
 ## Features
 
-### Network Profiles
-- Create, edit, and delete IP configuration profiles (IP address, subnet mask, gateway, DNS)
-- Apply any profile with a single click via `netsh`
-- Auto-switch profile by Wi-Fi SSID (connect to a network → profile activates automatically)
-- Import / export profiles as JSON
+### Network profiles
 
-### Wi-Fi Manager
-- Scan and display nearby networks (SSID, signal, security, channel, band, speed)
-- Connect to saved or new networks; passwords encrypted with Windows DPAPI or system keyring
-- View and manage saved Wi-Fi profiles
+- Create, copy, edit, and delete IPv4 profiles.
+- Configure DHCP or static IP, subnet mask, gateway, and DNS settings.
+- Apply a profile to a selected network adapter.
+- Import and export profiles as JSON.
 
-### Network Tools
-| Tool | Description |
-|------|-------------|
-| Ping | ICMP ping with statistics |
-| DNS Lookup | Forward / reverse DNS resolution |
-| Port Scanner | Single ports, comma-separated lists, or ranges (e.g. `22,80,443,8000-8100`) |
-| Traceroute | Network path tracing |
-| Netstat | Live connections table (Protocol / Local / Remote / State) |
-| ARP Table | ARP cache with IP → MAC → Interface mapping |
-| Network Adapters | All network interface parameters (equivalent to `ipconfig /all`) |
-| Route Table | Windows routing table (IPv4 / IPv6) |
-| HTTP Check | HTTP/HTTPS response time and status code |
-| SSL Certificate | TLS certificate details (subject, issuer, validity, SAN, cipher) |
-| Wi-Fi Signal Monitor | Real-time dBm / quality graph, roaming event log |
-| DNS Cache | View and flush the Windows DNS cache |
-| IP Batch Check | Bulk IP reachability check from CSV or Excel: ping + reverse DNS, export results |
+### Wi‑Fi
 
-### History
-- Full log of profile applications with timestamps and before/after state
-- One-click rollback to any previous configuration
+- Scan for visible wireless networks.
+- Display SSID, BSSID, signal strength, channel, frequency, speed, and security type.
+- Connect to a selected visible network.
+- Save network details in the application's profiles.
+- View Wi‑Fi profiles stored by Windows.
 
-### Settings
-- Light / dark theme
-- Language selection (Russian / English)
-- Minimize to tray, start minimized, start with Windows
-- Auto-scan interval for Wi-Fi
-- Auto-apply profile on Wi-Fi SSID change
+### Network tools
 
----
+- Ping and Traceroute.
+- DNS Lookup using the system resolver by default, with support for a manually selected DNS server.
+- HTTP Check and SSL certificate inspection.
+- Network adapters, Netstat, ARP, and route table views.
+- Wi‑Fi signal monitor and nearby network list.
+- TCP port scanner and Windows DNS cache viewer.
+- IPv4 subnet calculator.
+- Batch IP checks from CSV/XLSX files with filtering and result export.
 
-## Requirements
+### Interface
 
-- Windows 10 / 11
-- Python 3.10+
-- Administrator privileges (required for `netsh` commands)
+- Light and dark themes.
+- Russian and English languages.
+- Start-with-Windows and system tray behavior settings.
 
-```
-PySide6 >= 6.5
-pywin32 >= 306   # Windows DPAPI password encryption (recommended)
-keyring >= 25.0  # Fallback password storage (if pywin32 is unavailable)
-openpyxl >= 3.1  # Excel support for IP Batch Check
-```
+## System requirements
 
----
+- Windows 10 or Windows 11.
+- Python 3.10 or newer when running from source.
+- Administrator privileges are required only for operations that change Windows network settings.
 
-## Installation
+Main dependencies:
 
-```bash
+| Package | Version |
+|---|---|
+| PySide6 | `>=6.7,<7.0` |
+| pywin32 | `>=306` |
+| keyring | `>=25.1` |
+| openpyxl | `>=3.1.2` |
+| typing_extensions | `>=4.9` |
+
+## Install from source
+
+```powershell
 git clone https://github.com/mishamv/NetConneXion.git
 cd NetConneXion
 python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-
-# Optional: enable DPAPI password encryption
-pip install pywin32
-python .venv\Scripts\pywin32_postinstall.py -install
+.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
----
+## Run
 
-## Running
-
-```bash
-# Run as administrator for full netsh access
+```powershell
 python -m quickip
 ```
 
-Or right-click → "Run as administrator" in your file manager.
+If you need to change a network adapter's settings, run the terminal as Administrator when required.
 
----
+## Data storage
 
-## Project Structure
+- In standard mode, user data is stored in `%PROGRAMDATA%\NetConneXion`.
+- For portable mode, create `portable.flag` next to the executable; data will then be stored in the adjacent `data` directory.
+- Wi‑Fi secrets are protected with Windows DPAPI, with the operating system credential store used as a fallback.
 
+## Project structure
+
+```text
+NetConneXion/
+├── quickip/
+│   ├── app/             # application startup and composition
+│   ├── core/            # configuration, storage, and security
+│   ├── domain/          # domain models
+│   ├── events/          # application events
+│   ├── features/        # profiles, Wi-Fi, and network tools
+│   ├── infrastructure/  # Windows integration and process execution
+│   ├── shared/          # shared helpers and paths
+│   └── ui_qt/           # PySide6 UI, themes, and widgets
+├── data/                # localizations and UI resources
+├── tests/               # automated tests
+├── requirements.txt
+└── NetConneXion.spec
 ```
-quickip/
-  app/              # Bootstrap, DI container, entry point
-  domain/           # Domain models and services
-  events/           # Event bus
-  features/         # Feature modules (profiles, wifi, tools, history, settings)
-  ui_qt/            # PySide6 UI layer
-    pages/          # Page widgets (profiles, wifi, tools, settings)
-    qss/            # Qt stylesheets (dark / light)
-    assets/         # Icons and SVG assets
-  core/             # Shared infrastructure (process runner, security vault, paths)
-data/               # User data (gitignored): profiles, settings, history, logs
+
+## Tests
+
+```powershell
+python -m pytest -q
 ```
 
----
+## Build an EXE
 
-## Security
+Install PyInstaller and run the build:
 
-- Wi-Fi passwords are encrypted at rest using **Windows DPAPI** (machine + user binding) via `pywin32`
-- If `pywin32` is unavailable, the app falls back to the system **keyring** (Windows Credential Manager)
-- Passwords are decrypted in-memory only at connection time and never written to disk in plaintext
-- Legacy base64-encoded profiles are automatically migrated on first connect
-
----
-
-## Building an Executable
-
-```bash
-# Install build dependencies (once)
-pip install pyinstaller pillow
-
-# Build
+```powershell
+python -m pip install pyinstaller
 python -m PyInstaller NetConneXion.spec --clean --noconfirm
 ```
 
-Or simply run `build.bat`. Output: `dist\NetConneXion\NetConneXion.exe`.
+The executable will be created in the `dist` directory.
+
+## Security
+
+- Wi‑Fi passwords are not stored as plaintext.
+- Windows commands are executed without passing user input through a command shell.
+- Imported profile data is validated before use.
+
+## License
+
+Define the project's license terms before public distribution.

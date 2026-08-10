@@ -6,6 +6,7 @@ from PySide6.QtCore import Qt, QSize, Signal
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import QSizePolicy, QWidget
 
+from quickip.ui_qt.palette import color
 
 class ToggleSwitch(QWidget):
     """Компактный тумблер. API совместим с QCheckBox."""
@@ -61,15 +62,22 @@ class ToggleSwitch(QWidget):
         knob_d = self._H - m * 2
 
         if on:
-            track_color = QColor(108, 123, 255)   # #6c7bff accent
+            # EN: Temporary area-map colour applies only to the dark theme.
+            # RU: Временный цвет карты областей применяется только в тёмной теме.
+            track_color = (
+                QColor(color("dark", "DARK_CUSTOM_TOGGLE_ON")) if self._dark_mode
+                else QColor(color("light", "LIGHT_CUSTOM_TOGGLE_ON"))
+            )
             border_color = None
         else:
             if self._dark_mode:
-                track_color = QColor(42, 47, 66)   # #2a2f42 border
-                border_color = QColor(58, 63, 92)   # #3a3f5c
+                # EN: Cyan identifies the custom-painted OFF track.
+                # RU: Бирюзовый обозначает вручную отрисованную дорожку OFF.
+                track_color = QColor(color("dark", "DARK_CUSTOM_TOGGLE_OFF"))
+                border_color = QColor(color("dark", "DARK_CUSTOM_TOGGLE_BORDER"))
             else:
-                track_color = QColor(226, 232, 240)
-                border_color = QColor(203, 213, 225)
+                track_color = QColor(color("light", "LIGHT_CUSTOM_TOGGLE_OFF"))
+                border_color = QColor(color("light", "LIGHT_CUSTOM_TOGGLE_BORDER"))
 
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(track_color)
@@ -83,11 +91,23 @@ class ToggleSwitch(QWidget):
         travel = self._W - self._H
         knob_x = (m + travel) if on else m
         painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QColor(255, 255, 255))
+        # EN: Yellow identifies the custom-painted knob in dark mode only.
+        # RU: Жёлтый обозначает ручку переключателя только в тёмной теме.
+        painter.setBrush(
+            QColor(color("dark", "DARK_CUSTOM_TOGGLE_KNOB"))
+            if self._dark_mode
+            else QColor(color("light", "LIGHT_CUSTOM_TOGGLE_KNOB"))
+        )
         painter.drawEllipse(knob_x, m, knob_d, knob_d)
 
         if self._label:
-            text_color = QColor(148, 163, 184) if self._dark_mode else QColor(100, 116, 139)
+            # EN: Dark red identifies text painted directly by this widget.
+            # RU: Тёмно-красный обозначает текст, нарисованный самим виджетом.
+            text_color = (
+                QColor(color("dark", "DARK_CUSTOM_TOGGLE_TEXT"))
+                if self._dark_mode
+                else QColor(color("light", "LIGHT_CUSTOM_TOGGLE_TEXT"))
+            )
             painter.setPen(text_color)
             painter.setFont(self.font())
             painter.drawText(

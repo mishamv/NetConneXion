@@ -121,6 +121,18 @@ class WifiService:
                 f"SSID '{ssid!r}' contains a double-quote character"
             )
 
+    @staticmethod
+    def _unsupported_credential_result(ssid: str) -> ConnectResult:
+        logger.warning("Unsupported stored credential format for SSID=%r", ssid)
+        return ConnectResult(
+            success=False,
+            needs_reauth=True,
+            message=(
+                f"Пароль для «{ssid}» сохранён в неподдерживаемом формате.\n"
+                "Введите пароль повторно — он будет сохранён в актуальном формате."
+            ),
+        )
+
     def connect(self, ssid: str, profile: WifiProfile) -> ConnectResult:
         """Connect using a WifiProfile.
 
@@ -133,41 +145,14 @@ class WifiService:
         password = ""
         if profile.key_protected:
             if profile.key_protected.startswith("kr:"):
-                _kr_suffix = profile.key_protected[3:]   # "" → legacy, uuid → v2
-                if _kr_suffix:
-                    # v2: kr:<profile_uuid> — lookup by UUID
-                    from quickip.core.security.keyring_vault import unprotect_text as kr_unprotect
-                    password = kr_unprotect(_kr_suffix)
-                    logger.info("Secret source: keyring(v2) for profile_id=%r", _kr_suffix)
-                else:
-                    # v1 legacy: kr: — lookup by SSID, auto-migrate on success
-                    from quickip.core.security.keyring_vault import (
-                        unprotect_legacy as _kr_legacy,
-                        migrate_legacy_kr as _kr_migrate,
-                    )
-                    password = _kr_legacy(ssid)
-                    logger.warning(
-                        "keyring v1 sentinel 'kr:' for SSID=%r — auto-migrating to kr:<uuid>",
-                        ssid,
-                    )
-                    # Миграция best-effort: обновляем sentinel в repo
-                    new_sentinel = _kr_migrate(ssid, profile.id)
-                    if new_sentinel:
-                        profile.key_protected = new_sentinel
-                        # Сохраняем обновлённый профиль — требуется repo, но у сервиса
-                        # нет прямого доступа к нему. Профиль будет мигрирован
-                        # в presenter при следующем save_profile().
-                        logger.info("Keyring v1→v2 migration staged for SSID=%r", ssid)
-            elif profile.key_protected.startswith("b64:"):
-                # SECURITY: base64 — не шифрование. Тихий fallback удалён (T1552.001).
-                # Миграция должна выполняться в WifiPresenter.connect() до вызова сервиса.
-                # Если сюда всё же попал b64-профиль — отклоняем подключение.
-                msg = (
-                    f"SSID {ssid!r}: профиль использует небезопасное хранение пароля (b64). "
-                    "Пересохраните профиль в настройках Wi-Fi → вкладка «Профили»."
-                )
-                logger.error("Blocked b64 connect attempt for SSID=%r — require re-save", ssid)
-                return ConnectResult(success=False, message=msg)
+                profile_key = profile.key_protected[3:]
+                if not profile_key:
+                    return self._unsupported_credential_result(ssid)
+                from quickip.core.security.keyring_vault import unprotect_text as kr_unprotect
+                password = kr_unprotect(profile_key)
+                logger.info("Secret source: keyring for profile_id=%r", profile_key)
+            elif not profile.key_protected.startswith("dpapi3:"):
+                return self._unsupported_credential_result(ssid)
             elif self._vault_available:
                 from quickip.core.security.vault import unprotect_text, VaultPortabilityError
                 try:

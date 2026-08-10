@@ -5,9 +5,10 @@ from __future__ import annotations
 from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QWidget
 
+from quickip.ui_qt.palette import color
 
 class BackdropWidget(QWidget):
-    """Solid color background. Dark: #0F172A slate. Light: #F1F5F9."""
+    """Solid colour background matching the approved render."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -20,6 +21,6 @@ class BackdropWidget(QWidget):
     def paintEvent(self, _event) -> None:  # noqa: N802
         painter = QPainter(self)
         if self._theme_mode == "light":
-            painter.fillRect(self.rect(), QColor("#F1F5F9"))  # light: slate-100
+            painter.fillRect(self.rect(), QColor(color("light", "LIGHT_HEX_F1F5F9")))
         else:
-            painter.fillRect(self.rect(), QColor("#12141c"))  # dark: design bg
+            painter.fillRect(self.rect(), QColor(color("dark", "DARK_CUSTOM_BACKDROP")))

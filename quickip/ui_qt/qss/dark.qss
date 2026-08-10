@@ -1,29 +1,29 @@
 /* ═══════════════════════════════════════════════════════════════
    NetConneXion — DARK THEME
    Design tokens (from design handoff):
-     App bg:        #12141c
-     Topbar bg:     #181b28
-     Sidebar bg:    #161927
-     Panel/card:    #1c2030 / #181b28
-     Borders:       #232838 / #2a2f42
-     Accent:        #6c7bff
-     Active nav bg: #232a45
-     Text primary:  #e8e9f0
-     Text secondary:#c4c8db
-     Text tertiary: #787fa0
-     Text disabled: #5b6178
-     Success/green: #4ade80
-     Warning/yellow:#facc15
-     Error/red:     #f87171 / #ef4444
+     App bg:        {DARK_APP_BG}
+     Topbar bg:     {DARK_PANEL_BG}
+     Sidebar bg:    {DARK_SIDEBAR_BG}
+     Panel/card:    {DARK_SURFACE_RAISED} / {DARK_PANEL_BG}
+     Borders:       {DARK_BORDER_SUBTLE} / {DARK_BORDER_DEFAULT}
+     Accent:        {DARK_ACCENT}
+     Active nav bg: {DARK_STATE_ACTIVE_BG}
+     Text primary:  {DARK_TEXT_PRIMARY}
+     Text secondary:{DARK_TEXT_SECONDARY}
+     Text tertiary: {DARK_TEXT_MUTED}
+     Text disabled: {DARK_TEXT_DISABLED}
+     Success/green: {DARK_STATUS_SUCCESS}
+     Warning/yellow:{DARK_STATUS_WARNING}
+     Error/red:     {DARK_STATUS_ERROR_SOFT} / {DARK_STATUS_ERROR}
    ═══════════════════════════════════════════════════════════════ */
 
 QWidget {
-    color: #e8e9f0;
-    background-color: #12141c;
+    color: {DARK_TEXT_PRIMARY};
+    background-color: {DARK_APP_BG};
 }
 
 QMainWindow {
-    background-color: #12141c;
+    background-color: {DARK_APP_BG};
 }
 
 QLabel {
@@ -32,43 +32,43 @@ QLabel {
 
 /* ── TOPBAR ───────────────────────────────────────────────────── */
 QFrame#Topbar {
-    background: #181b28;
+    background: {DARK_PANEL_BG};
     border: none;
-    border-bottom: 1px solid #232838;
+    border-bottom: 1px solid {DARK_BORDER_SUBTLE};
     border-radius: 0;
 }
 
 QLabel#LogoIcon {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                stop:0 #4f7cff, stop:1 #38c98a);
-    color: #ffffff;
+                stop:0 {DARK_LOGO_BLUE}, stop:1 {DARK_LOGO_GREEN});
+    color: {DARK_TEXT_ON_ACCENT};
     border-radius: 6px;
     font-weight: 700;
     font-size: 13px;
 }
 
 QLabel#LogoName {
-    color: #ffffff;
+    color: {DARK_TEXT_ON_ACCENT};
     font-size: 14px;
     font-weight: 600;
     letter-spacing: 0.2px;
 }
 
 QLabel#TopbarTitle {
-    color: #787fa0;
+    color: {DARK_TEXT_MUTED};
     font-size: 13px;
     font-weight: 500;
 }
 
 QLabel#TopbarSubtitle {
-    color: #5b6178;
+    color: {DARK_TEXT_DISABLED};
 }
 
 /* ── SIDEBAR ──────────────────────────────────────────────────── */
 QFrame#Sidebar {
-    background: #161927;
+    background: {DARK_SIDEBAR_BG};
     border: none;
-    border-right: 1px solid #232838;
+    border-right: 1px solid {DARK_BORDER_SUBTLE};
     border-radius: 0;
 }
 
@@ -77,7 +77,7 @@ QFrame#NavFrame {
 }
 
 QLabel#NavGroupLabel {
-    color: #565c74;
+    color: {DARK_TEXT_FAINT};
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 1px;
@@ -92,20 +92,20 @@ QPushButton#NavBtn {
     background: transparent;
     border: none;
     border-left: 3px solid transparent;
-    color: #c4c8db;
+    color: {DARK_TEXT_SECONDARY};
     font-size: 14px;
     font-weight: 500;
 }
 
 QPushButton#NavBtn:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: #e8e9f0;
+    background: {DARK_HOVER_OVERLAY_STRONG};
+    color: {DARK_TEXT_PRIMARY};
 }
 
 QPushButton#NavBtn[active="true"] {
-    background: #232a45;
-    border-left: 3px solid #6c7bff;
-    color: #ffffff;
+    background: {DARK_STATE_ACTIVE_BG};
+    border-left: 3px solid {DARK_ACCENT};
+    color: {DARK_TEXT_ON_ACCENT};
     font-weight: 600;
 }
 
@@ -117,71 +117,85 @@ QFrame#ContentShell {
 }
 
 QWidget#RightWidget {
-    background: #12141c;
+    background: {DARK_APP_BG};
 }
 
 QWidget#Body {
-    background: #12141c;
+    background: {DARK_APP_BG};
 }
 
 QStackedWidget#MainStack {
-    background: #12141c;
+    background: {DARK_APP_BG};
+}
+
+/* ── PAGE HEADER (full-width title + action buttons row) ─────── */
+QFrame#PageHeader {
+    background: transparent;
+    border-bottom: 1px solid {DARK_BORDER_SUBTLE};
+    border-radius: 0;
+}
+
+QLabel#PageTitle {
+    color: {DARK_TEXT_PRIMARY};
+    font-size: 19px;
+    font-weight: 700;
+    background: transparent;
 }
 
 /* ── LEFT PANEL (Profiles list) ───────────────────────────────── */
 QFrame#LeftPanel {
-    background: #181b28;
+    background: {DARK_PANEL_BG};
     border: none;
-    border-right: 1px solid #2a2f42;
+    border-right: 1px solid {DARK_BORDER_DEFAULT};
     border-radius: 0;
 }
 
 QFrame#PanelHeader {
-    border-bottom: 1px solid #232838;
+    border-bottom: 1px solid {DARK_BORDER_SUBTLE};
 }
 
 QLabel#PanelTitle {
-    color: #787fa0;
+    color: {DARK_TEXT_MUTED};
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 1px;
 }
 
 QLabel#CountPill {
-    background: #232a45;
-    color: #9aa4ff;
+    background: {DARK_STATE_ACTIVE_BG};
+    color: {DARK_ACCENT_TEXT};
     font-size: 11px;
     font-weight: 700;
     border-radius: 10px;
 }
 
 QLineEdit#ProfilesSearch {
-    background: #1c2030;
-    border: 1px solid #2a2f42;
-    color: #e8e9f0;
+    background: {DARK_SURFACE_RAISED};
+    border: 1px solid {DARK_BORDER_DEFAULT};
+    color: {DARK_TEXT_PRIMARY};
     border-radius: 8px;
     min-height: 34px;
     font-size: 13px;
 }
 
 QLineEdit#ProfilesSearch:focus {
-    border-color: #6c7bff;
-    background: #1e2238;
+    border-color: {DARK_ACCENT};
+    background: {DARK_CONTROL_FOCUS_BG};
 }
 
 QComboBox#AdapterFilter {
-    background: #1c2030;
-    border: 1px solid #2a2f42;
+    background: {DARK_SURFACE_RAISED};
+    border: 1px solid {DARK_BORDER_DEFAULT};
     border-radius: 8px;
     padding: 0 10px;
     min-height: 32px;
-    color: #787fa0;
+    color: {DARK_TEXT_MUTED};
     font-size: 12px;
 }
 
 QComboBox#AdapterFilter:focus,
 QComboBox#AdapterFilter:on {
-    border-color: #6c7bff;
+    border-color: {DARK_ACCENT};
 }
 
 QComboBox#AdapterFilter::drop-down {
@@ -194,9 +208,31 @@ QComboBox#AdapterFilter::down-arrow {
     image: none;
     width: 8px;
     height: 8px;
-    border-left: 2px solid #787fa0;
-    border-bottom: 2px solid #787fa0;
+    border-left: 2px solid {DARK_TEXT_MUTED};
+    border-bottom: 2px solid {DARK_TEXT_MUTED};
     margin-top: -4px;
+}
+
+/* ProfilesList — список профилей в левой панели.
+   Фон явно задан как {DARK_PANEL_BG} (= LeftPanel bg), а не transparent,
+   потому что transparent в QListWidget наследует QWidget ({DARK_APP_BG}),
+   а не ближайший QFrame-родитель. */
+QListWidget#ProfilesList {
+    background: {DARK_PANEL_BG};
+    border: none;
+    outline: none;
+}
+
+/* Строки списка — прозрачные, фон рисует ProfileRowWidget.paintEvent() */
+QListWidget#ProfilesList::item {
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+/* Убираем синий Qt-selection (выделение рисует ProfileRowWidget.paintEvent()) */
+QListWidget#ProfilesList::item:selected {
+    background: transparent;
 }
 
 QWidget#ProfileRow {
@@ -204,44 +240,44 @@ QWidget#ProfileRow {
 }
 
 QWidget#ProfileRow:hover {
-    background: #1c2030;
+    background: {DARK_SURFACE_RAISED};
     border-radius: 8px;
 }
 
 QLabel#ProfileName {
-    color: #e8e9f0;
+    color: {DARK_TEXT_PRIMARY};
     font-size: 14px;
     font-weight: 600;
 }
 
 QLabel#ProfileMetaStatic,
 QLabel#ProfileMetaDhcp {
-    color: #787fa0;
+    color: {DARK_TEXT_MUTED};
     font-size: 12px;
 }
 
 QFrame#ActionsBlock {
     background: transparent;
-    border-top: 1px solid #232838;
+    border-top: 1px solid {DARK_BORDER_SUBTLE};
     border-radius: 0;
 }
 
 /* ── RIGHT PANEL (Profile editor) ────────────────────────────── */
 QFrame#RightPanel {
-    background: #12141c;
+    background: {DARK_APP_BG};
     border-radius: 0;
 }
 
 QFrame#EditorHeader {
     background: transparent;
-    border-bottom: 1px solid #232838;
+    border-bottom: 1px solid {DARK_BORDER_SUBTLE};
     border-radius: 0;
 }
 
 /* Section cards: ОСНОВНЫЕ / СЕТЬ / DNS */
 QFrame#SectionCard {
-    background: #1c2030;
-    border: 1px solid #2a2f42;
+    background: {DARK_SURFACE_RAISED};
+    border: 1px solid {DARK_BORDER_DEFAULT};
     border-radius: 12px;
 }
 
@@ -249,11 +285,11 @@ QLabel#SectionTitle {
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 1px;
-    color: #787fa0;
+    color: {DARK_TEXT_MUTED};
 }
 
 QFrame#SectionLine {
-    color: #232838;
+    color: {DARK_BORDER_SUBTLE};
 }
 
 QWidget#SettingsRow {
@@ -262,57 +298,24 @@ QWidget#SettingsRow {
 
 QLabel#SettingsHint {
     font-size: 11px;
-    color: #565c74;
+    color: {DARK_TEXT_FAINT};
     background: transparent;
 }
 
 QLabel#FieldLabel {
     font-size: 14px;
-    color: #c4c8db;
+    color: {DARK_TEXT_SECONDARY};
     background: transparent;
 }
 
 /* ── INPUTS ───────────────────────────────────────────────────── */
-QLineEdit#EditorField {
-    background: #12141c;
-    border: 1px solid #2a2f42;
-    border-radius: 8px;
-    color: #e8e9f0;
-    padding: 4px 10px;
-    min-height: 34px;
-}
 
-QLineEdit#EditorField:focus {
-    border-color: #6c7bff;
-    background: #1a1d2e;
-}
-
-QLineEdit#EditorField:disabled {
-    color: #5b6178;
-    background: #12141c;
-    border-color: #232838;
-}
-
-QComboBox#EditorCombo {
-    background: #12141c;
-    border: 1px solid #2a2f42;
-    border-radius: 8px;
-    color: #e8e9f0;
-    padding: 4px 10px;
-    min-height: 34px;
-}
-
-QComboBox#EditorCombo:focus,
-QComboBox#EditorCombo:on {
-    border-color: #6c7bff;
-    background: #1a1d2e;
-}
-
-/* Global inputs */
+/* Глобальный стиль для всех полей ввода (Настройки, Инструменты и т.д.)
+   Фон {DARK_SURFACE_RAISED} (card bg) — видно на тёмном фоне страниц */
 QLineEdit, QComboBox {
-    background: #1c2030;
-    border: 1px solid #2a2f42;
-    color: #e8e9f0;
+    background: {DARK_SURFACE_RAISED};
+    border: 1px solid {DARK_BORDER_DEFAULT};
+    color: {DARK_TEXT_PRIMARY};
     font-size: 14px;
     min-height: 38px;
     border-radius: 8px;
@@ -320,45 +323,86 @@ QLineEdit, QComboBox {
 }
 
 QLineEdit:focus, QComboBox:focus {
-    border-color: #6c7bff;
-    background: #1e2238;
+    border-color: {DARK_ACCENT};
+    background: {DARK_CONTROL_FOCUS_BG};
 }
 
 QComboBox:on {
-    border-color: #6c7bff;
-    background: #1e2238;
+    border-color: {DARK_ACCENT};
+    background: {DARK_CONTROL_FOCUS_BG};
 }
 
 QLineEdit:disabled, QComboBox:disabled {
-    background: #161927;
-    color: #5b6178;
-    border-color: #232838;
+    background: {DARK_SIDEBAR_BG};
+    color: {DARK_TEXT_DISABLED};
+    border-color: {DARK_BORDER_SUBTLE};
+}
+
+/* Поля редактора профилей (внутри SectionCard {DARK_SURFACE_RAISED}).
+   Фон {DARK_APP_BG} (app bg) — темнее карточки, создаёт контраст.
+   ВАЖНО: эти правила должны стоять ПОСЛЕ глобального QLineEdit,
+   иначе в некоторых версиях Qt они могут не перекрыть глобальный стиль. */
+QLineEdit#EditorField {
+    background: {DARK_APP_BG};   /* темнее SectionCard ({DARK_SURFACE_RAISED}) для контраста */
+    border: 1px solid {DARK_BORDER_DEFAULT};
+    border-radius: 8px;
+    color: {DARK_TEXT_PRIMARY};
+    padding: 4px 10px;
+    min-height: 34px;
+}
+
+QLineEdit#EditorField:focus {
+    border-color: {DARK_ACCENT};
+    background: {DARK_POPUP_BG};
+}
+
+/* При DHCP=ON поле становится disabled: серый текст, граница тускнее */
+QLineEdit#EditorField:disabled {
+    color: {DARK_TEXT_DISABLED};
+    background: {DARK_APP_BG};
+    border-color: {DARK_BORDER_SUBTLE};
+}
+
+/* Комбобокс адаптера в редакторе профиля */
+QComboBox#EditorCombo {
+    background: {DARK_APP_BG};   /* темнее SectionCard ({DARK_SURFACE_RAISED}) для контраста */
+    border: 1px solid {DARK_BORDER_DEFAULT};
+    border-radius: 8px;
+    color: {DARK_TEXT_PRIMARY};
+    padding: 4px 10px;
+    min-height: 34px;
+}
+
+QComboBox#EditorCombo:focus,
+QComboBox#EditorCombo:on {
+    border-color: {DARK_ACCENT};
+    background: {DARK_POPUP_BG};
 }
 
 QComboBox::drop-down {
-    border-left: 1px solid #232838;
+    border-left: 1px solid {DARK_BORDER_SUBTLE};
 }
 
 QComboBox::down-arrow {
-    border-left: 2px solid #787fa0;
-    border-bottom: 2px solid #787fa0;
+    border-left: 2px solid {DARK_TEXT_MUTED};
+    border-bottom: 2px solid {DARK_TEXT_MUTED};
 }
 
 QComboBox QAbstractItemView,
 QComboBox#EditorCombo QAbstractItemView {
-    background: #1c2030;
-    border: 1px solid #2a2f42;
+    background: {DARK_SURFACE_RAISED};
+    border: 1px solid {DARK_BORDER_DEFAULT};
     outline: none;
-    selection-background-color: #232a45;
-    selection-color: #e8e9f0;
-    color: #e8e9f0;
+    selection-background-color: {DARK_STATE_ACTIVE_BG};
+    selection-color: {DARK_TEXT_PRIMARY};
+    color: {DARK_TEXT_PRIMARY};
 }
 
 /* ── BUTTONS ──────────────────────────────────────────────────── */
 QPushButton {
-    background: #1c2030;
-    border: 1px solid #2a2f42;
-    color: #c4c8db;
+    background: {DARK_SURFACE_RAISED};
+    border: 1px solid {DARK_BORDER_DEFAULT};
+    color: {DARK_TEXT_SECONDARY};
     border-radius: 8px;
     font-size: 13px;
     font-weight: 600;
@@ -367,64 +411,64 @@ QPushButton {
 }
 
 QPushButton:hover {
-    background: #20243a;
-    border-color: #3a3f5c;
-    color: #e8e9f0;
+    background: {DARK_STATE_HOVER_BG};
+    border-color: {DARK_SCROLL_HANDLE};
+    color: {DARK_TEXT_PRIMARY};
 }
 
 QPushButton:pressed {
-    background: #161927;
+    background: {DARK_SIDEBAR_BG};
 }
 
 QPushButton[role="primary"] {
-    background: #6c7bff;
+    background: {DARK_ACCENT};
     border: none;
-    color: #ffffff;
+    color: {DARK_TEXT_ON_ACCENT};
     font-weight: 700;
 }
 
 QPushButton[role="primary"]:hover {
-    background: #7e8cff;
+    background: {DARK_ACCENT_HOVER};
     border: none;
 }
 
 QPushButton[role="primary"]:pressed {
-    background: #5a6aee;
+    background: {DARK_ACCENT_PRESSED};
 }
 
 QPushButton[role="action"] {
-    background: #1c2030;
-    border: 1px solid #2a2f42;
-    color: #c4c8db;
+    background: {DARK_SURFACE_RAISED};
+    border: 1px solid {DARK_BORDER_DEFAULT};
+    color: {DARK_TEXT_SECONDARY};
     font-size: 12px;
 }
 
 QPushButton[role="action"]:hover {
-    background: #20243a;
-    color: #e8e9f0;
+    background: {DARK_STATE_HOVER_BG};
+    color: {DARK_TEXT_PRIMARY};
 }
 
 QPushButton[role="delete"] {
-    background: rgba(239, 68, 68, 0.12);
-    border: 1px solid rgba(239, 68, 68, 0.30);
-    color: #f87171;
+    background: {DARK_ERROR_BG};
+    border: 1px solid {DARK_ERROR_BORDER_STRONG};
+    color: {DARK_STATUS_ERROR_SOFT};
     font-weight: 600;
 }
 
 QPushButton[role="delete"]:hover {
-    background: rgba(239, 68, 68, 0.22);
-    border-color: rgba(239, 68, 68, 0.50);
-    color: #fca5a5;
+    background: {DARK_ERROR_BG_HOVER};
+    border-color: {DARK_ERROR_BORDER};
+    color: {DARK_ERROR_TEXT};
 }
 
 QPushButton[role="delete"]:pressed {
-    background: rgba(239, 68, 68, 0.30);
+    background: {DARK_ERROR_BORDER_STRONG};
 }
 
 QPushButton:disabled {
-    background: #1c2030;
+    background: {DARK_SURFACE_RAISED};
     border: none;
-    color: #5b6178;
+    color: {DARK_TEXT_DISABLED};
 }
 
 QPushButton#BtnSave {
@@ -449,13 +493,13 @@ QScrollBar:vertical {
 }
 
 QScrollBar::handle:vertical {
-    background: #2a2f42;
+    background: {DARK_BORDER_DEFAULT};
     border-radius: 3px;
     min-height: 20px;
 }
 
 QScrollBar::handle:vertical:hover {
-    background: #3a3f5c;
+    background: {DARK_SCROLL_HANDLE};
 }
 
 QScrollBar::add-line:vertical,
@@ -471,28 +515,28 @@ QScrollBar::sub-page:vertical {
 
 /* ── PLACEHOLDER ──────────────────────────────────────────────── */
 QLabel#Placeholder {
-    color: #565c74;
+    color: {DARK_TEXT_FAINT};
 }
 
 /* ── DIALOGS ──────────────────────────────────────────────────── */
 QDialog {
-    background: #1c2030;
-    color: #e8e9f0;
+    background: {DARK_SURFACE_RAISED};
+    color: {DARK_TEXT_PRIMARY};
 }
 
 QDialog QLabel {
-    color: #e8e9f0;
+    color: {DARK_TEXT_PRIMARY};
     font-size: 13px;
     background: transparent;
 }
 
 QMessageBox {
-    background: #1c2030;
-    color: #e8e9f0;
+    background: {DARK_SURFACE_RAISED};
+    color: {DARK_TEXT_PRIMARY};
 }
 
 QMessageBox QLabel {
-    color: #e8e9f0;
+    color: {DARK_TEXT_PRIMARY};
     font-size: 13px;
     background: transparent;
 }
@@ -518,27 +562,27 @@ QTableWidget#WifiProfileTable::item {
     padding: 4px 8px;
     border: none;
     background: transparent;
-    color: #c4c8db;
+    color: {DARK_TEXT_SECONDARY};
 }
 
 QTableWidget#WifiNetworkTable::item:selected,
 QTableWidget#WifiProfileTable::item:selected {
-    background: #232a45;
-    color: #e8e9f0;
+    background: {DARK_STATE_ACTIVE_BG};
+    color: {DARK_TEXT_PRIMARY};
 }
 
 QHeaderView::section {
     background: transparent;
-    color: #787fa0;
+    color: {DARK_TEXT_MUTED};
     font-size: 12px;
     font-weight: 600;
     padding: 10px 8px;
     border: none;
-    border-bottom: 1px solid #232838;
+    border-bottom: 1px solid {DARK_BORDER_SUBTLE};
 }
 
 QFrame#WifiStatusBar {
-    border-bottom: 1px solid #232838;
+    border-bottom: 1px solid {DARK_BORDER_SUBTLE};
     background: transparent;
 }
 
@@ -546,19 +590,19 @@ QLabel#WifiStatusLabel {
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 1px;
-    color: #787fa0;
+    color: {DARK_TEXT_MUTED};
     background: transparent;
 }
 
 QLabel#WifiFeedback {
     font-size: 13px;
-    color: #c4c8db;
+    color: {DARK_TEXT_SECONDARY};
     padding: 4px 0;
 }
 
 QCheckBox {
     font-size: 13px;
-    color: #c4c8db;
+    color: {DARK_TEXT_SECONDARY};
     spacing: 6px;
     background: transparent;
 }
@@ -567,23 +611,23 @@ QCheckBox::indicator {
     width: 16px;
     height: 16px;
     border-radius: 4px;
-    border: 1px solid #2a2f42;
-    background: #1c2030;
+    border: 1px solid {DARK_BORDER_DEFAULT};
+    background: {DARK_SURFACE_RAISED};
 }
 
 QCheckBox::indicator:checked {
-    background: #6c7bff;
-    border-color: #6c7bff;
+    background: {DARK_ACCENT};
+    border-color: {DARK_ACCENT};
 }
 
 QFrame#WifiTopPanel {
-    border-bottom: 1px solid #232838;
-    background: #181b28;
+    border-bottom: 1px solid {DARK_BORDER_SUBTLE};
+    background: {DARK_PANEL_BG};
 }
 
 QFrame#WifiBottomPanel {
-    background: #181b28;
-    border-top: 1px solid #232838;
+    background: {DARK_PANEL_BG};
+    border-top: 1px solid {DARK_BORDER_SUBTLE};
 }
 
 /* ── WI-FI TABS ───────────────────────────────────────────────── */
@@ -594,7 +638,7 @@ QTabWidget#WifiTabs::pane {
 
 QTabWidget#WifiTabs > QTabBar::tab {
     background: transparent;
-    color: #787fa0;
+    color: {DARK_TEXT_MUTED};
     font-size: 14px;
     font-weight: 500;
     padding: 14px 2px;
@@ -605,13 +649,13 @@ QTabWidget#WifiTabs > QTabBar::tab {
 }
 
 QTabWidget#WifiTabs > QTabBar::tab:selected {
-    color: #8f9aff;
-    border-bottom: 2px solid #6c7bff;
+    color: {DARK_TAB_ACTIVE_TEXT};
+    border-bottom: 2px solid {DARK_ACCENT};
     font-weight: 600;
 }
 
 QTabWidget#WifiTabs > QTabBar::tab:hover:!selected {
-    color: #c4c8db;
+    color: {DARK_TEXT_SECONDARY};
 }
 
 QTabBar {
@@ -619,12 +663,12 @@ QTabBar {
 }
 
 QFrame#WifiTabBar {
-    border-bottom: 1px solid #232838;
+    border-bottom: 1px solid {DARK_BORDER_SUBTLE};
     background: transparent;
 }
 
 QFrame#WifiProfileToolbar {
-    border-bottom: 1px solid #232838;
+    border-bottom: 1px solid {DARK_BORDER_SUBTLE};
     background: transparent;
 }
 
@@ -635,15 +679,15 @@ QFrame#WifiProfileToolbar QPushButton {
 
 QLabel#WifiStatusDetails {
     font-size: 11px;
-    color: #787fa0;
+    color: {DARK_TEXT_MUTED};
     padding-left: 22px;
     background: transparent;
 }
 
 /* ── CONTEXT MENU ─────────────────────────────────────────────── */
 QMenu {
-    background: #1c2030;
-    border: 1px solid #2a2f42;
+    background: {DARK_SURFACE_RAISED};
+    border: 1px solid {DARK_BORDER_DEFAULT};
     border-radius: 8px;
     padding: 4px;
 }
@@ -651,23 +695,23 @@ QMenu::item {
     padding: 6px 16px;
     border-radius: 4px;
     font-size: 13px;
-    color: #e8e9f0;
+    color: {DARK_TEXT_PRIMARY};
     background: transparent;
 }
 QMenu::item:selected {
-    background: #232a45;
-    color: #9aa4ff;
+    background: {DARK_STATE_ACTIVE_BG};
+    color: {DARK_ACCENT_TEXT};
 }
 QMenu::separator {
     height: 1px;
-    background: #232838;
+    background: {DARK_BORDER_SUBTLE};
     margin: 3px 8px;
 }
 
 /* ── TOOLS PAGE ───────────────────────────────────────────────── */
 QFrame#ToolsSidebar {
-    background: #181b28;
-    border-right: 1px solid #2a2f42;
+    background: {DARK_PANEL_BG};
+    border-right: 1px solid {DARK_BORDER_DEFAULT};
 }
 
 QFrame#ToolNavItem {
@@ -675,10 +719,10 @@ QFrame#ToolNavItem {
     border-radius: 0;
 }
 QFrame#ToolNavItem:hover {
-    background: rgba(255, 255, 255, 0.04);
+    background: {DARK_HOVER_OVERLAY};
 }
 QFrame#ToolNavItem[active="true"] {
-    background: #232a45;
+    background: {DARK_STATE_ACTIVE_BG};
 }
 
 QFrame#ToolNavBar {
@@ -686,23 +730,23 @@ QFrame#ToolNavBar {
     border-radius: 0 2px 2px 0;
 }
 QFrame#ToolNavBar[active="true"] {
-    background: #6c7bff;
+    background: {DARK_ACCENT};
 }
 
 QLabel#ToolNavIcon {
-    color: #787fa0;
+    color: {DARK_TEXT_MUTED};
     font-size: 13px;
 }
 QLabel#ToolNavIcon[active="true"] {
-    color: #9aa4ff;
+    color: {DARK_ACCENT_TEXT};
 }
 
 QLabel#ToolNavText {
-    color: #c4c8db;
+    color: {DARK_TEXT_SECONDARY};
     font-size: 13px;
 }
 QLabel#ToolNavText[active="true"] {
-    color: #e8e9f0;
+    color: {DARK_TEXT_PRIMARY};
     font-weight: 600;
 }
 
@@ -710,18 +754,18 @@ QLabel#ToolGroupLabel {
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 1px;
-    color: #565c74;
+    color: {DARK_TEXT_FAINT};
     padding-left: 14px;
 }
 
 QFrame#ToolDivider {
-    background: #232838;
+    background: {DARK_BORDER_SUBTLE};
     max-height: 1px;
     margin: 0 10px;
 }
 
 QLabel#ToolPanelTitle {
-    color: #e8e9f0;
+    color: {DARK_TEXT_PRIMARY};
     font-size: 19px;
     font-weight: 700;
 }
@@ -736,12 +780,12 @@ QTreeWidget#ToolTree {
 }
 QTreeWidget#NetstatTable::item,
 QTreeWidget#ToolTree::item {
-    color: #c4c8db;
+    color: {DARK_TEXT_SECONDARY};
     padding: 3px 6px;
 }
 QTreeWidget#NetstatTable::item:hover,
 QTreeWidget#ToolTree::item:hover {
-    background: rgba(255, 255, 255, 0.04);
+    background: {DARK_HOVER_OVERLAY};
 }
 QTreeWidget#NetstatTable::item:selected,
 QTreeWidget#NetstatTable::item:selected:active,
@@ -749,18 +793,18 @@ QTreeWidget#NetstatTable::item:selected:!active,
 QTreeWidget#ToolTree::item:selected,
 QTreeWidget#ToolTree::item:selected:active,
 QTreeWidget#ToolTree::item:selected:!active {
-    background: #232a45;
-    color: #e8e9f0;
+    background: {DARK_STATE_ACTIVE_BG};
+    color: {DARK_TEXT_PRIMARY};
 }
 QTreeWidget#NetstatTable QHeaderView::section,
 QTreeWidget#ToolTree QHeaderView::section {
-    background: #1e2338;
-    color: #9aa4ff;
+    background: {DARK_BUTTON_HOVER_BG};
+    color: {DARK_ACCENT_TEXT};
     font-size: 12px;
     font-weight: 700;
     padding: 4px 6px;
     border: none;
-    border-bottom: 1px solid #2a2f42;
+    border-bottom: 1px solid {DARK_BORDER_DEFAULT};
 }
 
 QTableWidget#NetstatTable {
@@ -768,31 +812,31 @@ QTableWidget#NetstatTable {
     border: none;
     border-radius: 8px;
     outline: none;
-    gridline-color: #232838;
+    gridline-color: {DARK_BORDER_SUBTLE};
 }
 QTableWidget#NetstatTable::item {
-    color: #c4c8db;
+    color: {DARK_TEXT_SECONDARY};
     padding: 3px 6px;
     border: none;
 }
 QTableWidget#NetstatTable::item:hover {
-    background: rgba(255, 255, 255, 0.04);
+    background: {DARK_HOVER_OVERLAY};
 }
 QTableWidget#NetstatTable::item:selected,
 QTableWidget#NetstatTable::item:selected:active,
 QTableWidget#NetstatTable::item:selected:!active {
-    background: #232a45;
-    color: #e8e9f0;
+    background: {DARK_STATE_ACTIVE_BG};
+    color: {DARK_TEXT_PRIMARY};
 }
 QTableWidget#NetstatTable QHeaderView::section {
-    background: #1e2338;
-    color: #9aa4ff;
+    background: {DARK_BUTTON_HOVER_BG};
+    color: {DARK_ACCENT_TEXT};
     font-size: 12px;
     font-weight: 700;
     padding: 4px 6px;
     border: none;
-    border-bottom: 1px solid #2a2f42;
-    border-right: 1px solid #2a2f42;
+    border-bottom: 1px solid {DARK_BORDER_DEFAULT};
+    border-right: 1px solid {DARK_BORDER_DEFAULT};
 }
 QTableWidget#NetstatTable QHeaderView::section:last {
     border-right: none;
@@ -805,7 +849,7 @@ QTreeWidget#IpconfigTree {
     outline: none;
 }
 QTreeWidget#IpconfigTree::item {
-    color: #e8e9f0;
+    color: {DARK_TEXT_PRIMARY};
     border: none;
 }
 QTreeWidget#IpconfigTree::item:hover {
@@ -813,12 +857,12 @@ QTreeWidget#IpconfigTree::item:hover {
 }
 QTreeWidget#IpconfigTree::item:hover:!selected {
     background: transparent;
-    color: #e8e9f0;
+    color: {DARK_TEXT_PRIMARY};
 }
 QTreeWidget#IpconfigTree::item:selected,
 QTreeWidget#IpconfigTree::item:selected:hover {
-    background: #232a45;
-    color: #9aa4ff;
+    background: {DARK_STATE_ACTIVE_BG};
+    color: {DARK_ACCENT_TEXT};
 }
 QTreeWidget#IpconfigTree::branch {
     background: transparent;
@@ -842,86 +886,86 @@ QTreeWidget#IpconfigTree::branch:has-children:has-siblings:open {
     background: transparent;
 }
 QTreeWidget#IpconfigTree QHeaderView::section {
-    background: #1e2338;
+    background: {DARK_BUTTON_HOVER_BG};
     border: none;
-    border-bottom: 1px solid #232838;
-    border-right: 1px solid #232838;
+    border-bottom: 1px solid {DARK_BORDER_SUBTLE};
+    border-right: 1px solid {DARK_BORDER_SUBTLE};
     padding: 4px 8px;
     font-weight: 600;
-    color: #787fa0;
+    color: {DARK_TEXT_MUTED};
 }
 
 QTextEdit#ToolOutput {
-    background: #1c2030;
-    border: 1px solid #232838;
+    background: {DARK_SURFACE_RAISED};
+    border: 1px solid {DARK_BORDER_SUBTLE};
     border-radius: 8px;
-    color: #e8e9f0;
-    selection-background-color: #6c7bff;
-    selection-color: #ffffff;
+    color: {DARK_TEXT_PRIMARY};
+    selection-background-color: {DARK_ACCENT};
+    selection-color: {DARK_TEXT_ON_ACCENT};
     margin-top: 10px;
 }
 
-QLabel#SubnetLabel  { color: #c4c8db; }
-QLabel#SubnetValue  { color: #e8e9f0; }
+QLabel#SubnetLabel  { color: {DARK_TEXT_SECONDARY}; }
+QLabel#SubnetValue  { color: {DARK_TEXT_PRIMARY}; }
 
 QFrame#SpeedCard {
-    background: #1c2030;
-    border: 1px solid #232838;
+    background: {DARK_SURFACE_RAISED};
+    border: 1px solid {DARK_BORDER_SUBTLE};
     border-radius: 10px;
 }
-QLabel#SpeedCardTitle { color: #787fa0; }
-QLabel#SpeedCardValue { color: #e8e9f0; }
-QLabel#SpeedCardUnit  { color: #565c74; }
+QLabel#SpeedCardTitle { color: {DARK_TEXT_MUTED}; }
+QLabel#SpeedCardValue { color: {DARK_TEXT_PRIMARY}; }
+QLabel#SpeedCardUnit  { color: {DARK_TEXT_FAINT}; }
 
 QLabel#ToolStatus {
-    color: #787fa0;
+    color: {DARK_TEXT_MUTED};
 }
 
 QLabel#ToolPanelSubtitle {
-    color: #787fa0;
+    color: {DARK_TEXT_MUTED};
     font-size: 13px;
 }
 
 QLineEdit#ToolInput {
-    background: #1c2030;
-    border: 1px solid #2a2f42;
+    background: {DARK_SURFACE_RAISED};
+    border: 1px solid {DARK_BORDER_DEFAULT};
     border-radius: 8px;
-    color: #e8e9f0;
+    color: {DARK_TEXT_PRIMARY};
 }
 
 QLineEdit#ToolInput:focus {
-    border-color: #6c7bff;
-    background: #1e2238;
+    border-color: {DARK_ACCENT};
+    background: {DARK_CONTROL_FOCUS_BG};
 }
 
 QSpinBox#ToolSpinBox {
-    background: #1c2030;
-    border: 1px solid #2a2f42;
-    color: #e8e9f0;
+    background: {DARK_SURFACE_RAISED};
+    border: 1px solid {DARK_BORDER_DEFAULT};
+    color: {DARK_TEXT_PRIMARY};
 }
 
 QSpinBox#ToolSpinBox:disabled {
-    color: #5b6178;
-    background: #161927;
+    color: {DARK_TEXT_DISABLED};
+    background: {DARK_SIDEBAR_BG};
 }
 
 /* ── TOOLS BUTTONS ────────────────────────────────────────────── */
 QPushButton#ToolBtn[role="primary"]:pressed {
-    background: #5a6aee;
+    background: {DARK_ACCENT_PRESSED};
 }
 
 QPushButton#ToolBtn[role="action"]:pressed {
-    background: #161927;
+    background: {DARK_SIDEBAR_BG};
 }
 
 QPushButton#ToolNavBtn:pressed {
-    background: #232a45;
+    background: {DARK_STATE_ACTIVE_BG};
 }
 
 QComboBox#ToolCombo {
-    background: #1c2030;
-    border: 1px solid #2a2f42;
-    color: #e8e9f0;
+    background: {DARK_SURFACE_RAISED};
+    border: 1px solid {DARK_BORDER_DEFAULT};
+    color: {DARK_TEXT_PRIMARY};
     max-width: 180px;
     padding: 0 8px;
     font-size: 13px;
@@ -931,8 +975,8 @@ QComboBox#ToolCombo {
 
 QComboBox#ToolCombo:focus,
 QComboBox#ToolCombo:on {
-    border-color: #6c7bff;
-    background: #1e2238;
+    border-color: {DARK_ACCENT};
+    background: {DARK_CONTROL_FOCUS_BG};
 }
 
 QComboBox#ToolCombo::drop-down {
@@ -941,17 +985,17 @@ QComboBox#ToolCombo::drop-down {
 }
 
 QComboBox#ToolCombo QAbstractItemView {
-    background: #1c2030;
-    border: 1px solid #2a2f42;
-    color: #e8e9f0;
-    selection-background-color: #232a45;
+    background: {DARK_SURFACE_RAISED};
+    border: 1px solid {DARK_BORDER_DEFAULT};
+    color: {DARK_TEXT_PRIMARY};
+    selection-background-color: {DARK_STATE_ACTIVE_BG};
 }
 
 QSpinBox#SettingsSpinBox {
-    background: #1c2030;
-    border: 1px solid #2a2f42;
+    background: {DARK_SURFACE_RAISED};
+    border: 1px solid {DARK_BORDER_DEFAULT};
     border-radius: 7px;
-    color: #e8e9f0;
+    color: {DARK_TEXT_PRIMARY};
     font-size: 13px;
     padding: 0 8px;
     min-height: 0;
@@ -966,24 +1010,681 @@ QSpinBox#SettingsSpinBox::down-button {
 
 /* ── EMPTY STATE (Инструменты → Netstat без данных) ──────────── */
 QLabel#EmptyStateIcon {
-    color: #565c74;
+    color: {DARK_TEXT_FAINT};
     font-size: 32px;
 }
 
 QLabel#EmptyStateTitle {
-    color: #787fa0;
+    color: {DARK_TEXT_MUTED};
     font-size: 14px;
     font-weight: 600;
 }
 
 QLabel#EmptyStateHint {
-    color: #565c74;
+    color: {DARK_TEXT_FAINT};
     font-size: 13px;
 }
 
 /* ── STATUS LABELS (реиспользуются на разных страницах) ───────── */
-QLabel#StatusDot   { color: #4ade80; }
-QLabel#StatusActive { color: #e8e9f0; font-size: 13px; }
-QLabel#StatusKey    { color: #787fa0; font-size: 12px; }
-QLabel#StatusValue  { color: #c4c8db; font-size: 12px; }
-QLabel#StatusIP     { color: #6c7bff; font-size: 12px; font-family: "Consolas", monospace; }
+QLabel#StatusDot   { color: {DARK_STATUS_SUCCESS}; }
+QLabel#StatusActive { color: {DARK_TEXT_PRIMARY}; font-size: 13px; }
+QLabel#StatusKey    { color: {DARK_TEXT_MUTED}; font-size: 12px; }
+QLabel#StatusValue  { color: {DARK_TEXT_SECONDARY}; font-size: 12px; }
+QLabel#StatusIP     { color: {DARK_ACCENT}; font-size: 12px; font-family: "Consolas", monospace; }
+
+/* ── RENDER-MATCH PALETTE ──────────────────────────────────────
+   Colour-only overrides measured against the approved render. */
+QWidget,
+QMainWindow,
+QWidget#RightWidget,
+QWidget#Body,
+QStackedWidget#MainStack,
+QFrame#RightPanel {
+    background-color: {DARK_PAGE_CANVAS};
+}
+
+QFrame#Topbar {
+    background: {DARK_HEADER_BG};
+    border-bottom-color: {DARK_BORDER_SHELL};
+}
+
+QFrame#Sidebar {
+    background: {DARK_SIDEBAR_MATCH_BG};
+    border-right-color: {DARK_BORDER_SHELL};
+}
+
+QFrame#LeftPanel,
+QListWidget#ProfilesList {
+    background: {DARK_SIDE_SURFACE};
+}
+
+QFrame#LeftPanel {
+    border-right-color: {DARK_PANEL_MATCH_BORDER};
+}
+
+QFrame#PageHeader,
+QFrame#PanelHeader,
+QFrame#EditorHeader,
+QFrame#ActionsBlock {
+    border-color: {DARK_BORDER_SHELL};
+}
+
+QFrame#SectionCard,
+QFrame#SpeedCard {
+    background: {DARK_DATA_SURFACE};
+    border-color: {DARK_CARD_BORDER};
+}
+
+QLineEdit,
+QComboBox,
+QLineEdit#ProfilesSearch,
+QComboBox#AdapterFilter,
+QLineEdit#ToolInput,
+QComboBox#ToolCombo,
+QSpinBox#ToolSpinBox,
+QSpinBox#SettingsSpinBox,
+QTextEdit#ToolOutput {
+    background: {DARK_INPUT_BG};
+    border-color: {DARK_CONTROL_BORDER};
+}
+
+QLineEdit#EditorField,
+QComboBox#EditorCombo {
+    background: {DARK_EDITOR_INPUT_BG};
+    border-color: {DARK_CONTROL_BORDER};
+}
+
+QLineEdit#EditorField:disabled,
+QComboBox#EditorCombo:disabled,
+QLineEdit:disabled,
+QComboBox:disabled {
+    background: {DARK_CONTROL_DISABLED_BG};
+    border-color: {DARK_CONTROL_DISABLED_BORDER};
+}
+
+QPushButton {
+    background: {DARK_BUTTON_BG};
+    border-color: {DARK_CONTROL_BORDER};
+}
+
+QPushButton#NavBtn[active="true"],
+QLabel#CountPill {
+    background: {DARK_STATE_ACTIVE_MATCH_BG};
+}
+/* ═══════════════════════════════════════════════════════════════
+   CONSOLIDATED DARK SURFACES / СВОДНЫЕ ПОВЕРХНОСТИ ТЁМНОЙ ТЕМЫ
+
+   EN: These rules preserve the UI areas identified by the temporary
+   colour map. Colours below belong to the normal dark theme.
+   RU: Эти правила сохраняют области, найденные временной цветовой
+   картой. Ниже используются обычные цвета тёмной темы.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Page canvas / Фон страниц */
+QWidget#ProfilesPage,
+QWidget#WifiPage,
+QWidget#ToolsPage,
+QWidget#SettingsPage,
+QWidget#PageBody,
+QFrame#RightPanel,
+QScrollArea#EditorScroll,
+QScrollArea#EditorScroll > QWidget > QWidget,
+QWidget#EditorBody,
+QTabWidget#WifiTabs,
+QTabWidget#WifiTabs::pane,
+QTabWidget#WifiTabs > QWidget,
+QTabWidget#WifiTabs QStackedWidget,
+QTabWidget#WifiTabs QStackedWidget > QWidget,
+QFrame#WifiTopPanel,
+QStackedWidget#ToolsStack,
+QStackedWidget#ToolsStack > QWidget,
+QScrollArea#SettingsScroll,
+QScrollArea#SettingsScroll > QWidget > QWidget,
+QWidget#SettingsBody {
+    background: {DARK_PAGE_CANVAS};
+}
+
+/* Secondary surfaces / Вторичные поверхности */
+QFrame#LeftPanel,
+QListWidget#ProfilesList,
+QFrame#ToolsSidebar,
+QFrame#WifiBottomPanel,
+QFrame#WifiStatusBar,
+QFrame#WifiProfileToolbar,
+QTabWidget#WifiTabs QFrame#ActionsBlock {
+    background: {DARK_SIDE_SURFACE};
+}
+
+/* Read-only data and result surfaces / Области данных и результатов */
+QTableWidget#WifiNetworkTable,
+QTableWidget#WifiProfileTable {
+    background: {DARK_DATA_SURFACE};
+    color: {DARK_TEXT_PRIMARY};
+    border-color: {DARK_CONTROL_BORDER};
+}
+
+QTextEdit#ToolOutput,
+QTextEdit#ToolOutput QWidget,
+QTreeWidget#NetstatTable,
+QTableWidget#NetstatTable,
+QTreeWidget#ToolTree,
+QTreeWidget#IpconfigTree {
+    background: {DARK_RESULT_SURFACE};
+    color: {DARK_TEXT_PRIMARY};
+    border-color: {DARK_CONTROL_BORDER};
+}
+
+/* Grouped cards / Сгруппированные карточки */
+QFrame#SectionCard,
+QFrame#SpeedCard {
+    background: {DARK_CARD_SURFACE};
+    border-color: {DARK_CARD_BORDER};
+}
+
+/* Editable controls / Редактируемые элементы */
+QLineEdit#EditorField,
+QComboBox#EditorCombo,
+QLineEdit#ProfilesSearch,
+QComboBox#AdapterFilter,
+QWidget#ToolsPage QLineEdit#ToolInput,
+QWidget#ToolsPage QComboBox#ToolCombo,
+QWidget#ToolsPage QSpinBox#ToolSpinBox,
+QSpinBox#SettingsSpinBox {
+    background: {DARK_INPUT_BG};
+    color: {DARK_TEXT_PRIMARY};
+    border-color: {DARK_CONTROL_BORDER};
+}
+
+/* EN: Keep the adapter filter dark while its popup is open. Qt applies the
+   native active-combobox palette to the closed field in the :on state unless
+   every visual property is explicitly overridden.
+   RU: Сохраняем тёмный вид фильтра адаптеров при открытом списке. Qt применяет
+   системную палитру активного комбобокса к закрытой части в состоянии :on,
+   если явно не переопределить все визуальные свойства. */
+QComboBox#AdapterFilter:focus,
+QComboBox#AdapterFilter:on {
+    background: {DARK_CONTROL_FOCUS_BG};
+    color: {DARK_TEXT_PRIMARY};
+    border: 1px solid {DARK_ACCENT};
+    selection-background-color: {DARK_STATE_ACTIVE_BG};
+    selection-color: {DARK_TEXT_PRIMARY};
+}
+
+QComboBox#AdapterFilter::drop-down:on {
+    background: transparent;
+    border: none;
+}
+
+/* Captions / Подписи */
+QLabel#SectionTitle,
+QLabel#FieldLabel,
+QWidget#ToolsPage QLabel#ToolGroupLabel {
+    background: transparent;
+    color: {DARK_TEXT_MUTED};
+}
+
+/* EN: Settings rows need an explicit card surface. Transparent child
+   widgets can expose the page canvas instead of their QFrame parent in Qt.
+   RU: Строкам настроек нужен явный фон карточки. Прозрачные дочерние
+   виджеты Qt могут показывать холст страницы вместо родительского QFrame. */
+QWidget#SettingsPage QWidget#SettingsRow,
+QWidget#SettingsPage QCheckBox {
+    background: {DARK_CARD_SURFACE};
+}
+
+/* Dividers / Разделители */
+QFrame#SectionLine {
+    background: {DARK_SECTION_DIVIDER};
+    color: {DARK_SECTION_DIVIDER};
+    border: none;
+}
+
+QWidget#ToolsPage QFrame#ToolDivider {
+    background: {DARK_BORDER_SUBTLE};
+    color: {DARK_BORDER_SUBTLE};
+    border: none;
+}
+
+/* Internal tools navigation / Внутренняя навигация инструментов */
+QWidget#ToolsPage QFrame#ToolNavItem {
+    /* EN: Slightly raised rows visually belong to the tools sidebar.
+       RU: Слегка приподнятые строки визуально остаются частью панели инструментов. */
+    background: {DARK_PANEL_BG};
+    border: 1px solid transparent;
+    border-radius: 6px;
+}
+
+QWidget#ToolsPage QFrame#ToolNavItem:hover {
+    background: {DARK_INPUT_BG};
+    border-color: {DARK_BORDER_SUBTLE};
+}
+
+QWidget#ToolsPage QFrame#ToolNavItem[active="true"] {
+    background: {DARK_STATE_ACTIVE_BG};
+    border-color: {DARK_CONTROL_BORDER};
+}
+
+/* EN: Child labels must not cover the row surface with the global QLabel
+   background. RU: Дочерние подписи не должны перекрывать фон строки
+   глобальным фоном QLabel. */
+QWidget#ToolsPage QFrame#ToolNavItem QLabel#ToolNavIcon,
+QWidget#ToolsPage QFrame#ToolNavItem QLabel#ToolNavText {
+    background: transparent;
+}
+
+/* Table headings / Заголовки таблиц */
+QWidget#WifiPage QHeaderView::section,
+QWidget#ToolsPage QHeaderView::section {
+    background: {DARK_HEADER_BG};
+    color: {DARK_TEXT_MUTED};
+    border-bottom: 1px solid {DARK_BORDER_SUBTLE};
+}
+
+/* Wi-Fi result edges and scrollbar / Границы и прокрутка результатов Wi-Fi */
+QWidget#WifiPage QTableWidget#WifiNetworkTable,
+QWidget#WifiPage QTableWidget#WifiProfileTable {
+    border: 1px solid {DARK_CONTROL_BORDER};
+}
+
+QWidget#WifiPage QScrollBar:vertical {
+    background: {DARK_SIDE_SURFACE};
+    border: none;
+}
+
+QWidget#WifiPage QScrollBar::handle:vertical {
+    background: {DARK_SCROLL_HANDLE};
+    min-height: 20px;
+    border-radius: 2px;
+}
+
+QWidget#WifiPage QScrollBar::add-page:vertical,
+QWidget#WifiPage QScrollBar::sub-page:vertical,
+QWidget#WifiPage QScrollBar::add-line:vertical,
+QWidget#WifiPage QScrollBar::sub-line:vertical {
+    background: {DARK_SIDE_SURFACE};
+    border: none;
+}
+/* Subnet Calculator / Калькулятор подсетей */
+QFrame#SubnetInputCard,
+QFrame#SubnetResultCard {
+    background: {DARK_SURFACE_RAISED};
+    border: 1px solid {DARK_BORDER_DEFAULT};
+    border-radius: 10px;
+}
+QLabel#SubnetInputLabel {
+    color: {DARK_TEXT_SECONDARY};
+    font-size: 12px;
+    font-weight: 600;
+}
+QLabel#SubnetResultsTitle {
+    color: {DARK_TEXT_PRIMARY};
+    font-size: 13px;
+    font-weight: 700;
+}
+QLabel#SubnetCardTitle {
+    color: {DARK_ACCENT_TEXT};
+    font-size: 11px;
+    font-weight: 700;
+    padding-bottom: 5px;
+    border-bottom: 1px solid {DARK_BORDER_SUBTLE};
+}
+QFrame#SubnetResultCard QLabel#SubnetLabel {
+    min-width: 150px;
+}
+/* Subnet card child surfaces / Дочерние поверхности карточек подсетей */
+/* EN: Qt can expose the page canvas behind transparent QLabel children.
+   Paint them with the exact card surface so each card reads as one surface.
+   RU: Qt может показывать холст страницы за прозрачными QLabel.
+   Красим дочерние подписи точно в цвет карточки, чтобы она была цельной. */
+QFrame#SubnetInputCard QLabel#SubnetInputLabel,
+QFrame#SubnetResultCard QLabel#SubnetCardTitle,
+QFrame#SubnetResultCard QLabel#SubnetLabel,
+QFrame#SubnetResultCard QLabel#SubnetValue {
+    background: {DARK_SURFACE_RAISED};
+}
+
+QFrame#SubnetResultCard QLabel#SubnetLabel {
+    color: {DARK_TEXT_SECONDARY};
+}
+
+QFrame#SubnetResultCard QLabel#SubnetValue {
+    color: {DARK_TEXT_PRIMARY};
+}
+/* TCP Port Scanner / Сканер TCP-портов */
+QFrame#PortScanInputCard,
+QFrame#PortScanResultsSection {
+    background: {DARK_SURFACE_RAISED};
+    border: 1px solid {DARK_BORDER_DEFAULT};
+    border-radius: 10px;
+}
+QFrame#PortScanControlsBar,
+QFrame#PortScanProgressRow {
+    background: {DARK_SURFACE_RAISED};
+    border: none;
+}
+QFrame#PortScanProgressRow {
+    border-bottom: 1px solid {DARK_BORDER_SUBTLE};
+}
+QFrame#PortScanResultCard {
+    background: {DARK_RESULT_SURFACE};
+    border: none;
+    border-radius: 0px;
+}
+QFrame#PortScanInputCard QLabel#PortScanInputLabel {
+    background: {DARK_SURFACE_RAISED};
+    color: {DARK_TEXT_SECONDARY};
+    font-size: 12px;
+    font-weight: 600;
+}
+QLabel#PortScanProgressText {
+    background: transparent;
+    color: {DARK_TEXT_MUTED};
+    font-size: 12px;
+}
+QProgressBar#PortScanProgress {
+    background: {DARK_BORDER_SUBTLE};
+    border: none;
+    border-radius: 3px;
+}
+QProgressBar#PortScanProgress::chunk {
+    background: {DARK_ACCENT};
+    border-radius: 3px;
+}
+QTableWidget#PortScanTable {
+    background: {DARK_RESULT_SURFACE};
+    alternate-background-color: {DARK_SURFACE_RAISED};
+    color: {DARK_TEXT_PRIMARY};
+    border: none;
+    border-radius: 0px;
+}
+QTableWidget#PortScanTable::item {
+    padding: 7px 10px;
+    border-bottom: 1px solid {DARK_BORDER_SUBTLE};
+}
+QTableWidget#PortScanTable::item:selected {
+    background: {DARK_STATE_ACTIVE_BG};
+    color: {DARK_TEXT_PRIMARY};
+}
+QTableWidget#PortScanTable QHeaderView::section {
+    background: {DARK_INPUT_BG};
+    color: {DARK_ACCENT_TEXT};
+    border: none;
+    border-bottom: 1px solid {DARK_BORDER_DEFAULT};
+    padding: 8px 10px;
+    font-weight: 700;
+}
+/* Windows DNS Cache / Кэш DNS Windows */
+QFrame#DnsCacheToolbarCard,
+QFrame#DnsCacheResultsSection {
+    background: {DARK_SURFACE_RAISED};
+    border: 1px solid {DARK_BORDER_DEFAULT};
+    border-radius: 10px;
+}
+QFrame#DnsCacheSummaryBar {
+    background: {DARK_SURFACE_RAISED};
+    border: none;
+    border-bottom: 1px solid {DARK_BORDER_SUBTLE};
+    border-radius: 0;
+}
+QFrame#DnsCacheResultCard {
+    background: {DARK_RESULT_SURFACE};
+    border: none;
+    border-radius: 0;
+}
+QFrame#DnsCacheToolbarCard QLabel#DnsCacheToolbarLabel {
+    background: {DARK_SURFACE_RAISED};
+    color: {DARK_TEXT_SECONDARY};
+    font-size: 12px;
+    font-weight: 600;
+}
+QWidget#DnsCacheControlsBar {
+    background: transparent;
+    border: none;
+}
+QLabel#DnsCacheSummaryPill {
+    background: {DARK_STATE_ACTIVE_BG};
+    color: {DARK_ACCENT_TEXT};
+    border: 1px solid {DARK_CONTROL_BORDER};
+    border-radius: 10px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 600;
+}
+QTreeWidget#DnsCacheTable {
+    background: {DARK_RESULT_SURFACE};
+    alternate-background-color: {DARK_SURFACE_RAISED};
+    color: {DARK_TEXT_PRIMARY};
+    border: none;
+    border-radius: 0;
+}
+QTreeWidget#DnsCacheTable::item {
+    padding: 7px 10px;
+    border-bottom: 1px solid {DARK_BORDER_SUBTLE};
+}
+QTreeWidget#DnsCacheTable QHeaderView::section {
+    background: {DARK_INPUT_BG};
+    color: {DARK_ACCENT_TEXT};
+    border: none;
+    border-bottom: 1px solid {DARK_BORDER_DEFAULT};
+    padding: 8px 10px;
+    font-weight: 700;
+}
+
+
+/* IP Batch Check dark structured workspace */
+QFrame#IpBatchSourceCard {
+    background: #151d2b;
+    border: 1px solid #2a3850;
+    border-radius: 12px;
+}
+QFrame#IpBatchSourceCard QLabel#IpBatchFieldLabel {
+    color: #a9bce0;
+    background: transparent;
+    font-size: 12px;
+    font-weight: 600;
+}
+QFrame#IpBatchSourceCard QLabel#IpBatchFileLabel {
+    color: #b8c7e3;
+    background: transparent;
+    padding: 0 10px;
+}
+QLabel#IpBatchSummaryPill {
+    color: #cbd8f2;
+    background: #202c43;
+    border: 1px solid #2b3a55;
+    border-radius: 11px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+}
+QFrame#IpBatchProgressRow {
+    background: #151d2b;
+    border: 1px solid #2a3850;
+    border-radius: 9px;
+}
+QFrame#IpBatchProgressRow QLabel#ToolStatus {
+    color: #a9bce0;
+    background: transparent;
+    border: none;
+    font-size: 11px;
+}
+QProgressBar#IpBatchProgress {
+    background: #1b2638;
+    border: none;
+    border-radius: 3px;
+    color: transparent;
+}
+QProgressBar#IpBatchProgress::chunk {
+    background: #707cff;
+    border-radius: 3px;
+}
+QTableWidget#IpBatchTable {
+    background: #111927;
+    alternate-background-color: #172132;
+    color: #e5ecfb;
+    border: 1px solid #2a3850;
+    border-radius: 10px;
+    gridline-color: #243148;
+}
+QTableWidget#IpBatchTable::item {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+QTableWidget#IpBatchTable QHeaderView::section {
+    background: {DARK_INPUT_BG};
+    color: {DARK_ACCENT_TEXT};
+    border: none;
+    border-bottom: 1px solid {DARK_BORDER_DEFAULT};
+    padding: 8px 12px;
+    font-weight: 700;
+}
+
+
+/* IP Batch dark numeric controls */
+QFrame#IpBatchSourceCard QSpinBox#ToolSpin {
+    background: #1b2638;
+    color: #f0f4ff;
+    border: 1px solid #30415f;
+    border-radius: 8px;
+    padding: 6px 24px 6px 10px;
+    selection-background-color: #707cff;
+}
+QFrame#IpBatchSourceCard QSpinBox#ToolSpin::up-button,
+QFrame#IpBatchSourceCard QSpinBox#ToolSpin::down-button {
+    width: 18px;
+    background: #243249;
+    border: none;
+}
+
+
+/* Signal Monitor dark structured controls */
+QFrame#SignalControlsCard {
+    background: #151d2b;
+    border: 1px solid #2a3850;
+    border-radius: 11px;
+}
+QFrame#SignalControlsCard QLabel#SignalConnectionBadge {
+    color: #cbd8f2;
+    background: #202c43;
+    border: 1px solid #2b3a55;
+    border-radius: 12px;
+    padding: 5px 11px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* ── PROFILES + WI-FI SURFACE REFINEMENT ───────────────────────
+   EN: Keep data-heavy pages quieter than the Tools workspace.
+   RU: Делаем страницы с большим объёмом данных спокойнее,
+   не меняя удачное оформление раздела «Инструменты». */
+
+/* Profiles: quiet neutral cards with clearly separated editable fields. */
+QWidget#ProfilesPage QFrame#SectionCard {
+    background: {DARK_PROFILE_CARD_BG};
+    border-color: {DARK_BORDER_SUBTLE};
+}
+
+QWidget#ProfilesPage QLineEdit#EditorField,
+QWidget#ProfilesPage QComboBox#EditorCombo {
+    background: {DARK_PROFILE_INPUT_BG};
+    border-color: {DARK_BORDER_SUBTLE};
+}
+
+QWidget#ProfilesPage QLineEdit#EditorField:disabled,
+QWidget#ProfilesPage QComboBox#EditorCombo:disabled {
+    background: {DARK_SIDE_SURFACE};
+    border-color: {DARK_BORDER_SUBTLE};
+}
+
+/* Wi-Fi: neutral table with subtle alternating depth and no ruled grid. */
+QWidget#WifiPage QTableWidget#WifiNetworkTable,
+QWidget#WifiPage QTableWidget#WifiProfileTable {
+    background: {DARK_WIFI_TABLE_BG};
+    alternate-background-color: {DARK_WIFI_ROW_ALT_BG};
+    border-color: {DARK_BORDER_SUBTLE};
+}
+
+QWidget#WifiPage QTableWidget#WifiNetworkTable::item,
+QWidget#WifiPage QTableWidget#WifiProfileTable::item {
+    background: transparent;
+    border: none;
+}
+
+QWidget#WifiPage QTableWidget#WifiNetworkTable::item:hover,
+QWidget#WifiPage QTableWidget#WifiProfileTable::item:hover {
+    background: {DARK_WIFI_ROW_HOVER_BG};
+}
+
+QWidget#WifiPage QTableWidget#WifiNetworkTable::item:selected,
+QWidget#WifiPage QTableWidget#WifiProfileTable::item:selected {
+    background: {DARK_STATE_ACTIVE_BG};
+}
+
+QWidget#WifiPage QHeaderView::section {
+    background: {DARK_HEADER_BG};
+    border-bottom: 1px solid {DARK_BORDER_SUBTLE};
+}
+
+/* ── MAIN SIDEBAR GROUPS ────────────────────────────────────────
+   EN: Group names are separators, not navigation buttons.
+   RU: Названия групп — это разделители, а не кнопки навигации. */
+QFrame#Sidebar QLabel#NavGroupLabel {
+    background: transparent;
+    color: {DARK_TEXT_FAINT};
+    border: none;
+    border-bottom: 1px solid {DARK_BORDER_SUBTLE};
+    border-radius: 0;
+    padding: 10px 8px 7px 8px;
+    margin: 0 2px 5px 2px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+/* Keep keyboard focus subtle; active page retains the accent marker. */
+QFrame#Sidebar QPushButton#NavBtn:focus {
+    border: none;
+    border-left: 3px solid transparent;
+    outline: none;
+}
+
+QFrame#Sidebar QPushButton#NavBtn[active="true"]:focus {
+    border-left: 3px solid {DARK_ACCENT};
+}
+
+/* ── WI-FI COMPACT OVERVIEW ─────────────────────────────────────
+   EN: Title, network count and connection state form one toolbar.
+   RU: Заголовок, количество сетей и состояние соединения
+   собраны в одну компактную панель. */
+QWidget#WifiPage QFrame#WifiOverviewBar {
+    background: {DARK_SIDE_SURFACE};
+    border: none;
+    border-bottom: 1px solid {DARK_BORDER_SUBTLE};
+    border-radius: 0;
+}
+
+QWidget#WifiPage QFrame#WifiOverviewBar QLabel#PanelTitle {
+    background: transparent;
+    color: {DARK_TEXT_MUTED};
+}
+
+QWidget#WifiPage QFrame#WifiOverviewBar QLabel#CountPill {
+    min-width: 26px;
+    padding: 2px 8px;
+}
+
+QWidget#WifiPage QFrame#WifiOverviewBar QLabel#StatusDot,
+QWidget#WifiPage QFrame#WifiOverviewBar QLabel#WifiStatusLabel,
+QWidget#WifiPage QFrame#WifiOverviewBar QLabel#WifiStatusDetails {
+    background: transparent;
+}
+
+QWidget#WifiPage QTabWidget#WifiTabs > QTabBar::tab {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+QWidget#WifiPage QHeaderView::section {
+    padding-top: 8px;
+    padding-bottom: 8px;
+}

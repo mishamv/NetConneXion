@@ -85,80 +85,101 @@ def _extract_mbps(raw_block: str) -> int:
 # ── Network parser ────────────────────────────────────────────────────────────
 
 def parse_networks(raw: str) -> List[WifiNetworkSnapshot]:
-    """Parse output of: netsh wlan show networks mode=bssid
+    """Parse every BSSID returned by ``netsh wlan show networks mode=bssid``.
 
-    Returns a list of WifiNetworkSnapshot, one per unique BSSID block.
+    One SSID can be broadcast by several access points. Authentication and
+    cipher belong to the SSID block, while signal, radio type and channel
+    belong to each individual BSSID block.
     """
     if not raw:
         return []
 
     networks: List[WifiNetworkSnapshot] = []
-    current: dict = {}
-    block_lines: List[str] = []
+    ssid_data: dict = {}
+    bssid_data: dict = {}
+    bssid_lines: List[str] = []
 
-    def _flush() -> None:
-        if not current.get("ssid"):
+    def _flush_bssid() -> None:
+        if not ssid_data.get("ssid") or not bssid_data.get("bssid"):
             return
-        ch = _int(current.get("channel", "0"))
-        mbps = _extract_mbps("\n".join(block_lines))
-        protocol = current.get("radio_type", "")
-        # Если скорость из netsh ≤ 54 (только legacy rates) — используем fallback по протоколу
-        # netsh wlan show networks не возвращает реальные HT/VHT скорости
+        channel = _int(bssid_data.get("channel", "0"))
+        protocol = bssid_data.get("radio_type", "")
+        mbps = _extract_mbps("\n".join(bssid_lines))
         if protocol:
-            proto_lower = protocol.lower()
-            proto_mbps = 0
-            if "ax" in proto_lower or "wi-fi 6" in proto_lower:
-                proto_mbps = 1200
-            elif "ac" in proto_lower or "wi-fi 5" in proto_lower:
-                proto_mbps = 867
-            elif "n" in proto_lower:
-                proto_mbps = 300
-            elif "g" in proto_lower or "a" in proto_lower:
-                proto_mbps = 54
-            if proto_mbps > mbps:
-                mbps = proto_mbps
+            protocol_lower = protocol.lower()
+            protocol_mbps = 0
+            if "ax" in protocol_lower or "wi-fi 6" in protocol_lower:
+                protocol_mbps = 1200
+            elif "ac" in protocol_lower or "wi-fi 5" in protocol_lower:
+                protocol_mbps = 867
+            elif "n" in protocol_lower:
+                protocol_mbps = 300
+            elif "g" in protocol_lower or "a" in protocol_lower:
+                protocol_mbps = 54
+            mbps = max(mbps, protocol_mbps)
         networks.append(WifiNetworkSnapshot(
-            ssid=current.get("ssid", ""),
-            bssid=current.get("bssid", ""),
-            signal_pct=_int(current.get("signal", "0").replace("%", "")),
-            auth=current.get("auth", ""),
-            cipher=current.get("cipher", ""),
-            channel=ch,
-            freq_ghz=channel_to_freq(ch),
+            ssid=ssid_data.get("ssid", ""),
+            bssid=bssid_data.get("bssid", ""),
+            signal_pct=_int(bssid_data.get("signal", "0").replace("%", "")),
+            auth=ssid_data.get("auth", ""),
+            cipher=ssid_data.get("cipher", ""),
+            channel=channel,
+            freq_ghz=channel_to_freq(channel),
             mbps=mbps,
             protocol=protocol,
         ))
 
     for line in raw.splitlines():
         stripped = line.strip()
-        block_lines.append(stripped)
 
-        m = re.match(r"^SSID\s+\d+\s*:\s*(.+)$", stripped, re.IGNORECASE)
-        if m:
-            _flush()
-            current = {"ssid": _clean(m.group(1))}
-            block_lines = []
+        ssid_match = re.match(
+            r"^SSID\s+\d+\s*:\s*(.*)$",
+            stripped,
+            re.IGNORECASE,
+        )
+        if ssid_match:
+            _flush_bssid()
+            ssid_data = {"ssid": _clean(ssid_match.group(1))}
+            bssid_data = {}
+            bssid_lines = []
             continue
 
-        m = re.match(r"^BSSID\s+1\s*:\s*(.+)$", stripped, re.IGNORECASE)
-        if m:
-            current.setdefault("bssid", _clean(m.group(1)))
+        bssid_match = re.match(
+            r"^BSSID\s+\d+\s*:\s*(.+)$",
+            stripped,
+            re.IGNORECASE,
+        )
+        if bssid_match:
+            _flush_bssid()
+            bssid_data = {"bssid": _clean(bssid_match.group(1))}
+            bssid_lines = [stripped]
             continue
 
+        if not bssid_data:
+            for key, pattern in (
+                ("auth", r"^(?:Authentication|Проверка подлинности)\s*:\s*(.+)$"),
+                ("cipher", r"^(?:Encryption|Шифрование)\s*:\s*(.+)$"),
+            ):
+                match = re.match(pattern, stripped, re.IGNORECASE)
+                if match:
+                    ssid_data[key] = _clean(match.group(1))
+                    break
+            continue
+
+        bssid_lines.append(stripped)
         for key, pattern in (
-            ("auth",       r"^(?:Authentication|Проверка подлинности)\s*:\s*(.+)$"),
-            ("cipher",     r"^(?:Encryption|Шифрование)\s*:\s*(.+)$"),
-            ("signal",     r"^(?:Signal|Сигнал)\s*:\s*(.+)$"),
+            ("signal", r"^(?:Signal|Сигнал)\s*:\s*(.+)$"),
             ("radio_type", r"^(?:Radio type|Тип радио)\s*:\s*(.+)$"),
-            ("channel",    r"^(?:Channel|Канал)\s*:\s*(\d+)"),
+            ("channel", r"^(?:Channel|Канал)\s*:\s*(\d+)"),
         ):
-            if key in current:
+            if key in bssid_data:
                 continue
-            m2 = re.match(pattern, stripped, re.IGNORECASE)
-            if m2:
-                current[key] = _clean(m2.group(1))
+            match = re.match(pattern, stripped, re.IGNORECASE)
+            if match:
+                bssid_data[key] = _clean(match.group(1))
+                break
 
-    _flush()
+    _flush_bssid()
     return networks
 
 

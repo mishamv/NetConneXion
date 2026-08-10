@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import logging
 import threading
-import time
 from typing import Optional, TYPE_CHECKING
 
 from quickip.core.events.types import NetworkSsidChanged

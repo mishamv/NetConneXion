@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════
    NetConneXion v2.0 — LIGHT THEME (F: White + Indigo)
-   Backdrop: #F1F5F9  Sidebar: #FFFFFF  Cards: #FFFFFF
-   Accent: #4F46E5 indigo
+   Backdrop: {LIGHT_HEX_F1F5F9}  Sidebar: {LIGHT_HEX_FFFFFF}  Cards: {LIGHT_HEX_FFFFFF}
+   Accent: {LIGHT_HEX_4F46E5} indigo
    ═══════════════════════════════════════════════════════════════ */
 
 * {
@@ -11,31 +11,31 @@
 }
 
 QWidget {
-    color: #1E293B;           /* глобальный текст — slate-800 */
+    color: {LIGHT_HEX_1E293B};           /* глобальный текст — slate-800 */
     background: transparent;
 }
 
 QWidget#RootWindow {
-    background: transparent;  /* фон рисует BackdropWidget (#F1F5F9) */
+    background: transparent;  /* фон рисует BackdropWidget ({LIGHT_HEX_F1F5F9}) */
 }
 
 /* ── SIDEBAR ──────────────────────────────────────────────────── */
 QFrame#Sidebar {
-    background: #FFFFFF;      /* sidebar — белый */
-    border: 1px solid #E8EDF5; /* рамка sidebar */
+    background: {LIGHT_HEX_FFFFFF};      /* sidebar — белый */
+    border: 1px solid {LIGHT_HEX_E8EDF5}; /* рамка sidebar */
     border-radius: 14px;
 }
 
 /* Logo area */
 QFrame#LogoArea {
     background: transparent;
-    border-bottom: 1px solid #F0F4FA; /* разделитель под логотипом */
+    border-bottom: 1px solid {LIGHT_HEX_F0F4FA}; /* разделитель под логотипом */
     border-radius: 0;
 }
 
 QLabel#LogoIcon {
-    background: #4F46E5;      /* иконка-плашка N — indigo */
-    color: #FFFFFF;
+    background: {LIGHT_HEX_4F46E5};      /* иконка-плашка N — indigo */
+    color: {LIGHT_HEX_FFFFFF};
     font-size: 13px;
     font-weight: 700;
     border-radius: 8px;
@@ -44,12 +44,12 @@ QLabel#LogoIcon {
 QLabel#LogoName {
     font-size: 13px;
     font-weight: 700;
-    color: #1E293B;           /* название приложения */
+    color: {LIGHT_HEX_1E293B};           /* название приложения */
 }
 
 QLabel#LogoVersion {
     font-size: 9px;
-    color: #94A3B8;           /* версия — slate-400 */
+    color: {LIGHT_HEX_94A3B8};           /* версия — slate-400 */
 }
 
 /* Nav */
@@ -60,7 +60,7 @@ QFrame#NavFrame {
 QLabel#NavGroupLabel {
     font-size: 10px;
     font-weight: 700;
-    color: #CBD5E1;           /* заголовок группы: NETWORK / SYSTEM */
+    color: {LIGHT_HEX_CBD5E1};           /* заголовок группы: NETWORK / SYSTEM */
     letter-spacing: 2px;
     text-transform: uppercase;
     padding: 0 8px 4px 8px;
@@ -74,108 +74,108 @@ QPushButton#NavBtn {
     background: transparent;
     border: none;
     border-left: 3px solid transparent;
-    color: #64748B;           /* неактивная nav кнопка — slate-500 */
+    color: {LIGHT_HEX_64748B};           /* неактивная nav кнопка — slate-500 */
     font-size: 15px;
     font-weight: 500;
 }
 
 QPushButton#NavBtn:hover {
-    background: #F1F5F9;
-    color: #1E293B;
-    border-left: 3px solid #CBD5E1;
+    background: {LIGHT_HEX_F1F5F9};
+    color: {LIGHT_HEX_1E293B};
+    border-left: 3px solid {LIGHT_HEX_CBD5E1};
 }
 
 QPushButton#NavBtn[active="true"] {
-    background: #EEF2FF;      /* активная nav — indigo-50 */
-    color: #4338CA;           /* текст активной — indigo-700 */
+    background: {LIGHT_HEX_EEF2FF};      /* активная nav — indigo-50 */
+    color: {LIGHT_HEX_4338CA};           /* текст активной — indigo-700 */
     font-weight: 700;
-    border-left: 3px solid #4338CA;
+    border-left: 3px solid {LIGHT_HEX_4338CA};
 }
 
 /* Status block */
 QFrame#StatusBlock {
     background: transparent;
-    border-top: 1px solid #F0F4FA; /* разделитель над статусом */
+    border-top: 1px solid {LIGHT_HEX_F0F4FA}; /* разделитель над статусом */
     border-radius: 0;
 }
 
 QLabel#StatusDot {
-    color: #22C55E;           /* зелёная точка — connected */
+    color: {LIGHT_HEX_22C55E};           /* зелёная точка — connected */
     font-size: 8px;
 }
 
 QLabel#StatusActive {
     font-size: 10px;
     font-weight: 600;
-    color: #334155;           /* активный профиль */
+    color: {LIGHT_HEX_334155};           /* активный профиль */
 }
 
 QLabel#StatusKey {
     font-size: 10px;
-    color: #94A3B8;           /* ключ: "Adapter" */
+    color: {LIGHT_HEX_94A3B8};           /* ключ: "Adapter" */
 }
 
 QLabel#StatusValue {
     font-size: 10px;
     font-weight: 600;
-    color: #334155;           /* значение: "Ethernet" */
+    color: {LIGHT_HEX_334155};           /* значение: "Ethernet" */
 }
 
 QLabel#StatusIP {
     font-size: 10px;
-    color: #4F46E5;           /* IP адрес — indigo */
+    color: {LIGHT_HEX_4F46E5};           /* IP адрес — indigo */
     font-family: "Consolas", "Courier New", monospace;
     font-weight: 600;
 }
 
 /* ── TOPBAR ───────────────────────────────────────────────────── */
 QFrame#Topbar {
-    background: #FFFFFF;      /* topbar — белый */
-    border: 1px solid #E8EDF5;
+    background: {LIGHT_HEX_FFFFFF};      /* topbar — белый */
+    border: 1px solid {LIGHT_HEX_E8EDF5};
     border-radius: 12px;
 }
 
 QLabel#TopbarTitle {
     font-size: 15px;
     font-weight: 700;
-    color: #1E293B;           /* заголовок страницы */
+    color: {LIGHT_HEX_1E293B};           /* заголовок страницы */
 }
 
 QLabel#TopbarSubtitle {
     font-size: 10px;
-    color: #94A3B8;           /* подзаголовок: "4 saved · Office active" */
+    color: {LIGHT_HEX_94A3B8};           /* подзаголовок: "4 saved · Office active" */
 }
 
 /* ── CONTENT SHELL ────────────────────────────────────────────── */
 QFrame#ContentShell {
-    background: #FFFFFF;      /* основная рабочая область — белый */
-    border: 1px solid #E8EDF5;
+    background: {LIGHT_HEX_FFFFFF};      /* основная рабочая область — белый */
+    border: 1px solid {LIGHT_HEX_E8EDF5};
     border-radius: 14px;      /* скругление всех углов */
 }
 
 /* ── LEFT PANEL ───────────────────────────────────────────────── */
 QFrame#LeftPanel {
-    background: #FFFFFF;      /* левая панель — белый */
-    border-right: 1px solid #E8EDF5; /* разделитель между панелями */
+    background: {LIGHT_HEX_FFFFFF};      /* левая панель — белый */
+    border-right: 1px solid {LIGHT_HEX_E8EDF5}; /* разделитель между панелями */
     border-radius: 14px 0 14px 14px; /* все углы кроме верхнего правого */
 }
 
 QFrame#PanelHeader {
     background: transparent;
-    border-bottom: 1px solid #F1F5F9; /* разделитель под заголовком */
+    border-bottom: 1px solid {LIGHT_HEX_F1F5F9}; /* разделитель под заголовком */
 }
 
 QLabel#PanelTitle {
     font-size: 10px;
     font-weight: 700;
-    color: #CBD5E1;           /* заголовок "All profiles" */
+    color: {LIGHT_HEX_CBD5E1};           /* заголовок "All profiles" */
     text-transform: uppercase;
     letter-spacing: 1.2px;
 }
 
 QLabel#CountPill {
-    background: #EEF2FF;      /* пилюля счётчика — indigo-50 */
-    color: #3730A3;           /* текст счётчика — indigo-800 */
+    background: {LIGHT_HEX_EEF2FF};      /* пилюля счётчика — indigo-50 */
+    color: {LIGHT_HEX_3730A3};           /* текст счётчика — indigo-800 */
     font-size: 9px;
     font-weight: 700;
     padding: 2px 7px;
@@ -187,34 +187,34 @@ QFrame#SearchWrap {
 }
 
 QLineEdit#ProfilesSearch {
-    background: #F8FAFC;      /* фон поля поиска */
-    border: 1px solid #E2E8F0; /* рамка поиска */
+    background: {LIGHT_HEX_F8FAFC};      /* фон поля поиска */
+    border: 1px solid {LIGHT_HEX_E2E8F0}; /* рамка поиска */
     border-radius: 8px;
     padding: 0 10px;
     min-height: 32px;
-    color: #1E293B;
+    color: {LIGHT_HEX_1E293B};
     font-size: 12px;
 }
 
 QLineEdit#ProfilesSearch:focus {
-    border-color: #A5B4FC;   /* рамка поиска при фокусе — indigo-300 */
-    background: #FFFFFF;
+    border-color: {LIGHT_HEX_A5B4FC};   /* рамка поиска при фокусе — indigo-300 */
+    background: {LIGHT_HEX_FFFFFF};
 }
 
 QComboBox#AdapterFilter {
-    background: #F8FAFC;
-    border: 1px solid #E2E8F0;
+    background: {LIGHT_HEX_F8FAFC};
+    border: 1px solid {LIGHT_HEX_E2E8F0};
     border-radius: 8px;
     padding: 0 10px;
     min-height: 32px;
-    color: #64748B;
+    color: {LIGHT_HEX_64748B};
     font-size: 12px;
 }
 
 QComboBox#AdapterFilter:focus,
 QComboBox#AdapterFilter:on {
-    border-color: #A5B4FC;
-    background: #FFFFFF;
+    border-color: {LIGHT_HEX_A5B4FC};
+    background: {LIGHT_HEX_FFFFFF};
 }
 
 QComboBox#AdapterFilter::drop-down {
@@ -227,8 +227,8 @@ QComboBox#AdapterFilter::down-arrow {
     image: none;
     width: 8px;
     height: 8px;
-    border-left: 2px solid #94A3B8;
-    border-bottom: 2px solid #94A3B8;
+    border-left: 2px solid {LIGHT_HEX_94A3B8};
+    border-bottom: 2px solid {LIGHT_HEX_94A3B8};
     margin-top: -4px;
 }
 
@@ -259,44 +259,44 @@ QWidget#ProfileRow {
 }
 
 QWidget#ProfileRow:hover {
-    background: #F8FAFC;      /* hover строки профиля — очень лёгкий */
+    background: {LIGHT_HEX_F8FAFC};      /* hover строки профиля — очень лёгкий */
     border-radius: 10px;
 }
 
 QLabel#ProfileName {
     font-size: 14px;
     font-weight: 600;
-    color: #1E293B;           /* имя профиля */
+    color: {LIGHT_HEX_1E293B};           /* имя профиля */
     letter-spacing: -0.1px;
 }
 
 /* Адаптер + режим в одну строку — "Ethernet · STATIC" */
 QLabel#ProfileMetaStatic {
     font-size: 12px;
-    color: #94A3B8;           /* базовый цвет строки адаптера */
+    color: {LIGHT_HEX_94A3B8};           /* базовый цвет строки адаптера */
 }
 
 QLabel#ProfileMetaDhcp {
     font-size: 12px;
-    color: #94A3B8;           /* то же, DHCP */
+    color: {LIGHT_HEX_94A3B8};           /* то же, DHCP */
 }
 
 /* Actions block */
 QFrame#ActionsBlock {
-    background: #FFFFFF;      /* фон блока кнопок — белый, единый с панелью */
-    border-top: 1px solid #F1F5F9;
+    background: {LIGHT_HEX_FFFFFF};      /* фон блока кнопок — белый, единый с панелью */
+    border-top: 1px solid {LIGHT_HEX_F1F5F9};
     border-radius: 0 0 14px 14px; /* скругление нижних углов — совпадает с LeftPanel */
 }
 
 /* ── RIGHT PANEL ──────────────────────────────────────────────── */
 QFrame#RightPanel {
-    background: #F8FAFC;      /* фон правой панели — чуть светлее белого */
+    background: {LIGHT_HEX_F8FAFC};      /* фон правой панели — чуть светлее белого */
     border-radius: 0 14px 14px 0;  /* скругление только правых углов */
 }
 
 QFrame#EditorHeader {
-    background: #FFFFFF;      /* хедер редактора — белый, без внешней рамки */
-    border-bottom: 1px solid #F1F5F9; /* тонкий разделитель снизу */
+    background: {LIGHT_HEX_FFFFFF};      /* хедер редактора — белый, без внешней рамки */
+    border-bottom: 1px solid {LIGHT_HEX_F1F5F9}; /* тонкий разделитель снизу */
     border-top-right-radius: 13px;    /* скругление верхнего правого угла под ContentShell */
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
@@ -318,20 +318,20 @@ QScrollArea#EditorScroll > QWidget > QWidget {
 
 /* Section cards */
 QFrame#SectionCard {
-    background: #FFFFFF;      /* фон секции General / Network / DNS */
-    border: 1px solid #E8EDF5; /* рамка секции */
+    background: {LIGHT_HEX_FFFFFF};      /* фон секции General / Network / DNS */
+    border: 1px solid {LIGHT_HEX_E8EDF5}; /* рамка секции */
     border-radius: 12px;
 }
 
 QLabel#SectionTitle {
     font-size: 11px;
     font-weight: 700;
-    color: #CBD5E1;           /* заголовок секции — GENERAL, NETWORK, DNS */
+    color: {LIGHT_HEX_CBD5E1};           /* заголовок секции — GENERAL, NETWORK, DNS */
     letter-spacing: 1.5px;
 }
 
 QFrame#SectionLine {
-    color: #F1F5F9;           /* горизонтальная линия после заголовка секции */
+    color: {LIGHT_HEX_F1F5F9};           /* горизонтальная линия после заголовка секции */
 }
 
 QWidget#SettingsRow {
@@ -340,75 +340,75 @@ QWidget#SettingsRow {
 
 QLabel#SettingsHint {
     font-size: 11px;
-    color: #94A3B8;
+    color: {LIGHT_HEX_94A3B8};
 }
 
 QLabel#FieldLabel {
     font-size: 14px;
-    color: #64748B;           /* подпись поля: Name, IP address и т.д. */
+    color: {LIGHT_HEX_64748B};           /* подпись поля: Name, IP address и т.д. */
     font-weight: 500;
 }
 
 /* ── INPUTS ───────────────────────────────────────────────────── */
 QLineEdit, QComboBox {
-    background: #F8FAFC;      /* фон полей ввода */
-    border: 1px solid #E2E8F0; /* рамка полей */
+    background: {LIGHT_HEX_F8FAFC};      /* фон полей ввода */
+    border: 1px solid {LIGHT_HEX_E2E8F0}; /* рамка полей */
     border-radius: 8px;
     padding: 0 12px;
     min-height: 38px;
-    color: #1E293B;
+    color: {LIGHT_HEX_1E293B};
     font-size: 14px;
     font-family: "Consolas", "Courier New", monospace; /* monospace для IP-адресов */
 }
 
 QLineEdit:focus, QComboBox:focus {
-    border-color: #A5B4FC;   /* рамка при фокусе — indigo-300 */
-    background: #FFFFFF;
+    border-color: {LIGHT_HEX_A5B4FC};   /* рамка при фокусе — indigo-300 */
+    background: {LIGHT_HEX_FFFFFF};
 }
 
 QComboBox:on {
-    border-color: #A5B4FC;
-    background: #FFFFFF;
+    border-color: {LIGHT_HEX_A5B4FC};
+    background: {LIGHT_HEX_FFFFFF};
 }
 
 QLineEdit:disabled, QComboBox:disabled {
-    background: #F1F5F9;      /* заблокированное поле */
-    color: #CBD5E1;
-    border-color: #E2E8F0;
+    background: {LIGHT_HEX_F1F5F9};      /* заблокированное поле */
+    color: {LIGHT_HEX_CBD5E1};
+    border-color: {LIGHT_HEX_E2E8F0};
 }
 
 QComboBox::drop-down {
     width: 26px;
-    border-left: 1px solid #E2E8F0;
+    border-left: 1px solid {LIGHT_HEX_E2E8F0};
     background: transparent;
     border-radius: 0 7px 7px 0;
 }
 
 QComboBox::down-arrow {
     image: none;
-    border-left: 2px solid #94A3B8;  /* стрелка ComboBox */
-    border-bottom: 2px solid #94A3B8;
+    border-left: 2px solid {LIGHT_HEX_94A3B8};  /* стрелка ComboBox */
+    border-bottom: 2px solid {LIGHT_HEX_94A3B8};
     width: 6px;
     height: 6px;
     margin-top: -2px;
 }
 
 QComboBox QAbstractItemView {
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
+    background: {LIGHT_HEX_FFFFFF};
+    border: 1px solid {LIGHT_HEX_E2E8F0};
     border-radius: 8px;
-    selection-background-color: #EEF2FF; /* выбранный элемент */
-    selection-color: #1E293B;
+    selection-background-color: {LIGHT_HEX_EEF2FF}; /* выбранный элемент */
+    selection-color: {LIGHT_HEX_1E293B};
     padding: 4px;
-    color: #1E293B;
+    color: {LIGHT_HEX_1E293B};
 }
 
 /* ── BUTTONS ──────────────────────────────────────────────────── */
 QPushButton {
-    background: #F8FAFC;
-    border: 1px solid #E2E8F0;
+    background: {LIGHT_HEX_F8FAFC};
+    border: 1px solid {LIGHT_HEX_E2E8F0};
     border-radius: 7px;
-    color: #475569;
+    color: {LIGHT_HEX_475569};
     font-size: 12px;
     font-weight: 600;
     padding: 6px 12px;
@@ -441,61 +441,67 @@ QPushButton#BtnApply {
 }
 
 QPushButton:hover {
-    background: #F0F4FF;
-    border-color: #C7D2FE;
-    color: #1E293B;
+    background: {LIGHT_HEX_F0F4FF};
+    border-color: {LIGHT_HEX_C7D2FE};
+    color: {LIGHT_HEX_1E293B};
 }
 
 QPushButton:pressed {
-    background: #E0E7FF;
+    background: {LIGHT_HEX_E0E7FF};
 }
 
 QPushButton[role="action"] {
-    background: #F8FAFC;      /* action кнопки — Save, Копировать, Импорт, Экспорт */
-    border-color: #E2E8F0;
-    color: #475569;
+    background: {LIGHT_HEX_F8FAFC};      /* action кнопки — Save, Копировать, Импорт, Экспорт */
+    border-color: {LIGHT_HEX_E2E8F0};
+    color: {LIGHT_HEX_475569};
     font-size: 12px;
 }
 
 QPushButton[role="action"]:hover {
-    background: #F0F4FF;
-    border-color: #C7D2FE;
-    color: #1E293B;
+    background: {LIGHT_HEX_F0F4FF};
+    border-color: {LIGHT_HEX_C7D2FE};
+    color: {LIGHT_HEX_1E293B};
 }
 
 QPushButton[role="primary"] {
-    background: #E8EAF6;
-    border: 1px solid #C5CAE9;
-    color: #3730A3;
+    background: {LIGHT_HEX_E8EAF6};
+    border: 1px solid {LIGHT_HEX_C5CAE9};
+    color: {LIGHT_HEX_3730A3};
     font-weight: 700;
     font-size: 12px;
 }
 
 QPushButton[role="primary"]:hover {
-    background: #D1D5F0;
-    border-color: #9FA8DA;
+    background: {LIGHT_HEX_D1D5F0};
+    border-color: {LIGHT_HEX_9FA8DA};
 }
 
 QPushButton[role="primary"]:pressed {
-    background: #C5CAE9;
+    background: {LIGHT_HEX_C5CAE9};
 }
 
 QPushButton[role="delete"] {
-    background: #FEF2F2;      /* Delete — слабо-красный фон в покое */
-    border: 1px solid #FECACA;
-    color: #DC2626;
+    background: {LIGHT_HEX_FEF2F2};      /* Delete — слабо-красный фон в покое */
+    border: 1px solid {LIGHT_HEX_FECACA};
+    color: {LIGHT_HEX_DC2626};
     font-weight: 600;
     font-size: 12px;
 }
 
 QPushButton[role="delete"]:hover {
-    background: #FEE2E2;
-    border-color: #FCA5A5;
-    color: #B91C1C;
+    background: {LIGHT_HEX_FEE2E2};
+    border-color: {LIGHT_HEX_FCA5A5};
+    color: {LIGHT_HEX_B91C1C};
 }
 
 QPushButton[role="delete"]:pressed {
-    background: #FECACA;
+    background: {LIGHT_HEX_FECACA};
+}
+
+QPushButton:disabled {
+    background: {LIGHT_HEX_F1F5F9};
+    border-color: {LIGHT_HEX_E2E8F0};
+    color: {LIGHT_HEX_94A3B8};
 }
 
 /* ── SCROLLBARS ───────────────────────────────────────────────── */
@@ -506,13 +512,13 @@ QScrollBar:vertical {
 }
 
 QScrollBar::handle:vertical {
-    background: rgba(15, 23, 42, 0.12); /* ползунок */
+    background: {LIGHT_RGBA_15_23_42_0_12}; /* ползунок */
     border-radius: 3px;
     min-height: 20px;
 }
 
 QScrollBar::handle:vertical:hover {
-    background: rgba(15, 23, 42, 0.22);
+    background: {LIGHT_RGBA_15_23_42_0_22};
 }
 
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
@@ -528,28 +534,28 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
 QLabel#Placeholder {
     font-size: 18px;
     font-weight: 300;
-    color: #CBD5E1;           /* текст-заглушка на пустых страницах */
+    color: {LIGHT_HEX_CBD5E1};           /* текст-заглушка на пустых страницах */
 }
 
 /* ── DIALOGS (QMessageBox, QDialog, QFileDialog) ──────────────── */
 QDialog {
-    background: #FFFFFF;
-    color: #1E293B;
+    background: {LIGHT_HEX_FFFFFF};
+    color: {LIGHT_HEX_1E293B};
 }
 
 QDialog QLabel {
-    color: #1E293B;
+    color: {LIGHT_HEX_1E293B};
     font-size: 13px;
     background: transparent;
 }
 
 QMessageBox {
-    background: #FFFFFF;
-    color: #1E293B;
+    background: {LIGHT_HEX_FFFFFF};
+    color: {LIGHT_HEX_1E293B};
 }
 
 QMessageBox QLabel {
-    color: #1E293B;
+    color: {LIGHT_HEX_1E293B};
     font-size: 13px;
     background: transparent;
 }
@@ -575,34 +581,34 @@ QTableWidget#WifiProfileTable::item {
     padding: 4px 8px;
     border: none;
     background: transparent;
-    color: #334155;
+    color: {LIGHT_HEX_334155};
 }
 
 QTableWidget#WifiNetworkTable::item:selected,
 QTableWidget#WifiProfileTable::item:selected {
-    background: #EEF2FF;
-    color: #1E293B;
+    background: {LIGHT_HEX_EEF2FF};
+    color: {LIGHT_HEX_1E293B};
     border-radius: 6px;
 }
 
 QHeaderView::section {
     background: transparent;
-    color: #94A3B8;
+    color: {LIGHT_HEX_94A3B8};
     font-size: 11px;
     font-weight: 600;
     padding: 4px 8px;
     border: none;
-    border-bottom: 1px solid #E2E8F0;
+    border-bottom: 1px solid {LIGHT_HEX_E2E8F0};
 }
 
 QFrame#WifiStatusBar {
-    border-bottom: 1px solid #E2E8F0;
+    border-bottom: 1px solid {LIGHT_HEX_E2E8F0};
     background: transparent;
 }
 
 QLabel#WifiStatusLabel {
     font-size: 13px;
-    color: #475569;
+    color: {LIGHT_HEX_475569};
 }
 
 QLabel#WifiFeedback {
@@ -612,7 +618,7 @@ QLabel#WifiFeedback {
 
 QCheckBox {
     font-size: 13px;
-    color: #475569;
+    color: {LIGHT_HEX_475569};
     spacing: 6px;
 }
 
@@ -620,17 +626,17 @@ QCheckBox::indicator {
     width: 16px;
     height: 16px;
     border-radius: 4px;
-    border: 1px solid #CBD5E1;
-    background: #F8FAFC;
+    border: 1px solid {LIGHT_HEX_CBD5E1};
+    background: {LIGHT_HEX_F8FAFC};
 }
 
 QCheckBox::indicator:checked {
-    background: #6366F1;
-    border-color: #6366F1;
+    background: {LIGHT_HEX_6366F1};
+    border-color: {LIGHT_HEX_6366F1};
 }
 
 QFrame#WifiTopPanel {
-    border-bottom: 1px solid #E2E8F0;
+    border-bottom: 1px solid {LIGHT_HEX_E2E8F0};
 }
 
 QFrame#WifiBottomPanel {
@@ -649,7 +655,7 @@ QTabWidget#WifiTabs::pane {
 
 QTabWidget#WifiTabs > QTabBar::tab {
     background: transparent;
-    color: #94A3B8;
+    color: {LIGHT_HEX_94A3B8};
     font-size: 13px;
     font-weight: 500;
     padding: 10px 20px;
@@ -659,17 +665,17 @@ QTabWidget#WifiTabs > QTabBar::tab {
 }
 
 QTabWidget#WifiTabs > QTabBar::tab:selected {
-    color: #6366F1;
-    border-bottom: 2px solid #6366F1;
+    color: {LIGHT_HEX_6366F1};
+    border-bottom: 2px solid {LIGHT_HEX_6366F1};
 }
 
 QTabWidget#WifiTabs > QTabBar::tab:hover:!selected {
-    color: #475569;
-    border-bottom: 2px solid #CBD5E1;
+    color: {LIGHT_HEX_475569};
+    border-bottom: 2px solid {LIGHT_HEX_CBD5E1};
 }
 
 QFrame#WifiProfileToolbar {
-    border-bottom: 1px solid #E2E8F0;
+    border-bottom: 1px solid {LIGHT_HEX_E2E8F0};
     background: transparent;
 }
 
@@ -680,14 +686,14 @@ QFrame#WifiProfileToolbar QPushButton {
 
 QLabel#WifiStatusDetails {
     font-size: 11px;
-    color: #64748B;
+    color: {LIGHT_HEX_64748B};
     padding-left: 22px;
     background: transparent;
 }
 
 QMenu {
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
+    background: {LIGHT_HEX_FFFFFF};
+    border: 1px solid {LIGHT_HEX_E2E8F0};
     border-radius: 8px;
     padding: 4px;
 }
@@ -695,14 +701,14 @@ QMenu::item {
     padding: 6px 16px;
     border-radius: 4px;
     font-size: 13px;
-    color: #1E293B;
+    color: {LIGHT_HEX_1E293B};
 }
-QMenu::item:selected { background: #EEF2FF; color: #4F46E5; }
-QMenu::separator { height: 1px; background: #E2E8F0; margin: 3px 8px; }
+QMenu::item:selected { background: {LIGHT_HEX_EEF2FF}; color: {LIGHT_HEX_4F46E5}; }
+QMenu::separator { height: 1px; background: {LIGHT_HEX_E2E8F0}; margin: 3px 8px; }
 
 /* ── TOOLS PAGE ───────────────────────────────────────────────── */
 QFrame#ToolsSidebar {
-    border-right: 1px solid #E2E8F0;
+    border-right: 1px solid {LIGHT_HEX_E2E8F0};
     background: transparent;
 }
 
@@ -712,10 +718,10 @@ QFrame#ToolNavItem {
     border-radius: 0;
 }
 QFrame#ToolNavItem:hover {
-    background: #F1F5F9;
+    background: {LIGHT_HEX_F1F5F9};
 }
 QFrame#ToolNavItem[active="true"] {
-    background: #EEF2FF;
+    background: {LIGHT_HEX_EEF2FF};
 }
 
 QFrame#ToolNavBar {
@@ -723,38 +729,38 @@ QFrame#ToolNavBar {
     border-radius: 0 2px 2px 0;
 }
 QFrame#ToolNavBar[active="true"] {
-    background: #4F46E5;
+    background: {LIGHT_HEX_4F46E5};
 }
 
 QLabel#ToolNavIcon {
-    color: #94A3B8;
+    color: {LIGHT_HEX_94A3B8};
     font-size: 13px;
 }
 QLabel#ToolNavIcon[active="true"] {
-    color: #4F46E5;
+    color: {LIGHT_HEX_4F46E5};
 }
 
 QLabel#ToolNavText {
-    color: #475569;
+    color: {LIGHT_HEX_475569};
     font-size: 12px;
     padding-right: 4px;
 }
 QLabel#ToolNavText[active="true"] {
-    color: #4F46E5;
+    color: {LIGHT_HEX_4F46E5};
     font-weight: 600;
 }
 
 QLabel#ToolGroupLabel {
     font-size: 13px;
     font-weight: 700;
-    color: #94A3B8;
+    color: {LIGHT_HEX_94A3B8};
     padding-left: 14px;
     padding-top: 2px;
     padding-bottom: 2px;
 }
 
 QFrame#ToolDivider {
-    background: #E2E8F0;
+    background: {LIGHT_HEX_E2E8F0};
     max-height: 1px;
     margin: 0 10px;
 }
@@ -762,48 +768,48 @@ QFrame#ToolDivider {
 QLabel#ToolPanelTitle {
     font-size: 15px;
     font-weight: 500;
-    color: #1E293B;
+    color: {LIGHT_HEX_1E293B};
 }
 
 /* Subnet Calculator */
 QLabel#SubnetLabel {
     font-size: 12px;
-    color: #64748B;
+    color: {LIGHT_HEX_64748B};
     min-width: 140px;
 }
 QLabel#SubnetValue {
     font-size: 12px;
     font-weight: 600;
-    color: #1E293B;
+    color: {LIGHT_HEX_1E293B};
 }
 
 /* Speed Test cards */
 QFrame#SpeedCard {
-    background: #F1F5F9;
-    border: 1px solid #E2E8F0;
+    background: {LIGHT_HEX_F1F5F9};
+    border: 1px solid {LIGHT_HEX_E2E8F0};
     border-radius: 10px;
 }
 QLabel#SpeedCardTitle {
     font-size: 11px;
-    color: #64748B;
+    color: {LIGHT_HEX_64748B};
 }
 QLabel#SpeedCardValue {
     font-size: 24px;
     font-weight: 700;
-    color: #1E293B;
+    color: {LIGHT_HEX_1E293B};
 }
 QLabel#SpeedCardUnit {
     font-size: 11px;
-    color: #94A3B8;
+    color: {LIGHT_HEX_94A3B8};
 }
 
 QTextEdit#ToolOutput {
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
+    background: {LIGHT_HEX_FFFFFF};
+    border: 1px solid {LIGHT_HEX_E2E8F0};
     border-radius: 8px;
-    color: #1E293B;
-    selection-background-color: #6366F1;
-    selection-color: #FFFFFF;
+    color: {LIGHT_HEX_1E293B};
+    selection-background-color: {LIGHT_HEX_6366F1};
+    selection-color: {LIGHT_HEX_FFFFFF};
     padding: 6px;
     margin-top: 10px;
 }
@@ -811,19 +817,19 @@ QTextEdit#ToolOutput {
 /* Netstat / Routes / DNS Cache shared tree */
 QTreeWidget#NetstatTable,
 QTreeWidget#ToolTree {
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
+    background: {LIGHT_HEX_FFFFFF};
+    border: 1px solid {LIGHT_HEX_E2E8F0};
     border-radius: 8px;
     outline: none;
 }
 QTreeWidget#NetstatTable::item,
 QTreeWidget#ToolTree::item {
     padding: 3px 6px;
-    color: #1E293B;
+    color: {LIGHT_HEX_1E293B};
 }
 QTreeWidget#NetstatTable::item:hover,
 QTreeWidget#ToolTree::item:hover {
-    background: #F1F5F9;
+    background: {LIGHT_HEX_F1F5F9};
 }
 QTreeWidget#NetstatTable::item:selected,
 QTreeWidget#NetstatTable::item:selected:active,
@@ -831,79 +837,79 @@ QTreeWidget#NetstatTable::item:selected:!active,
 QTreeWidget#ToolTree::item:selected,
 QTreeWidget#ToolTree::item:selected:active,
 QTreeWidget#ToolTree::item:selected:!active {
-    background: #6366F1;
-    color: #FFFFFF;
+    background: {LIGHT_HEX_6366F1};
+    color: {LIGHT_HEX_FFFFFF};
 }
 QTreeWidget#NetstatTable QHeaderView::section,
 QTreeWidget#ToolTree QHeaderView::section {
-    background: #EEF2FF;
-    color: #4F46E5;
+    background: {LIGHT_HEX_EEF2FF};
+    color: {LIGHT_HEX_4F46E5};
     font-size: 11px;
     font-weight: 700;
     padding: 4px 6px;
     border: none;
-    border-bottom: 1px solid #C7D2FE;
+    border-bottom: 1px solid {LIGHT_HEX_C7D2FE};
 }
 
 QTableWidget#NetstatTable {
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
+    background: {LIGHT_HEX_FFFFFF};
+    border: 1px solid {LIGHT_HEX_E2E8F0};
     border-radius: 8px;
     outline: none;
-    gridline-color: #E2E8F0;
+    gridline-color: {LIGHT_HEX_E2E8F0};
 }
 QTableWidget#NetstatTable::item {
     padding: 3px 6px;
-    color: #1E293B;
+    color: {LIGHT_HEX_1E293B};
     border: none;
 }
 QTableWidget#NetstatTable::item:hover {
-    background: #F1F5F9;
+    background: {LIGHT_HEX_F1F5F9};
 }
 QTableWidget#NetstatTable::item:selected,
 QTableWidget#NetstatTable::item:selected:active,
 QTableWidget#NetstatTable::item:selected:!active {
-    background: #6366F1;
-    color: #FFFFFF;
+    background: {LIGHT_HEX_6366F1};
+    color: {LIGHT_HEX_FFFFFF};
 }
 QTableWidget#NetstatTable QHeaderView::section {
-    background: #EEF2FF;
-    color: #4F46E5;
+    background: {LIGHT_HEX_EEF2FF};
+    color: {LIGHT_HEX_4F46E5};
     font-size: 11px;
     font-weight: 700;
     padding: 4px 6px;
     border: none;
-    border-bottom: 1px solid #C7D2FE;
-    border-right: 1px solid #C7D2FE;
+    border-bottom: 1px solid {LIGHT_HEX_C7D2FE};
+    border-right: 1px solid {LIGHT_HEX_C7D2FE};
 }
 QTableWidget#NetstatTable QHeaderView::section:last {
     border-right: none;
 }
 
 QTreeWidget#IpconfigTree {
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
+    background: {LIGHT_HEX_FFFFFF};
+    border: 1px solid {LIGHT_HEX_E2E8F0};
     border-radius: 8px;
-    alternate-background-color: #F1F5F9;
+    alternate-background-color: {LIGHT_HEX_F1F5F9};
     margin-top: 10px;
     outline: none;
 }
 QTreeWidget#IpconfigTree::item {
     padding: 3px 6px;
     border: none;
-    color: #1E293B;
+    color: {LIGHT_HEX_1E293B};
 }
 QTreeWidget#IpconfigTree::item:hover {
     background: transparent;
 }
 QTreeWidget#IpconfigTree::item:hover:!selected {
     background: transparent;
-    color: #1E293B;
+    color: {LIGHT_HEX_1E293B};
 }
 QTreeWidget#IpconfigTree::item:selected,
 QTreeWidget#IpconfigTree::item:selected:hover {
-    background: rgba(99, 102, 241, 0.12);
-    color: #4F46E5;
+    background: {LIGHT_RGBA_99_102_241_0_12};
+    color: {LIGHT_HEX_4F46E5};
 }
 QTreeWidget#IpconfigTree::branch {
     background: transparent;
@@ -927,39 +933,39 @@ QTreeWidget#IpconfigTree::branch:has-children:has-siblings:open {
     background: transparent;
 }
 QTreeWidget#IpconfigTree QHeaderView::section {
-    background: #EEF2FF;
+    background: {LIGHT_HEX_EEF2FF};
     border: none;
-    border-bottom: 1px solid #E2E8F0;
-    border-right: 1px solid #E2E8F0;
+    border-bottom: 1px solid {LIGHT_HEX_E2E8F0};
+    border-right: 1px solid {LIGHT_HEX_E2E8F0};
     padding: 4px 8px;
     font-weight: 600;
-    color: #475569;
+    color: {LIGHT_HEX_475569};
 }
 
 QLabel#ToolStatus {
     font-size: 12px;
-    color: #64748B;
+    color: {LIGHT_HEX_64748B};
 }
 
 QLineEdit#ToolInput {
-    background: #F8FAFC;
-    border: 1px solid #E2E8F0;
+    background: {LIGHT_HEX_F8FAFC};
+    border: 1px solid {LIGHT_HEX_E2E8F0};
     border-radius: 6px;
-    color: #1E293B;
+    color: {LIGHT_HEX_1E293B};
     padding: 0 8px;
     font-size: 13px;
 }
 
 QLineEdit#ToolInput:focus {
-    border-color: #6366F1;
-    background: #FAFAFE;
+    border-color: {LIGHT_HEX_6366F1};
+    background: {LIGHT_HEX_FAFAFE};
 }
 
 QSpinBox#ToolSpinBox {
-    background: #F8FAFC;
-    border: 1px solid #E2E8F0;
+    background: {LIGHT_HEX_F8FAFC};
+    border: 1px solid {LIGHT_HEX_E2E8F0};
     border-radius: 6px;
-    color: #1E293B;
+    color: {LIGHT_HEX_1E293B};
     padding: 0 4px;
     font-size: 13px;
 }
@@ -975,25 +981,25 @@ QPushButton#ToolBtn:pressed {
 }
 
 QPushButton#ToolBtn[role="primary"]:pressed {
-    background: #4338CA;
-    border-color: #3730A3;
+    background: {LIGHT_HEX_4338CA};
+    border-color: {LIGHT_HEX_3730A3};
 }
 
 QPushButton#ToolBtn[role="action"]:pressed {
-    background: #CBD5E1;
+    background: {LIGHT_HEX_CBD5E1};
 }
 
 QPushButton#ToolNavBtn:pressed {
     padding-top: 2px;
-    background: #DDE2F0;
+    background: {LIGHT_HEX_DDE2F0};
 }
 
 /* DNS type combo */
 QComboBox#ToolCombo {
-    background: #F8FAFC;
-    border: 1px solid #E2E8F0;
+    background: {LIGHT_HEX_F8FAFC};
+    border: 1px solid {LIGHT_HEX_E2E8F0};
     border-radius: 6px;
-    color: #1E293B;
+    color: {LIGHT_HEX_1E293B};
     padding: 0 8px;
     font-size: 13px;
     min-height: 28px;
@@ -1006,19 +1012,19 @@ QComboBox#ToolCombo::drop-down {
 }
 
 QComboBox#ToolCombo:focus {
-    border-color: #6366F1;
+    border-color: {LIGHT_HEX_6366F1};
 }
 
 QSpinBox#ToolSpinBox:disabled {
-    color: #94A3B8;
-    background: #F1F5F9;
+    color: {LIGHT_HEX_94A3B8};
+    background: {LIGHT_HEX_F1F5F9};
 }
 
 QSpinBox#SettingsSpinBox {
-    background: #F8FAFC;
-    border: 1px solid #E2E8F0;
+    background: {LIGHT_HEX_F8FAFC};
+    border: 1px solid {LIGHT_HEX_E2E8F0};
     border-radius: 7px;
-    color: #1E293B;
+    color: {LIGHT_HEX_1E293B};
     font-size: 13px;
     padding: 0 8px;
     min-height: 0;
@@ -1029,4 +1035,224 @@ QSpinBox#SettingsSpinBox::up-button,
 QSpinBox#SettingsSpinBox::down-button {
     width: 0;
     border: none;
+}
+/* Subnet Calculator / Калькулятор подсетей */
+QFrame#SubnetInputCard,
+QFrame#SubnetResultCard {
+    background: {LIGHT_HEX_FFFFFF};
+    border: 1px solid {LIGHT_HEX_E2E8F0};
+    border-radius: 10px;
+}
+QLabel#SubnetInputLabel {
+    color: {LIGHT_HEX_475569};
+    font-size: 12px;
+    font-weight: 600;
+}
+QLabel#SubnetResultsTitle {
+    color: {LIGHT_HEX_1E293B};
+    font-size: 13px;
+    font-weight: 700;
+}
+QLabel#SubnetCardTitle {
+    color: {LIGHT_HEX_4F46E5};
+    font-size: 11px;
+    font-weight: 700;
+    padding-bottom: 5px;
+    border-bottom: 1px solid {LIGHT_HEX_E2E8F0};
+}
+QFrame#SubnetResultCard QLabel#SubnetLabel {
+    min-width: 150px;
+}
+/* TCP Port Scanner / Сканер TCP-портов */
+QFrame#PortScanInputCard,
+QFrame#PortScanResultCard {
+    background: {LIGHT_HEX_FFFFFF};
+    border: 1px solid {LIGHT_HEX_E2E8F0};
+    border-radius: 10px;
+}
+QLabel#PortScanInputLabel {
+    background: {LIGHT_HEX_FFFFFF};
+    color: {LIGHT_HEX_475569};
+    font-size: 12px;
+    font-weight: 600;
+}
+QLabel#PortScanProgressText {
+    color: {LIGHT_HEX_64748B};
+    font-size: 12px;
+}
+QProgressBar#PortScanProgress {
+    background: {LIGHT_HEX_E2E8F0};
+    border: none;
+    border-radius: 3px;
+}
+QProgressBar#PortScanProgress::chunk {
+    background: {LIGHT_HEX_6366F1};
+    border-radius: 3px;
+}
+QTableWidget#PortScanTable {
+    background: {LIGHT_HEX_FFFFFF};
+    alternate-background-color: {LIGHT_HEX_F8FAFC};
+    color: {LIGHT_HEX_1E293B};
+    border: none;
+    border-radius: 10px;
+}
+QTableWidget#PortScanTable::item {
+    padding: 7px 10px;
+    border-bottom: 1px solid {LIGHT_HEX_E2E8F0};
+}
+QTableWidget#PortScanTable::item:selected {
+    background: {LIGHT_HEX_E0E7FF};
+    color: {LIGHT_HEX_1E293B};
+}
+QTableWidget#PortScanTable QHeaderView::section {
+    background: {LIGHT_HEX_EEF2FF};
+    color: {LIGHT_HEX_4F46E5};
+    border: none;
+    border-bottom: 1px solid {LIGHT_HEX_C7D2FE};
+    padding: 8px 10px;
+    font-weight: 700;
+}
+/* Windows DNS Cache / Кэш DNS Windows */
+QFrame#DnsCacheToolbarCard,
+QFrame#DnsCacheResultCard {
+    background: {LIGHT_HEX_FFFFFF};
+    border: 1px solid {LIGHT_HEX_E2E8F0};
+    border-radius: 10px;
+}
+QLabel#DnsCacheToolbarLabel {
+    background: {LIGHT_HEX_FFFFFF};
+    color: {LIGHT_HEX_475569};
+    font-size: 12px;
+    font-weight: 600;
+}
+QWidget#DnsCacheControlsBar {
+    background: transparent;
+    border: none;
+}
+QLabel#DnsCacheSummaryPill {
+    background: {LIGHT_HEX_EEF2FF};
+    color: {LIGHT_HEX_4F46E5};
+    border: 1px solid {LIGHT_HEX_C7D2FE};
+    border-radius: 10px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 600;
+}
+QTreeWidget#DnsCacheTable {
+    background: {LIGHT_HEX_FFFFFF};
+    alternate-background-color: {LIGHT_HEX_F8FAFC};
+    color: {LIGHT_HEX_1E293B};
+    border: none;
+    border-radius: 10px;
+}
+QTreeWidget#DnsCacheTable::item {
+    padding: 7px 10px;
+    border-bottom: 1px solid {LIGHT_HEX_E2E8F0};
+}
+QTreeWidget#DnsCacheTable QHeaderView::section {
+    background: {LIGHT_HEX_EEF2FF};
+    color: {LIGHT_HEX_4F46E5};
+    border: none;
+    border-bottom: 1px solid {LIGHT_HEX_C7D2FE};
+    padding: 8px 10px;
+    font-weight: 700;
+}
+
+
+/* IP Batch Check structured workspace */
+QFrame#IpBatchSourceCard {
+    background: #ffffff;
+    border: 1px solid #d8e1ee;
+    border-radius: 12px;
+}
+QLabel#IpBatchFieldLabel {
+    color: #526987;
+    font-size: 12px;
+    font-weight: 600;
+}
+QLabel#IpBatchFileLabel {
+    color: #637a99;
+    padding: 0 10px;
+}
+QLabel#IpBatchSummaryPill {
+    color: #425a78;
+    background: #e8eef9;
+    border-radius: 11px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+}
+QFrame#IpBatchProgressRow {
+    background: #f7f9fc;
+    border: 1px solid #d8e1ee;
+    border-radius: 9px;
+}
+QFrame#IpBatchProgressRow QLabel#ToolStatus {
+    color: #637a99;
+    background: transparent;
+    border: none;
+    font-size: 11px;
+}
+QProgressBar#IpBatchProgress {
+    background: #e1e8f2;
+    border: none;
+    border-radius: 3px;
+    color: transparent;
+}
+QProgressBar#IpBatchProgress::chunk {
+    background: #6674f7;
+    border-radius: 3px;
+}
+QTableWidget#IpBatchTable {
+    background: #ffffff;
+    alternate-background-color: #f5f7fb;
+    color: #17243a;
+    border: 1px solid #d8e1ee;
+    border-radius: 10px;
+    gridline-color: #e7ecf3;
+}
+QTableWidget#IpBatchTable::item {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+QTableWidget#IpBatchTable QHeaderView::section {
+    background: #edf1ff;
+    color: #4338ca;
+    border: none;
+    border-bottom: 1px solid #cdd7ef;
+    padding: 8px 12px;
+    font-weight: 700;
+}
+
+
+/* IP Batch numeric controls */
+QSpinBox#ToolSpin {
+    background: #f7f9fc;
+    color: #17243a;
+    border: 1px solid #d8e1ee;
+    border-radius: 8px;
+    padding: 6px 24px 6px 10px;
+    selection-background-color: #6674f7;
+}
+QSpinBox#ToolSpin::up-button,
+QSpinBox#ToolSpin::down-button {
+    width: 18px;
+    background: #edf1f7;
+    border: none;
+}
+
+
+/* Signal Monitor structured controls */
+QFrame#SignalControlsCard {
+    background: #ffffff;
+    border: 1px solid #d8e1ee;
+    border-radius: 11px;
+}
+QLabel#SignalConnectionBadge {
+    color: #526987;
+    background: #e8eef9;
+    border-radius: 12px;
+    padding: 5px 11px;
+    font-size: 11px;
+    font-weight: 600;
 }

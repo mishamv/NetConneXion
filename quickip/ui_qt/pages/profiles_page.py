@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 from quickip.ui_qt.adapters.profiles_facade import ProfilesFacade, ProfileListItem
 from quickip.ui_qt.widgets.elide_label import ElideLabel
 from quickip.ui_qt.widgets.toggle_switch import ToggleSwitch
+from quickip.ui_qt.palette import color, semantic_color
 
 
 class ProfileRowWidget(QWidget):
@@ -67,36 +68,44 @@ class ProfileRowWidget(QWidget):
         # Фон при выделении
         if self._selected:
             if self._dark_mode:
+                # Фон выделенной строки: общий ACCENT с ~11% прозрачностью.
                 painter.setPen(Qt.PenStyle.NoPen)
-                painter.setBrush(QColor(108, 123, 255, 28))   # #6c7bff ~11%
+                selected_bg = QColor(semantic_color("ACCENT"))
+                selected_bg.setAlpha(28)
+                painter.setBrush(selected_bg)
                 painter.drawRoundedRect(r, 9, 9)
-                painter.setPen(QPen(QColor(108, 123, 255, 85), 1))
+                # Рамка выделенной строки: общий ACCENT, alpha=85/255 (~33%).
+                selected_border = QColor(semantic_color("ACCENT"))
+                selected_border.setAlpha(85)
+                painter.setPen(QPen(selected_border, 1))
                 painter.setBrush(Qt.BrushStyle.NoBrush)
                 painter.drawRoundedRect(r, 9, 9)
             else:
                 painter.setPen(Qt.PenStyle.NoPen)
-                painter.setBrush(QColor("#F0F4FF"))
+                painter.setBrush(QColor(semantic_color("LIGHT_SELECTION_BG")))
                 painter.drawRoundedRect(r, 9, 9)
-                painter.setPen(QPen(QColor("#C7D2FE"), 1.5))
+                painter.setPen(QPen(QColor(semantic_color("LIGHT_SELECTION_BORDER")), 1.5))
                 painter.setBrush(Qt.BrushStyle.NoBrush)
                 painter.drawRoundedRect(r, 9, 9)
 
         # Плашка иконки — фиксированные координаты (не зависят от height() при первой отрисовке)
         margin = 10   # совпадает с contentsMargins top/bottom
         ix, iy, iw, ih = 10, margin, 34, 34
-        bg = (
-            QColor(108, 123, 255, 40 if self._selected else 28)  # #6c7bff
-            if self._dark_mode
-            else QColor(238, 242, 255)
+        # Иконка-плашка: общий ACCENT с alpha 40 (выделено) или 28 (обычно).
+        bg = QColor(
+            semantic_color("ACCENT" if self._dark_mode else "LIGHT_ICON_BG")
         )
+        if self._dark_mode:
+            bg.setAlpha(40 if self._selected else 28)
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(bg)
         painter.drawRoundedRect(ix, iy, iw, ih, 9, 9)
 
-        ic = (
-            QColor(165, 180, 252, 210 if self._selected else 160)
-            if self._dark_mode
-            else QColor(79, 70, 229, 210 if self._selected else 170)
+        icon_theme = "dark" if self._dark_mode else "light"
+        icon_prefix = "DARK" if self._dark_mode else "LIGHT"
+        ic = QColor(color(icon_theme, f"{icon_prefix}_CUSTOM_PROFILE_ICON"))
+        ic.setAlpha(
+            210 if self._selected else (160 if self._dark_mode else 170)
         )
         cx, cy = ix + iw // 2, iy + ih // 2
         if self._is_wifi:
@@ -146,6 +155,8 @@ class ProfilesPage(QWidget):
 
     def __init__(self, facade: ProfilesFacade) -> None:
         super().__init__()
+        # Stable page selector for theme/QSS rules.
+        self.setObjectName("ProfilesPage")
         self.facade = facade
         self._dark_mode = True
         self._all_items: List[ProfileListItem] = []
@@ -154,9 +165,22 @@ class ProfilesPage(QWidget):
         self._form_dirty = False
         self._initialized = False  # True только после первой загрузки формы
 
-        root = QHBoxLayout(self)
+        root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
+
+        # ── Page header: title (left) + action buttons (right) ────────
+        self._page_hdr = QFrame()
+        self._page_hdr.setObjectName("PageHeader")
+        self._page_hdr.setFixedHeight(52)
+        root.addWidget(self._page_hdr)
+
+        # ── Body: left panel + right panel ────────────────────────────
+        _body = QWidget()
+        _body.setObjectName("PageBody")
+        _body_lay = QHBoxLayout(_body)
+        _body_lay.setContentsMargins(0, 0, 0, 0)
+        _body_lay.setSpacing(0)
 
         self._left = QFrame()
         self._left.setObjectName("LeftPanel")
@@ -167,15 +191,43 @@ class ProfilesPage(QWidget):
         self._right.setObjectName("RightPanel")
         self._right.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
-        root.addWidget(self._left)
-        root.addWidget(self._right, 1)
+        _body_lay.addWidget(self._left)
+        _body_lay.addWidget(self._right, 1)
+        root.addWidget(_body, 1)
 
+        self._build_page_header()
         self._build_left()
         self._build_right()
 
         self.facade.profiles_changed.connect(self._render_profiles)
         self.facade.form_loaded.connect(self._load_form)
         self.facade.adapter_values_changed.connect(self._set_adapter_values)
+
+    # ── Page header ───────────────────────────────────────────────────
+
+    def _build_page_header(self) -> None:
+        """Full-width header: page title (left) + action buttons (right)."""
+        lay = QHBoxLayout(self._page_hdr)
+        lay.setContentsMargins(24, 0, 16, 0)
+        lay.setSpacing(10)
+        lay.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+
+        self._page_title_lbl = QLabel(self._tr("page_profiles"))
+        self._page_title_lbl.setObjectName("PageTitle")
+        lay.addWidget(self._page_title_lbl)
+        lay.addStretch(1)
+
+        self.btn_save = QPushButton("✓  Сохранить")
+        self.btn_save.setProperty("role", "action")
+        self.btn_save.setObjectName("BtnSave")
+        self.btn_save.setFixedSize(100, 28)
+        lay.addWidget(self.btn_save)
+
+        self.btn_apply = QPushButton("▶  Применить")
+        self.btn_apply.setProperty("role", "primary")
+        self.btn_apply.setObjectName("BtnApply")
+        self.btn_apply.setFixedSize(110, 28)
+        lay.addWidget(self.btn_apply)
 
     # ── Left panel ────────────────────────────────────────────────────
 
@@ -290,32 +342,7 @@ class ProfilesPage(QWidget):
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(0)
 
-        # Editor header
-        # Высота и ширина кнопок Save/Apply управляются через setFixedSize().
-        # Шрифт — в base.qss QPushButton#BtnSave / #BtnApply.
-        # min-height: 0 в QSS снимает глобальное ограничение QPushButton { min-height: 30px }.
-        eh = QFrame()
-        eh.setObjectName("EditorHeader")
-        eh_lay = QHBoxLayout(eh)
-        eh_lay.setContentsMargins(18, 0, 14, 0)
-        eh_lay.setSpacing(10)
-        eh_lay.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-        eh.setFixedHeight(52)
-
-        eh_lay.addStretch(1)
-
-        self.btn_save = QPushButton("\u2713  Сохранить")
-        self.btn_save.setProperty("role", "action")
-        self.btn_save.setObjectName("BtnSave")
-        self.btn_save.setFixedSize(100, 28)
-        eh_lay.addWidget(self.btn_save)
-
-        self.btn_apply = QPushButton("\u25B6  Применить")
-        self.btn_apply.setProperty("role", "primary")
-        self.btn_apply.setObjectName("BtnApply")
-        self.btn_apply.setFixedSize(110, 28)
-        eh_lay.addWidget(self.btn_apply)
-        lay.addWidget(eh)
+        # btn_save / btn_apply are now in _build_page_header()
 
         # Feedback bar — результат apply
         self._feedback_bar = QLabel("")
@@ -419,10 +446,9 @@ class ProfilesPage(QWidget):
         line.setObjectName("SectionLine")
         line.setFrameShape(QFrame.Shape.HLine)
         tr.addWidget(line, 1)
-        lay.addLayout(tr)
-
         if top_widget:
-            lay.addWidget(top_widget)
+            tr.addWidget(top_widget)   # toggle right-aligned in header row
+        lay.addLayout(tr)
 
         grid = QGridLayout()
         grid.setHorizontalSpacing(14)
@@ -647,21 +673,25 @@ class ProfilesPage(QWidget):
 
     def _apply_dhcp_state(self) -> None:
         ip = self.dhcp_ip_cb.isChecked()
+        auto_ip = self._tr("dhcp_auto_placeholder") if ip else ""
         for w in (self.ip_edit, self.mask_edit, self.gw_edit):
             w.setEnabled(not ip)
+            w.setPlaceholderText(auto_ip)
         dns = self.dhcp_dns_cb.isChecked()
+        auto_dns = self._tr("dhcp_auto_placeholder") if dns else ""
         for w in (self.dns1_edit, self.dns2_edit):
             w.setEnabled(not dns)
+            w.setPlaceholderText(auto_dns)
 
     def show_apply_result(self, success: bool, profile_name: str, duration_ms: int = 0) -> None:
         """Показывает результат применения профиля в feedback bar."""
         if success:
             dur = f"  ({duration_ms} ms)" if duration_ms else ""
             text = f"✓  {profile_name} применён{dur}"
-            color = "#22C55E"
+            color = semantic_color("STATUS_SUCCESS")
         else:
             text = f"✕  Не удалось применить {profile_name}"
-            color = "#EF4444"
+            color = semantic_color("STATUS_ERROR")
         self._feedback_bar.setText(text)
         self._feedback_bar.setStyleSheet(
             f"color: {color}; font-size: 13px; font-weight: 500; background: transparent;"

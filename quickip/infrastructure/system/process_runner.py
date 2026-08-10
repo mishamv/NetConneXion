@@ -3,7 +3,7 @@
 import re
 import subprocess
 import logging
-import platform
+import sys
 import time
 from typing import List, Optional
 from quickip.domain.models import CommandResult
@@ -51,7 +51,7 @@ class ProcessRunner:
     @staticmethod
     def _get_startupinfo():
         """Get Windows startupinfo to hide console windows."""
-        if platform.system().lower() != "windows":
+        if sys.platform != "win32":
             return None
 
         startupinfo = subprocess.STARTUPINFO()
@@ -62,7 +62,7 @@ class ProcessRunner:
     @staticmethod
     def _get_creation_flags():
         """Get Windows creation flags to prevent console windows."""
-        if platform.system().lower() != "windows":
+        if sys.platform != "win32":
             return 0
         
         return subprocess.CREATE_NO_WINDOW

@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+from quickip.ui_qt.palette import inject_qss_colors
 
 THEME_TOKENS = {
     "light": {
@@ -45,4 +46,4 @@ def load_qss(theme_mode: str) -> str:
     # Inject absolute assets path for url() references
     assets_dir = str((root / "quickip" / "ui_qt" / "assets").resolve()).replace("\\", "/")
     qss = qss.replace("{ASSETS}", assets_dir)
-    return qss
+    return inject_qss_colors(qss)

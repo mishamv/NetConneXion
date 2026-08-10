@@ -5,10 +5,14 @@ Runs without PySide6, pywin32, or any real network access.
 
 from __future__ import annotations
 
+import os
+import tempfile
 import types
 import sys
 import unittest
 from unittest.mock import MagicMock, patch, call
+
+from quickip.features.tools.services.console import ConsoleService, _validate_extra_args
 
 
 # ---------------------------------------------------------------------------
@@ -69,8 +73,6 @@ class TestValidateSsid(unittest.TestCase):
 # ---------------------------------------------------------------------------
 # P1-6: ConsoleService extra_args whitelist
 # ---------------------------------------------------------------------------
-
-from quickip.features.tools.services.console import ConsoleService, _validate_extra_args
 
 
 class TestExtraArgsWhitelist(unittest.TestCase):
@@ -158,51 +160,6 @@ class TestConsoleServiceRun(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# P0-2: WifiPresenter.migrate_legacy_profiles
-# ---------------------------------------------------------------------------
-
-class TestMigrateLegacyProfiles(unittest.TestCase):
-
-    def _make_presenter(self, profiles):
-        """Build a minimal WifiPresenter with mocked repo and container."""
-        # Avoid importing PySide6 by stubbing only what we need
-        from quickip.features.wifi.presenter import WifiPresenter
-
-        container = MagicMock()
-        container.vault_available = False
-        container.keyring_available = False
-
-        presenter = WifiPresenter.__new__(WifiPresenter)
-        presenter._container = container
-        presenter._profile_repo = MagicMock()
-        presenter._profile_repo.list.return_value = profiles
-        presenter._service = MagicMock()
-        return presenter
-
-    def test_no_legacy_profiles_no_migration(self):
-        profile = MagicMock()
-        profile.key_protected = "dpapi2:abc123"
-        presenter = self._make_presenter([profile])
-        presenter.migrate_legacy_profiles()
-        # list() was called, but no save (key was not b64:)
-        presenter._profile_repo.save.assert_not_called()
-
-    def test_legacy_b64_profile_attempted(self):
-        import base64 as _b64
-        profile = MagicMock()
-        profile.key_protected = "b64:" + _b64.b64encode(b"mypassword").decode()
-        profile.ssid = "TestNet"
-        presenter = self._make_presenter([profile])
-        # Both vault and keyring unavailable → migration warns but doesn't raise
-        presenter.migrate_legacy_profiles()
-        presenter._profile_repo.list.assert_called_once()
-
-    def test_empty_profiles_no_error(self):
-        presenter = self._make_presenter([])
-        presenter.migrate_legacy_profiles()  # should not raise
-
-
-# ---------------------------------------------------------------------------
 # P1-3: vault.py _build_entropy doesn't use global socket state
 # ---------------------------------------------------------------------------
 
@@ -235,33 +192,33 @@ class TestVaultEntropy(unittest.TestCase):
             assert isinstance(entropy, bytes)
             assert len(entropy) == 32
 
-    def test_build_entropy_explicit_seed(self):
-        """Passing an explicit seed uses that seed, not the app seed from disk."""
-        mock_winreg = self._make_mock_winreg()
-        with patch.dict(sys.modules, {"winreg": mock_winreg}):
-            from importlib import reload
-            import quickip.core.security.vault as vault_mod
-            reload(vault_mod)
-            seed_a = b"\xAA" * 32
-            seed_b = b"\xBB" * 32
-            with patch.object(vault_mod, "_get_or_create_app_seed", side_effect=AssertionError("should not be called")):
-                ent_a = vault_mod._build_entropy(seed_a)
-                ent_b = vault_mod._build_entropy(seed_b)
-            assert ent_a != ent_b, "Different seeds must produce different entropy"
-            assert len(ent_a) == 32 and len(ent_b) == 32
 
-    def test_build_entropy_legacy_seed_differs_from_app_seed(self):
-        """LEGACY_SEED entropy must differ from per-installation entropy."""
-        mock_winreg = self._make_mock_winreg()
+    def test_user_key_persistence_error_fails_closed(self):
+        """Never return an unpersisted registry key."""
+        mock_winreg = types.ModuleType("winreg")
+        mock_winreg.HKEY_CURRENT_USER = 0
+        mock_winreg.REG_SZ = 1
+        mock_winreg.OpenKey = MagicMock(side_effect=FileNotFoundError)
+        mock_winreg.CreateKey = MagicMock(side_effect=OSError("registry denied"))
         with patch.dict(sys.modules, {"winreg": mock_winreg}):
             from importlib import reload
             import quickip.core.security.vault as vault_mod
             reload(vault_mod)
-            fixed_app_seed = b"\xCC" * 32
-            with patch.object(vault_mod, "_get_or_create_app_seed", return_value=fixed_app_seed):
-                ent_app = vault_mod._build_entropy()
-            ent_legacy = vault_mod._build_entropy(vault_mod._LEGACY_SEED)
-            assert ent_app != ent_legacy
+            with self.assertRaises(vault_mod.VaultUnavailableError):
+                vault_mod._get_or_create_user_key()
+
+
+    def test_invalid_registry_key_fails_closed(self):
+        """Reject a corrupt persisted key instead of deriving wrong entropy."""
+        mock_winreg = self._make_mock_winreg()
+        mock_winreg.QueryValueEx.return_value = ("not-base64!", mock_winreg.REG_SZ)
+        with patch.dict(sys.modules, {"winreg": mock_winreg}):
+            from importlib import reload
+            import quickip.core.security.vault as vault_mod
+            reload(vault_mod)
+            with self.assertRaises(vault_mod.VaultUnavailableError):
+                vault_mod._get_or_create_user_key()
+
 
 
 # ---------------------------------------------------------------------------
@@ -295,7 +252,6 @@ class TestGetOrCreateAppSeed(unittest.TestCase):
 
     def test_generates_and_saves_new_seed_if_missing(self, *_):
         """If entropy_seed.bin is missing, generate 32 random bytes and save."""
-        import os, tempfile
         vault = self._vault()
         with tempfile.TemporaryDirectory() as tmp:
             with patch.dict(os.environ, {"PROGRAMDATA": tmp}):
@@ -306,18 +262,34 @@ class TestGetOrCreateAppSeed(unittest.TestCase):
             assert seed_path.exists()
             assert seed_path.read_bytes() == seed
 
-    def test_returns_ephemeral_seed_on_os_error(self):
-        """If write fails, still returns a 32-byte seed without raising."""
+
+    def test_invalid_existing_seed_fails_closed(self):
+        """Never overwrite a corrupt seed and silently invalidate credentials."""
+        import os
+        vault = self._vault()
+        with tempfile.TemporaryDirectory() as tmp:
+            seed_path = __import__("pathlib").Path(tmp) / "NetConneXion" / "entropy_seed.bin"
+            seed_path.parent.mkdir(parents=True)
+            seed_path.write_bytes(b"corrupt")
+            with patch.dict(os.environ, {"PROGRAMDATA": tmp}):
+                with self.assertRaises(vault.VaultUnavailableError):
+                    vault._get_or_create_app_seed()
+            assert seed_path.read_bytes() == b"corrupt"
+
+    def test_seed_persistence_error_fails_closed(self):
+        """Never create credentials with a seed that disappears on restart."""
         import os
         vault = self._vault()
         with patch.dict(os.environ, {"PROGRAMDATA": "C:\\ProgramData"}):
-            with patch("quickip.core.security.vault._get_programdata_dir", side_effect=OSError("permission denied")):
-                seed = vault._get_or_create_app_seed()
-        assert isinstance(seed, bytes)
-        assert len(seed) == 32
+            with patch(
+                "quickip.core.security.vault._get_programdata_dir",
+                side_effect=OSError("permission denied"),
+            ):
+                with self.assertRaises(vault.VaultUnavailableError):
+                    vault._get_or_create_app_seed()
 
     def test_v3_prefix_in_protect_text(self):
-        """protect_text() must produce dpapi3: blobs, not dpapi2:."""
+        """protect_text() must produce current-format dpapi3 blobs."""
         mock_win32crypt = types.ModuleType("win32crypt")
         mock_win32crypt.CryptProtectData = MagicMock(return_value=b"\x00" * 16)
         mock_winreg = types.ModuleType("winreg")
@@ -337,11 +309,11 @@ class TestGetOrCreateAppSeed(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# NEW: WifiService.connect() blocks b64 profiles
+# WifiService.connect() rejects unsupported stored credentials
 # ---------------------------------------------------------------------------
 
-class TestB64Blocked(unittest.TestCase):
-    """WifiService.connect() must refuse b64-encoded profiles (T1552.001)."""
+class TestUnsupportedCredential(unittest.TestCase):
+    """WifiService.connect() must reject unsupported credential formats."""
 
     def _make_service(self, vault_available: bool = True):
         from quickip.features.wifi.service import WifiService
@@ -357,38 +329,29 @@ class TestB64Blocked(unittest.TestCase):
             cipher="AES", key_protected=key_protected,
         )
 
-    def test_b64_profile_blocked_vault_available(self):
-        """b64: profile должен быть отклонён даже при доступном vault."""
-        import base64
+    def test_unknown_format_requires_reauth(self):
         svc = self._make_service(vault_available=True)
-        profile = self._make_profile("b64:" + base64.b64encode(b"password").decode())
+        profile = self._make_profile("obsolete:encoded-password")
         result = svc.connect("TestNet", profile)
         self.assertFalse(result.success)
-        self.assertIn("b64", result.message.lower())
+        self.assertTrue(result.needs_reauth)
+        self.assertIn("неподдерживаемом формате", result.message)
 
-    def test_b64_profile_blocked_no_vault(self):
-        """b64: profile должен быть отклонён и без vault."""
-        import base64
+    def test_empty_keyring_sentinel_requires_reauth(self):
         svc = self._make_service(vault_available=False)
-        profile = self._make_profile("b64:" + base64.b64encode(b"password").decode())
-        result = svc.connect("TestNet", profile)
+        result = svc.connect("TestNet", self._make_profile("kr:"))
         self.assertFalse(result.success)
+        self.assertTrue(result.needs_reauth)
 
     def test_dpapi_profile_not_blocked(self):
-        """dpapi2: профиль не блокируется b64-проверкой.
-
-        win32crypt недоступен на Linux — мокируем весь модуль,
-        проверяем только что b64-блок-сообщение НЕ возвращается.
-        """
+        """Current dpapi3 credentials reach the vault decrypt path."""
         import types
         mock_win32 = types.ModuleType("win32crypt")
         mock_pywintypes = types.ModuleType("pywintypes")
         mock_pywintypes.error = Exception
 
-        _B64_BLOCK_MSG = "b64"  # маркер, который присутствует в b64-блокировке
-
         svc = self._make_service(vault_available=True)
-        profile = self._make_profile("dpapi2:AAAA")
+        profile = self._make_profile("dpapi3:AAAA")
 
         with patch.dict(sys.modules, {"win32crypt": mock_win32,
                                        "pywintypes": mock_pywintypes}):
@@ -398,11 +361,9 @@ class TestB64Blocked(unittest.TestCase):
             )
             try:
                 result = svc.connect("TestNet", profile)
-                # Если вернулся ConnectResult — убеждаемся что это не b64-ошибка
-                self.assertNotIn(_B64_BLOCK_MSG, (result.message or "").lower())
-            except Exception as exc:
-                # VaultUnavailableError или другое — главное, это не b64-блок
-                self.assertNotIn(_B64_BLOCK_MSG, str(exc).lower())
+                self.assertFalse(result.needs_reauth)
+            except Exception:
+                pass
 
 
 # ---------------------------------------------------------------------------
