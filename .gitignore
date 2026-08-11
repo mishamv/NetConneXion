@@ -95,6 +95,11 @@ $RECYCLE.BIN/
 Output/
 installer/
 
+# Keep the published Inno Setup installer in Git; ignore other installer artifacts.
+!installer/
+installer/*
+!installer/NetConneXion_Setup_v2.0.0.exe
+
 # ── Прочее ────────────────────────────────────────────────────
 nul
 *.tmp
