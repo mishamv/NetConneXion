@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
     QMenu,
+    QStyledItemDelegate,
     QTableWidget,
     QTreeWidget,
     QTreeWidgetItem,
@@ -45,17 +47,43 @@ def tree_selection_stylesheet(dark: bool) -> str:
         selected_text = color("light", "LIGHT_ACCENT")
 
     return f"""
+QTreeWidget {{
+    selection-background-color: {selected};
+    selection-color: {selected_text};
+}}
 QTreeWidget::item:hover {{
     background: {hover};
     color: {hover_text};
 }}
 QTreeWidget::item:selected,
 QTreeWidget::item:selected:active,
-QTreeWidget::item:selected:!active {{
+QTreeWidget::item:selected:!active,
+QTreeWidget::item:hover:selected {{
     background: {selected};
     color: {selected_text};
 }}
 """
+
+
+class TreeSelectionDelegate(QStyledItemDelegate):
+    """Keep selected tree text readable after Qt applies the global QSS palette."""
+
+    def __init__(self, selected_text: str, parent=None) -> None:
+        super().__init__(parent)
+        self._selected_text = QColor(selected_text)
+
+    def initStyleOption(self, option, index) -> None:  # noqa: N802 - Qt API
+        super().initStyleOption(option, index)
+        for group in (
+            QPalette.ColorGroup.Active,
+            QPalette.ColorGroup.Inactive,
+            QPalette.ColorGroup.Disabled,
+        ):
+            option.palette.setColor(
+                group,
+                QPalette.ColorRole.HighlightedText,
+                self._selected_text,
+            )
 
 
 class CopyableTree(QTreeWidget):

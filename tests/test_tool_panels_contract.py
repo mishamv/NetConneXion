@@ -8,8 +8,10 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import pytest
 from PySide6.QtCore import QModelIndex
-from PySide6.QtWidgets import QApplication, QLabel
+from PySide6.QtGui import QPalette
+from PySide6.QtWidgets import QApplication, QLabel, QStyleOptionViewItem
 
+from quickip.ui_qt.palette import color
 from quickip.ui_qt.tool_panels.adapters import IpconfigPanel
 from quickip.ui_qt.tool_panels.basic import DnsPanel, PingPanel, TraceroutePanel
 from quickip.ui_qt.tool_panels.dns_cache import DnsCachePanel
@@ -766,6 +768,20 @@ def test_adapters_populate_full_width_group_headings(qt_app: QApplication) -> No
     assert panel._tree.topLevelItem(0).childCount() == 2
     assert panel._tree.isFirstColumnSpanned(0, QModelIndex())
     assert panel._tree.isFirstColumnSpanned(1, QModelIndex())
+    panel.deleteLater()
+
+
+def test_adapters_light_selection_palette_keeps_text_readable(qt_app: QApplication) -> None:
+    panel = IpconfigPanel(dark=False)
+    panel._populate([("Ethernet", [("Interface Type", "Ethernet")])])
+    parent_index = panel._tree.model().index(0, 0)
+    index = panel._tree.model().index(0, 0, parent_index)
+    option = QStyleOptionViewItem()
+    panel._tree.itemDelegate().initStyleOption(option, index)
+
+    assert option.palette.color(QPalette.ColorRole.HighlightedText).name() == color(
+        "light", "LIGHT_ACCENT"
+    ).lower()
     panel.deleteLater()
 
 
