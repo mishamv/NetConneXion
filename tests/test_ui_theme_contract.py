@@ -41,12 +41,15 @@ def test_theme_styles_transient_and_interactive_states(theme_mode: str) -> None:
 
 @pytest.mark.parametrize(
     ("theme_mode", "text_token"),
-    [("light", "LIGHT_TEXT_PRIMARY"), ("dark", "DARK_TEXT_SECONDARY")],
+    [("light", "LIGHT_TEXT_PRIMARY"), ("dark", "DARK_TEXT_PRIMARY")],
 )
-def test_tool_tree_hover_keeps_readable_text(theme_mode: str, text_token: str) -> None:
+def test_adapter_tree_hover_keeps_readable_text(
+    theme_mode: str,
+    text_token: str,
+) -> None:
     qss = load_qss(theme_mode)
     matches = re.findall(
-        r"QTreeWidget#ToolTree::item:hover\s*\{([^}]*)\}",
+        r"QTreeWidget#IpconfigTree::item:hover\s*\{([^}]*)\}",
         qss,
         flags=re.DOTALL,
     )
@@ -54,3 +57,21 @@ def test_tool_tree_hover_keeps_readable_text(theme_mode: str, text_token: str) -
     assert matches
     expected_text = color(theme_mode, text_token)
     assert f"color: {expected_text};" in matches[-1]
+
+
+@pytest.mark.parametrize(
+    ("theme_mode", "selection_text_token"),
+    [("light", "LIGHT_ACCENT"), ("dark", "DARK_ACCENT_TEXT")],
+)
+def test_adapter_tree_overrides_global_selection_text(
+    theme_mode: str,
+    selection_text_token: str,
+) -> None:
+    qss = load_qss(theme_mode)
+    matches = re.findall(
+        r"QTreeWidget#IpconfigTree\s*\{([^}]*)\}", qss, flags=re.DOTALL
+    )
+
+    assert matches
+    expected_text = color(theme_mode, selection_text_token)
+    assert any(f"selection-color: {expected_text};" in body for body in matches)

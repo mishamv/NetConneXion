@@ -816,19 +816,22 @@ QTextEdit#ToolOutput {
 
 /* Netstat / Routes / DNS Cache shared tree */
 QTreeWidget#NetstatTable,
-QTreeWidget#ToolTree {
+QTreeWidget#ToolTree,
+QTreeWidget#IpconfigTree {
     background: {LIGHT_CARD_SURFACE};
     border: 1px solid {LIGHT_BORDER_DEFAULT};
     border-radius: 8px;
     outline: none;
 }
 QTreeWidget#NetstatTable::item,
-QTreeWidget#ToolTree::item {
+QTreeWidget#ToolTree::item,
+QTreeWidget#IpconfigTree::item {
     padding: 3px 6px;
     color: {LIGHT_TEXT_PRIMARY};
 }
 QTreeWidget#NetstatTable::item:hover,
-QTreeWidget#ToolTree::item:hover {
+QTreeWidget#ToolTree::item:hover,
+QTreeWidget#IpconfigTree::item:hover {
     background: {LIGHT_PANEL_BG};
     color: {LIGHT_TEXT_PRIMARY};
 }
@@ -837,12 +840,16 @@ QTreeWidget#NetstatTable::item:selected:active,
 QTreeWidget#NetstatTable::item:selected:!active,
 QTreeWidget#ToolTree::item:selected,
 QTreeWidget#ToolTree::item:selected:active,
-QTreeWidget#ToolTree::item:selected:!active {
+QTreeWidget#ToolTree::item:selected:!active,
+QTreeWidget#IpconfigTree::item:selected,
+QTreeWidget#IpconfigTree::item:selected:active,
+QTreeWidget#IpconfigTree::item:selected:!active {
     background: {LIGHT_ACCENT_HOVER};
     color: {LIGHT_TEXT_ON_ACCENT};
 }
 QTreeWidget#NetstatTable QHeaderView::section,
-QTreeWidget#ToolTree QHeaderView::section {
+QTreeWidget#ToolTree QHeaderView::section,
+QTreeWidget#IpconfigTree QHeaderView::section {
     background: {LIGHT_INPUT_BG};
     color: {LIGHT_ACCENT};
     font-size: 11px;
@@ -892,6 +899,8 @@ QTreeWidget#IpconfigTree {
     border: 1px solid {LIGHT_BORDER_DEFAULT};
     border-radius: 8px;
     alternate-background-color: {LIGHT_PANEL_BG};
+    selection-background-color: {LIGHT_RGBA_99_102_241_0_12};
+    selection-color: {LIGHT_ACCENT};
     margin-top: 10px;
     outline: none;
 }
@@ -902,6 +911,7 @@ QTreeWidget#IpconfigTree::item {
 }
 QTreeWidget#IpconfigTree::item:hover {
     background: transparent;
+    color: {LIGHT_TEXT_PRIMARY};
 }
 QTreeWidget#IpconfigTree::item:hover:!selected {
     background: transparent;
