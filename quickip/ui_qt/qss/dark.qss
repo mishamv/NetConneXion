@@ -865,22 +865,23 @@ QTreeWidget#IpconfigTree::branch {
     background: transparent;
     border: none;
 }
-QTreeWidget#IpconfigTree::branch:hover,
+QTreeWidget#IpconfigTree::branch:hover {
+    background: {DARK_HOVER_OVERLAY};
+    border: none;
+}
 QTreeWidget#IpconfigTree::branch:selected,
 QTreeWidget#IpconfigTree::branch:selected:active,
 QTreeWidget#IpconfigTree::branch:hover:selected {
-    background: transparent;
+    background: {DARK_STATE_ACTIVE_BG};
     border: none;
 }
 QTreeWidget#IpconfigTree::branch:has-children:!has-siblings:closed,
 QTreeWidget#IpconfigTree::branch:has-children:has-siblings:closed {
     image: url({ASSETS}/arrow-right-dark.svg);
-    background: transparent;
 }
 QTreeWidget#IpconfigTree::branch:has-children:!has-siblings:open,
 QTreeWidget#IpconfigTree::branch:has-children:has-siblings:open {
     image: url({ASSETS}/arrow-down-dark.svg);
-    background: transparent;
 }
 QTreeWidget#IpconfigTree QHeaderView::section {
     background: {DARK_BUTTON_HOVER_BG};

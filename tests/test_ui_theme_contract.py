@@ -36,3 +36,21 @@ def test_theme_styles_transient_and_interactive_states(theme_mode: str) -> None:
 
     missing = [selector for selector in required_selectors if selector not in qss]
     assert not missing, f"{theme_mode} theme misses selectors: {missing}"
+
+
+@pytest.mark.parametrize("theme_mode", ["light", "dark"])
+def test_adapter_tree_branch_uses_row_interaction_background(theme_mode: str) -> None:
+    qss = load_qss(theme_mode)
+    hover = re.search(
+        r"QTreeWidget#IpconfigTree::branch:hover\s*\{([^}]*)\}",
+        qss,
+        flags=re.DOTALL,
+    )
+    selected = re.search(
+        r"QTreeWidget#IpconfigTree::branch:selected,[^{]+\{([^}]*)\}",
+        qss,
+        flags=re.DOTALL,
+    )
+
+    assert hover and "background: transparent" not in hover.group(1)
+    assert selected and "background: transparent" not in selected.group(1)

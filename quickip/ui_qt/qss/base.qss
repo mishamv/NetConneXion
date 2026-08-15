@@ -911,22 +911,23 @@ QTreeWidget#IpconfigTree::branch {
     background: transparent;
     border: none;
 }
-QTreeWidget#IpconfigTree::branch:hover,
+QTreeWidget#IpconfigTree::branch:hover {
+    background: {LIGHT_STATE_ACTIVE_BG};
+    border: none;
+}
 QTreeWidget#IpconfigTree::branch:selected,
 QTreeWidget#IpconfigTree::branch:selected:active,
 QTreeWidget#IpconfigTree::branch:hover:selected {
-    background: transparent;
+    background: {LIGHT_ACCENT_HOVER};
     border: none;
 }
 QTreeWidget#IpconfigTree::branch:has-children:!has-siblings:closed,
 QTreeWidget#IpconfigTree::branch:has-children:has-siblings:closed {
     image: url({ASSETS}/arrow-right.svg);
-    background: transparent;
 }
 QTreeWidget#IpconfigTree::branch:has-children:!has-siblings:open,
 QTreeWidget#IpconfigTree::branch:has-children:has-siblings:open {
     image: url({ASSETS}/arrow-down.svg);
-    background: transparent;
 }
 QTreeWidget#IpconfigTree QHeaderView::section {
     background: {LIGHT_INPUT_BG};
