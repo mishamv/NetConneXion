@@ -2,5 +2,8 @@
 # Transitive dependencies are resolved by pip for the selected platform.
 PySide6==6.10.2
 typing_extensions==4.15.0
+pywin32==311; sys_platform == "win32"
+keyring==25.7.0
+openpyxl==3.1.5
 pytest==9.0.3
 ruff==0.15.10

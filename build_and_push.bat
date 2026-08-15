@@ -78,17 +78,10 @@ if errorlevel 1 (
 )
 echo [OK] Pushed to https://github.com/mishamv/NetConneXion
 
-:: ── 4. PyInstaller check & build ────────────────────────────
+:: ── 4. Reproducible locked build ────────────────────────────
 echo.
-echo [4/5] Checking PyInstaller...
-pyinstaller --version >nul 2>&1
-if errorlevel 1 (
-    echo PyInstaller not found — installing...
-    pip install pyinstaller
-)
-
 echo [4/5] Building exe...
-pyinstaller NetConneXion.spec --noconfirm
+call build.bat
 if errorlevel 1 (
     echo.
     echo [ERROR] Build failed. Check the output above.

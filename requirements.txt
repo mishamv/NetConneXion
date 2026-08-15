@@ -1,7 +1,6 @@
 # ── Runtime dependencies ──────────────────────────────────────────────────────
 # Зафиксированы минимальные проверенные версии.
-# Для production-сборки используйте pip-compile requirements.in → requirements.txt
-# с точными версиями всех транзитивных зависимостей.
+# Для dev/CI/release-сборки устанавливайте точные версии из requirements.lock.
 
 # Core UI
 PySide6>=6.7,<7.0

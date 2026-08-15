@@ -19,33 +19,26 @@ if not exist "%PYTHON%" (
     exit /b 1
 )
 
-:: Ensure PyInstaller is available.
-"%PYTHON%" -m PyInstaller --version >nul 2>&1
-if errorlevel 1 (
-    echo [INFO] PyInstaller not found, installing...
-    "%PYTHON%" -m pip install pyinstaller
+if not exist "%CD%\requirements.lock" (
+    echo [ERROR] Dependency lockfile not found: %CD%\requirements.lock
+    if not defined CI pause
+    exit /b 1
 )
 
-:: Ensure pywin32 is available.
-"%PYTHON%" -c "import win32crypt" >nul 2>&1
+:: Synchronize every build with the reviewed dependency lockfile.
+echo [INFO] Installing locked dependencies...
+"%PYTHON%" -m pip install --requirement "%CD%\requirements.lock"
 if errorlevel 1 (
-    echo [INFO] pywin32 not found, installing...
-    "%PYTHON%" -m pip install pywin32
-    "%PYTHON%" Scripts\pywin32_postinstall.py -install 2>nul
+    echo [ERROR] Locked dependency installation failed.
+    if not defined CI pause
+    exit /b 1
 )
 
-:: Ensure openpyxl is available.
-"%PYTHON%" -c "import openpyxl" >nul 2>&1
+"%PYTHON%" -m pip check
 if errorlevel 1 (
-    echo [INFO] openpyxl not found, installing...
-    "%PYTHON%" -m pip install "openpyxl>=3.1"
-)
-
-:: Ensure Pillow is available for icon processing.
-"%PYTHON%" -c "import PIL" >nul 2>&1
-if errorlevel 1 (
-    echo [INFO] pillow not found, installing...
-    "%PYTHON%" -m pip install pillow
+    echo [ERROR] Installed dependencies are inconsistent.
+    if not defined CI pause
+    exit /b 1
 )
 
 :: Stop a running application before replacing its executable.
