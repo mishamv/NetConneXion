@@ -266,3 +266,9 @@ class IpconfigPanel(QWidget):
 
     def refresh_theme(self, dark: bool) -> None:
         self._dark = dark
+        configure_tool_tree(
+            self._tree,
+            dark=dark,
+            object_name="IpconfigTree",
+            root_decorated=True,
+        )
