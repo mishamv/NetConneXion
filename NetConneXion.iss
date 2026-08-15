@@ -1,9 +1,9 @@
 ; NetConneXion v2.0 — Inno Setup installer script
 ; Сборка: iscc NetConneXion.iss
-; Результат: installer\NetConneXion_Setup_v2.0.0.exe
+; Результат: installer\NetConneXion_Setup_v2.0.1.exe
 
 #define MyAppName        "NetConneXion"
-#define MyAppVersion     "2.0.0"
+#define MyAppVersion     "2.0.1"
 #define MyAppDescription "Network Profile Manager"
 #define MyAppExeName     "NetConneXion.exe"
 #define MyAppSourceDir   "dist\NetConneXion"

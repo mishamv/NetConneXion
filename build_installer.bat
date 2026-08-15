@@ -66,11 +66,11 @@ if errorlevel 1 (
 echo.
 echo ============================================
 echo  [OK] Installer ready:
-echo       installer\NetConneXion_Setup_v2.0.0.exe
+echo       installer\NetConneXion_Setup_v2.0.1.exe
 echo ============================================
 echo.
 
-for %%F in ("installer\NetConneXion_Setup_v2.0.0.exe") do (
+for %%F in ("installer\NetConneXion_Setup_v2.0.1.exe") do (
     echo Size: %%~zF bytes
 )
 

@@ -133,7 +133,7 @@ class SettingsPage(QWidget):
         about_lay = QHBoxLayout(about_row)
         about_lay.setContentsMargins(0, 0, 0, 0)
         about_lay.setSpacing(8)
-        self._lbl_version = QLabel("NetConneXion  v2.0.0")
+        self._lbl_version = QLabel("NetConneXion  v2.0.1")
         self._lbl_version.setObjectName("FieldLabel")
         about_lay.addWidget(self._lbl_version)
         about_lay.addStretch(1)
@@ -347,7 +347,7 @@ class SettingsPage(QWidget):
         self._chk_tray.setText(self._tr("chk_minimize_to_tray"))
         self._chk_start_min.setText(self._tr("chk_start_minimized"))
         self._lbl_sec_about.setText(self._tr("section_about").upper())
-        self._lbl_version.setText("NetConneXion  v2.0.0")
+        self._lbl_version.setText("NetConneXion  v2.0.1")
 
         # Восстанавливаем активное состояние кнопок языка
         locale = self._container.i18n.get_current_locale()

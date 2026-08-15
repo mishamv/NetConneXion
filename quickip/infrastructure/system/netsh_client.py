@@ -1,6 +1,7 @@
 """Windows netsh client for network configuration."""
 
 import logging
+import ipaddress
 import re
 from typing import List, Optional
 from quickip.domain.models import Profile, CommandResult, AdapterConfig
@@ -94,44 +95,97 @@ class NetshClient:
     def _parse_adapter_config(self, adapter: str, output: str) -> Optional[AdapterConfig]:
         """Parse adapter configuration from netsh output."""
         config = AdapterConfig(adapter=adapter, ip="", mask="", gateway="")
-        
-        lines = output.splitlines()
-        for line in lines:
-            line = line.strip().lower()
-            
-            # Check DHCP status
-            if "dhcp" in line and "enabled" in line:
-                config.dhcp_enabled = True
-            
-            # Extract IP address
-            if "ip address" in line or "ip-адрес" in line:
-                parts = line.split(":")
-                if len(parts) > 1:
-                    config.ip = parts[1].strip()
-            
-            # Extract subnet mask
-            if "subnet prefix" in line or "маска подсети" in line:
-                parts = line.split(":")
-                if len(parts) > 1:
-                    mask_part = parts[1].strip()
-                    # Extract mask from format "255.255.255.0/24" or just mask
-                    config.mask = mask_part.split('/')[0].strip()
-            
-            # Extract gateway
-            if "default gateway" in line or "основной шлюз" in line:
-                parts = line.split(":")
-                if len(parts) > 1:
-                    config.gateway = parts[1].strip()
-            
-            # Extract DNS
-            if "dns" in line and "server" in line:
-                parts = line.split(":")
-                if len(parts) > 1:
-                    dns = parts[1].strip()
-                    if dns:
-                        config.dns_servers.append(dns)
+
+        collecting_dns = False
+        for raw_line in output.splitlines():
+            stripped = raw_line.strip()
+            if not stripped:
+                collecting_dns = False
+                continue
+
+            label, separator, value = stripped.partition(":")
+            lowered_label = label.casefold()
+            value = value.strip() if separator else ""
+
+            if "dhcp" in lowered_label and (
+                "enabled" in lowered_label or "включ" in lowered_label
+            ):
+                config.dhcp_enabled = value.casefold() in {
+                    "yes", "true", "enabled", "да", "включено", "включен",
+                }
+                collecting_dns = False
+                continue
+
+            if "ip address" in lowered_label or "ip-адрес" in lowered_label:
+                config.ip = self._first_ipv4(value)
+                collecting_dns = False
+                continue
+
+            if any(marker in lowered_label for marker in (
+                "subnet prefix", "subnet mask", "префикс подсети", "маска подсети",
+            )):
+                config.mask = self._parse_subnet_mask(value)
+                collecting_dns = False
+                continue
+
+            if "default gateway" in lowered_label or "основной шлюз" in lowered_label:
+                config.gateway = self._first_ipv4(value)
+                collecting_dns = False
+                continue
+
+            is_dns_label = "dns" in lowered_label and (
+                "server" in lowered_label or "сервер" in lowered_label
+            )
+            if is_dns_label:
+                self._append_ipv4(config.dns_servers, value)
+                collecting_dns = True
+                continue
+
+            if collecting_dns and not separator:
+                if self._append_ipv4(config.dns_servers, stripped):
+                    continue
+            collecting_dns = False
 
         return config
+
+    @staticmethod
+    def _first_ipv4(value: str) -> str:
+        match = re.search(r"(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?![\d.])", value)
+        if not match:
+            return ""
+        candidate = match.group(0)
+        try:
+            return str(ipaddress.IPv4Address(candidate))
+        except ipaddress.AddressValueError:
+            return ""
+
+    @classmethod
+    def _append_ipv4(cls, values: List[str], text: str) -> bool:
+        address = cls._first_ipv4(text)
+        if not address:
+            return False
+        if address not in values:
+            values.append(address)
+        return True
+
+    @classmethod
+    def _parse_subnet_mask(cls, value: str) -> str:
+        explicit = re.search(
+            r"(?:mask|маска)\s+((?:\d{1,3}\.){3}\d{1,3})",
+            value,
+            flags=re.IGNORECASE,
+        )
+        if explicit:
+            return cls._first_ipv4(explicit.group(1))
+
+        prefix = re.search(r"/(\d{1,2})(?:\D|$)", value)
+        if prefix:
+            try:
+                return str(ipaddress.IPv4Network(f"0.0.0.0/{prefix.group(1)}").netmask)
+            except (ValueError, ipaddress.NetmaskValueError):
+                return ""
+
+        return cls._first_ipv4(value)
 
     # Символы запрещённые в имени адаптера — защита от command injection в netsh
     _ADAPTER_FORBIDDEN = set('"\'&|;<>(){}$`\\\n\r\t')
