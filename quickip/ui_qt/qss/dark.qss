@@ -786,6 +786,7 @@ QTreeWidget#ToolTree::item {
 QTreeWidget#NetstatTable::item:hover,
 QTreeWidget#ToolTree::item:hover {
     background: {DARK_HOVER_OVERLAY};
+    color: {DARK_TEXT_SECONDARY};
 }
 QTreeWidget#NetstatTable::item:selected,
 QTreeWidget#NetstatTable::item:selected:active,

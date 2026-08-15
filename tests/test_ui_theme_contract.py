@@ -6,6 +6,7 @@ import re
 
 import pytest
 
+from quickip.ui_qt.palette import color
 from quickip.ui_qt.theme import load_qss
 
 
@@ -36,3 +37,20 @@ def test_theme_styles_transient_and_interactive_states(theme_mode: str) -> None:
 
     missing = [selector for selector in required_selectors if selector not in qss]
     assert not missing, f"{theme_mode} theme misses selectors: {missing}"
+
+
+@pytest.mark.parametrize(
+    ("theme_mode", "text_token"),
+    [("light", "LIGHT_TEXT_PRIMARY"), ("dark", "DARK_TEXT_SECONDARY")],
+)
+def test_tool_tree_hover_keeps_readable_text(theme_mode: str, text_token: str) -> None:
+    qss = load_qss(theme_mode)
+    matches = re.findall(
+        r"QTreeWidget#ToolTree::item:hover\s*\{([^}]*)\}",
+        qss,
+        flags=re.DOTALL,
+    )
+
+    assert matches
+    expected_text = color(theme_mode, text_token)
+    assert f"color: {expected_text};" in matches[-1]

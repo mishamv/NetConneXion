@@ -830,6 +830,7 @@ QTreeWidget#ToolTree::item {
 QTreeWidget#NetstatTable::item:hover,
 QTreeWidget#ToolTree::item:hover {
     background: {LIGHT_PANEL_BG};
+    color: {LIGHT_TEXT_PRIMARY};
 }
 QTreeWidget#NetstatTable::item:selected,
 QTreeWidget#NetstatTable::item:selected:active,
