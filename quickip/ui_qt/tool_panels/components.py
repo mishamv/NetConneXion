@@ -14,12 +14,9 @@ from PySide6.QtWidgets import (
     QStyleFactory,
 )
 
-from quickip.ui_qt.widgets.copyable_views import (
-    TreeSelectionDelegate,
-    tree_selection_stylesheet,
-)
+from quickip.ui_qt.widgets.copyable_views import tree_selection_stylesheet
 
-from quickip.ui_qt.palette import color, semantic_color
+from quickip.ui_qt.palette import semantic_color
 
 
 TOOL_BUTTON_HEIGHT = 40
@@ -119,12 +116,6 @@ def configure_tool_tree(
     tree.setObjectName(object_name)
     tree.setStyle(QStyleFactory.create("Fusion"))
     tree.setStyleSheet(tree_selection_stylesheet(dark))
-    theme = "dark" if dark else "light"
-    selected_text = color(
-        theme,
-        "DARK_CUSTOM_TREE_SELECTED_TEXT" if dark else "LIGHT_ACCENT",
-    )
-    tree.setItemDelegate(TreeSelectionDelegate(selected_text, tree))
     tree.setRootIsDecorated(root_decorated)
     tree.setAlternatingRowColors(True)
     tree.setSelectionBehavior(

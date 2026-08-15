@@ -854,27 +854,12 @@ QTreeWidget#IpconfigTree {
     background: {DARK_RESULT_SURFACE};
     alternate-background-color: {DARK_RESULT_SURFACE};
     border: none;
-    selection-background-color: {DARK_STATE_ACTIVE_BG};
-    selection-color: {DARK_ACCENT_TEXT};
     margin-top: 10px;
     outline: none;
 }
 QTreeWidget#IpconfigTree::item {
     color: {DARK_TEXT_PRIMARY};
     border: none;
-}
-QTreeWidget#IpconfigTree::item:hover {
-    background: transparent;
-    color: {DARK_TEXT_PRIMARY};
-}
-QTreeWidget#IpconfigTree::item:hover:!selected {
-    background: transparent;
-    color: {DARK_TEXT_PRIMARY};
-}
-QTreeWidget#IpconfigTree::item:selected,
-QTreeWidget#IpconfigTree::item:selected:hover {
-    background: {DARK_STATE_ACTIVE_BG};
-    color: {DARK_ACCENT_TEXT};
 }
 QTreeWidget#IpconfigTree::branch {
     background: transparent;

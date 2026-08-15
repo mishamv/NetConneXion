@@ -899,8 +899,6 @@ QTreeWidget#IpconfigTree {
     border: 1px solid {LIGHT_BORDER_DEFAULT};
     border-radius: 8px;
     alternate-background-color: {LIGHT_PANEL_BG};
-    selection-background-color: {LIGHT_RGBA_99_102_241_0_12};
-    selection-color: {LIGHT_ACCENT};
     margin-top: 10px;
     outline: none;
 }
@@ -908,19 +906,6 @@ QTreeWidget#IpconfigTree::item {
     padding: 3px 6px;
     border: none;
     color: {LIGHT_TEXT_PRIMARY};
-}
-QTreeWidget#IpconfigTree::item:hover {
-    background: transparent;
-    color: {LIGHT_TEXT_PRIMARY};
-}
-QTreeWidget#IpconfigTree::item:hover:!selected {
-    background: transparent;
-    color: {LIGHT_TEXT_PRIMARY};
-}
-QTreeWidget#IpconfigTree::item:selected,
-QTreeWidget#IpconfigTree::item:selected:hover {
-    background: {LIGHT_RGBA_99_102_241_0_12};
-    color: {LIGHT_ACCENT};
 }
 QTreeWidget#IpconfigTree::branch {
     background: transparent;
