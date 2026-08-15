@@ -175,8 +175,9 @@ class TestManagedProcess(unittest.TestCase):
         """ProcessRunner.popen() must return ManagedProcess, not raw Popen."""
         from quickip.infrastructure.system.process_runner import ProcessRunner, ManagedProcess
         runner = ProcessRunner()
+        popen_spec = subprocess.Popen
         with patch("subprocess.Popen") as mock_popen_cls:
-            mock_instance = MagicMock(spec=subprocess.Popen)
+            mock_instance = MagicMock(spec=popen_spec)
             mock_instance.stdout = MagicMock()
             mock_popen_cls.return_value = mock_instance
             result = runner.popen(["echo", "test"])

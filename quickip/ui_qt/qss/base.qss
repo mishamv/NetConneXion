@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════
    NetConneXion v2.0 — LIGHT THEME (F: White + Indigo)
-   Backdrop: {LIGHT_HEX_F1F5F9}  Sidebar: {LIGHT_HEX_FFFFFF}  Cards: {LIGHT_HEX_FFFFFF}
-   Accent: {LIGHT_HEX_4F46E5} indigo
+   Backdrop: {LIGHT_PANEL_BG}  Sidebar: {LIGHT_CARD_SURFACE}  Cards: {LIGHT_CARD_SURFACE}
+   Accent: {LIGHT_ACCENT} indigo
    ═══════════════════════════════════════════════════════════════ */
 
 * {
@@ -11,31 +11,31 @@
 }
 
 QWidget {
-    color: {LIGHT_HEX_1E293B};           /* глобальный текст — slate-800 */
+    color: {LIGHT_TEXT_PRIMARY};           /* глобальный текст — slate-800 */
     background: transparent;
 }
 
 QWidget#RootWindow {
-    background: transparent;  /* фон рисует BackdropWidget ({LIGHT_HEX_F1F5F9}) */
+    background: transparent;  /* фон рисует BackdropWidget ({LIGHT_PANEL_BG}) */
 }
 
 /* ── SIDEBAR ──────────────────────────────────────────────────── */
 QFrame#Sidebar {
-    background: {LIGHT_HEX_FFFFFF};      /* sidebar — белый */
-    border: 1px solid {LIGHT_HEX_E8EDF5}; /* рамка sidebar */
+    background: {LIGHT_CARD_SURFACE};      /* sidebar — белый */
+    border: 1px solid {LIGHT_DATA_SURFACE}; /* рамка sidebar */
     border-radius: 14px;
 }
 
 /* Logo area */
 QFrame#LogoArea {
     background: transparent;
-    border-bottom: 1px solid {LIGHT_HEX_F0F4FA}; /* разделитель под логотипом */
+    border-bottom: 1px solid {LIGHT_SIDE_SURFACE}; /* разделитель под логотипом */
     border-radius: 0;
 }
 
 QLabel#LogoIcon {
-    background: {LIGHT_HEX_4F46E5};      /* иконка-плашка N — indigo */
-    color: {LIGHT_HEX_FFFFFF};
+    background: {LIGHT_ACCENT};      /* иконка-плашка N — indigo */
+    color: {LIGHT_TEXT_ON_ACCENT};
     font-size: 13px;
     font-weight: 700;
     border-radius: 8px;
@@ -44,12 +44,12 @@ QLabel#LogoIcon {
 QLabel#LogoName {
     font-size: 13px;
     font-weight: 700;
-    color: {LIGHT_HEX_1E293B};           /* название приложения */
+    color: {LIGHT_TEXT_PRIMARY};           /* название приложения */
 }
 
 QLabel#LogoVersion {
     font-size: 9px;
-    color: {LIGHT_HEX_94A3B8};           /* версия — slate-400 */
+    color: {LIGHT_TEXT_MUTED};           /* версия — slate-400 */
 }
 
 /* Nav */
@@ -60,7 +60,7 @@ QFrame#NavFrame {
 QLabel#NavGroupLabel {
     font-size: 10px;
     font-weight: 700;
-    color: {LIGHT_HEX_CBD5E1};           /* заголовок группы: NETWORK / SYSTEM */
+    color: {LIGHT_BORDER_SUBTLE};           /* заголовок группы: NETWORK / SYSTEM */
     letter-spacing: 2px;
     text-transform: uppercase;
     padding: 0 8px 4px 8px;
@@ -74,108 +74,108 @@ QPushButton#NavBtn {
     background: transparent;
     border: none;
     border-left: 3px solid transparent;
-    color: {LIGHT_HEX_64748B};           /* неактивная nav кнопка — slate-500 */
+    color: {LIGHT_TEXT_FAINT};           /* неактивная nav кнопка — slate-500 */
     font-size: 15px;
     font-weight: 500;
 }
 
 QPushButton#NavBtn:hover {
-    background: {LIGHT_HEX_F1F5F9};
-    color: {LIGHT_HEX_1E293B};
-    border-left: 3px solid {LIGHT_HEX_CBD5E1};
+    background: {LIGHT_PANEL_BG};
+    color: {LIGHT_TEXT_PRIMARY};
+    border-left: 3px solid {LIGHT_BORDER_SUBTLE};
 }
 
 QPushButton#NavBtn[active="true"] {
-    background: {LIGHT_HEX_EEF2FF};      /* активная nav — indigo-50 */
-    color: {LIGHT_HEX_4338CA};           /* текст активной — indigo-700 */
+    background: {LIGHT_INPUT_BG};      /* активная nav — indigo-50 */
+    color: {LIGHT_ACCENT_PRESSED};           /* текст активной — indigo-700 */
     font-weight: 700;
-    border-left: 3px solid {LIGHT_HEX_4338CA};
+    border-left: 3px solid {LIGHT_ACCENT_PRESSED};
 }
 
 /* Status block */
 QFrame#StatusBlock {
     background: transparent;
-    border-top: 1px solid {LIGHT_HEX_F0F4FA}; /* разделитель над статусом */
+    border-top: 1px solid {LIGHT_SIDE_SURFACE}; /* разделитель над статусом */
     border-radius: 0;
 }
 
 QLabel#StatusDot {
-    color: {LIGHT_HEX_22C55E};           /* зелёная точка — connected */
+    color: {LIGHT_STATUS_SUCCESS};           /* зелёная точка — connected */
     font-size: 8px;
 }
 
 QLabel#StatusActive {
     font-size: 10px;
     font-weight: 600;
-    color: {LIGHT_HEX_334155};           /* активный профиль */
+    color: {LIGHT_TEXT_STRONG};           /* активный профиль */
 }
 
 QLabel#StatusKey {
     font-size: 10px;
-    color: {LIGHT_HEX_94A3B8};           /* ключ: "Adapter" */
+    color: {LIGHT_TEXT_MUTED};           /* ключ: "Adapter" */
 }
 
 QLabel#StatusValue {
     font-size: 10px;
     font-weight: 600;
-    color: {LIGHT_HEX_334155};           /* значение: "Ethernet" */
+    color: {LIGHT_TEXT_STRONG};           /* значение: "Ethernet" */
 }
 
 QLabel#StatusIP {
     font-size: 10px;
-    color: {LIGHT_HEX_4F46E5};           /* IP адрес — indigo */
+    color: {LIGHT_ACCENT};           /* IP адрес — indigo */
     font-family: "Consolas", "Courier New", monospace;
     font-weight: 600;
 }
 
 /* ── TOPBAR ───────────────────────────────────────────────────── */
 QFrame#Topbar {
-    background: {LIGHT_HEX_FFFFFF};      /* topbar — белый */
-    border: 1px solid {LIGHT_HEX_E8EDF5};
+    background: {LIGHT_CARD_SURFACE};      /* topbar — белый */
+    border: 1px solid {LIGHT_DATA_SURFACE};
     border-radius: 12px;
 }
 
 QLabel#TopbarTitle {
     font-size: 15px;
     font-weight: 700;
-    color: {LIGHT_HEX_1E293B};           /* заголовок страницы */
+    color: {LIGHT_TEXT_PRIMARY};           /* заголовок страницы */
 }
 
 QLabel#TopbarSubtitle {
     font-size: 10px;
-    color: {LIGHT_HEX_94A3B8};           /* подзаголовок: "4 saved · Office active" */
+    color: {LIGHT_TEXT_MUTED};           /* подзаголовок: "4 saved · Office active" */
 }
 
 /* ── CONTENT SHELL ────────────────────────────────────────────── */
 QFrame#ContentShell {
-    background: {LIGHT_HEX_FFFFFF};      /* основная рабочая область — белый */
-    border: 1px solid {LIGHT_HEX_E8EDF5};
+    background: {LIGHT_CARD_SURFACE};      /* основная рабочая область — белый */
+    border: 1px solid {LIGHT_DATA_SURFACE};
     border-radius: 14px;      /* скругление всех углов */
 }
 
 /* ── LEFT PANEL ───────────────────────────────────────────────── */
 QFrame#LeftPanel {
-    background: {LIGHT_HEX_FFFFFF};      /* левая панель — белый */
-    border-right: 1px solid {LIGHT_HEX_E8EDF5}; /* разделитель между панелями */
+    background: {LIGHT_CARD_SURFACE};      /* левая панель — белый */
+    border-right: 1px solid {LIGHT_DATA_SURFACE}; /* разделитель между панелями */
     border-radius: 14px 0 14px 14px; /* все углы кроме верхнего правого */
 }
 
 QFrame#PanelHeader {
     background: transparent;
-    border-bottom: 1px solid {LIGHT_HEX_F1F5F9}; /* разделитель под заголовком */
+    border-bottom: 1px solid {LIGHT_PANEL_BG}; /* разделитель под заголовком */
 }
 
 QLabel#PanelTitle {
     font-size: 10px;
     font-weight: 700;
-    color: {LIGHT_HEX_CBD5E1};           /* заголовок "All profiles" */
+    color: {LIGHT_BORDER_SUBTLE};           /* заголовок "All profiles" */
     text-transform: uppercase;
     letter-spacing: 1.2px;
 }
 
 QLabel#CountPill {
-    background: {LIGHT_HEX_EEF2FF};      /* пилюля счётчика — indigo-50 */
-    color: {LIGHT_HEX_3730A3};           /* текст счётчика — indigo-800 */
+    background: {LIGHT_INPUT_BG};      /* пилюля счётчика — indigo-50 */
+    color: {LIGHT_ACCENT_DEEP};           /* текст счётчика — indigo-800 */
     font-size: 9px;
     font-weight: 700;
     padding: 2px 7px;
@@ -187,34 +187,34 @@ QFrame#SearchWrap {
 }
 
 QLineEdit#ProfilesSearch {
-    background: {LIGHT_HEX_F8FAFC};      /* фон поля поиска */
-    border: 1px solid {LIGHT_HEX_E2E8F0}; /* рамка поиска */
+    background: {LIGHT_APP_BG};      /* фон поля поиска */
+    border: 1px solid {LIGHT_BORDER_DEFAULT}; /* рамка поиска */
     border-radius: 8px;
     padding: 0 10px;
     min-height: 32px;
-    color: {LIGHT_HEX_1E293B};
+    color: {LIGHT_TEXT_PRIMARY};
     font-size: 12px;
 }
 
 QLineEdit#ProfilesSearch:focus {
-    border-color: {LIGHT_HEX_A5B4FC};   /* рамка поиска при фокусе — indigo-300 */
-    background: {LIGHT_HEX_FFFFFF};
+    border-color: {LIGHT_ACCENT_TEXT};   /* рамка поиска при фокусе — indigo-300 */
+    background: {LIGHT_CARD_SURFACE};
 }
 
 QComboBox#AdapterFilter {
-    background: {LIGHT_HEX_F8FAFC};
-    border: 1px solid {LIGHT_HEX_E2E8F0};
+    background: {LIGHT_APP_BG};
+    border: 1px solid {LIGHT_BORDER_DEFAULT};
     border-radius: 8px;
     padding: 0 10px;
     min-height: 32px;
-    color: {LIGHT_HEX_64748B};
+    color: {LIGHT_TEXT_FAINT};
     font-size: 12px;
 }
 
 QComboBox#AdapterFilter:focus,
 QComboBox#AdapterFilter:on {
-    border-color: {LIGHT_HEX_A5B4FC};
-    background: {LIGHT_HEX_FFFFFF};
+    border-color: {LIGHT_ACCENT_TEXT};
+    background: {LIGHT_CARD_SURFACE};
 }
 
 QComboBox#AdapterFilter::drop-down {
@@ -227,8 +227,8 @@ QComboBox#AdapterFilter::down-arrow {
     image: none;
     width: 8px;
     height: 8px;
-    border-left: 2px solid {LIGHT_HEX_94A3B8};
-    border-bottom: 2px solid {LIGHT_HEX_94A3B8};
+    border-left: 2px solid {LIGHT_TEXT_MUTED};
+    border-bottom: 2px solid {LIGHT_TEXT_MUTED};
     margin-top: -4px;
 }
 
@@ -259,44 +259,44 @@ QWidget#ProfileRow {
 }
 
 QWidget#ProfileRow:hover {
-    background: {LIGHT_HEX_F8FAFC};      /* hover строки профиля — очень лёгкий */
+    background: {LIGHT_APP_BG};      /* hover строки профиля — очень лёгкий */
     border-radius: 10px;
 }
 
 QLabel#ProfileName {
     font-size: 14px;
     font-weight: 600;
-    color: {LIGHT_HEX_1E293B};           /* имя профиля */
+    color: {LIGHT_TEXT_PRIMARY};           /* имя профиля */
     letter-spacing: -0.1px;
 }
 
 /* Адаптер + режим в одну строку — "Ethernet · STATIC" */
 QLabel#ProfileMetaStatic {
     font-size: 12px;
-    color: {LIGHT_HEX_94A3B8};           /* базовый цвет строки адаптера */
+    color: {LIGHT_TEXT_MUTED};           /* базовый цвет строки адаптера */
 }
 
 QLabel#ProfileMetaDhcp {
     font-size: 12px;
-    color: {LIGHT_HEX_94A3B8};           /* то же, DHCP */
+    color: {LIGHT_TEXT_MUTED};           /* то же, DHCP */
 }
 
 /* Actions block */
 QFrame#ActionsBlock {
-    background: {LIGHT_HEX_FFFFFF};      /* фон блока кнопок — белый, единый с панелью */
-    border-top: 1px solid {LIGHT_HEX_F1F5F9};
+    background: {LIGHT_CARD_SURFACE};      /* фон блока кнопок — белый, единый с панелью */
+    border-top: 1px solid {LIGHT_PANEL_BG};
     border-radius: 0 0 14px 14px; /* скругление нижних углов — совпадает с LeftPanel */
 }
 
 /* ── RIGHT PANEL ──────────────────────────────────────────────── */
 QFrame#RightPanel {
-    background: {LIGHT_HEX_F8FAFC};      /* фон правой панели — чуть светлее белого */
+    background: {LIGHT_APP_BG};      /* фон правой панели — чуть светлее белого */
     border-radius: 0 14px 14px 0;  /* скругление только правых углов */
 }
 
 QFrame#EditorHeader {
-    background: {LIGHT_HEX_FFFFFF};      /* хедер редактора — белый, без внешней рамки */
-    border-bottom: 1px solid {LIGHT_HEX_F1F5F9}; /* тонкий разделитель снизу */
+    background: {LIGHT_CARD_SURFACE};      /* хедер редактора — белый, без внешней рамки */
+    border-bottom: 1px solid {LIGHT_PANEL_BG}; /* тонкий разделитель снизу */
     border-top-right-radius: 13px;    /* скругление верхнего правого угла под ContentShell */
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
@@ -318,20 +318,20 @@ QScrollArea#EditorScroll > QWidget > QWidget {
 
 /* Section cards */
 QFrame#SectionCard {
-    background: {LIGHT_HEX_FFFFFF};      /* фон секции General / Network / DNS */
-    border: 1px solid {LIGHT_HEX_E8EDF5}; /* рамка секции */
+    background: {LIGHT_CARD_SURFACE};      /* фон секции General / Network / DNS */
+    border: 1px solid {LIGHT_DATA_SURFACE}; /* рамка секции */
     border-radius: 12px;
 }
 
 QLabel#SectionTitle {
     font-size: 11px;
     font-weight: 700;
-    color: {LIGHT_HEX_CBD5E1};           /* заголовок секции — GENERAL, NETWORK, DNS */
+    color: {LIGHT_BORDER_SUBTLE};           /* заголовок секции — GENERAL, NETWORK, DNS */
     letter-spacing: 1.5px;
 }
 
 QFrame#SectionLine {
-    color: {LIGHT_HEX_F1F5F9};           /* горизонтальная линия после заголовка секции */
+    color: {LIGHT_PANEL_BG};           /* горизонтальная линия после заголовка секции */
 }
 
 QWidget#SettingsRow {
@@ -340,75 +340,75 @@ QWidget#SettingsRow {
 
 QLabel#SettingsHint {
     font-size: 11px;
-    color: {LIGHT_HEX_94A3B8};
+    color: {LIGHT_TEXT_MUTED};
 }
 
 QLabel#FieldLabel {
     font-size: 14px;
-    color: {LIGHT_HEX_64748B};           /* подпись поля: Name, IP address и т.д. */
+    color: {LIGHT_TEXT_FAINT};           /* подпись поля: Name, IP address и т.д. */
     font-weight: 500;
 }
 
 /* ── INPUTS ───────────────────────────────────────────────────── */
 QLineEdit, QComboBox {
-    background: {LIGHT_HEX_F8FAFC};      /* фон полей ввода */
-    border: 1px solid {LIGHT_HEX_E2E8F0}; /* рамка полей */
+    background: {LIGHT_APP_BG};      /* фон полей ввода */
+    border: 1px solid {LIGHT_BORDER_DEFAULT}; /* рамка полей */
     border-radius: 8px;
     padding: 0 12px;
     min-height: 38px;
-    color: {LIGHT_HEX_1E293B};
+    color: {LIGHT_TEXT_PRIMARY};
     font-size: 14px;
     font-family: "Consolas", "Courier New", monospace; /* monospace для IP-адресов */
 }
 
 QLineEdit:focus, QComboBox:focus {
-    border-color: {LIGHT_HEX_A5B4FC};   /* рамка при фокусе — indigo-300 */
-    background: {LIGHT_HEX_FFFFFF};
+    border-color: {LIGHT_ACCENT_TEXT};   /* рамка при фокусе — indigo-300 */
+    background: {LIGHT_CARD_SURFACE};
 }
 
 QComboBox:on {
-    border-color: {LIGHT_HEX_A5B4FC};
-    background: {LIGHT_HEX_FFFFFF};
+    border-color: {LIGHT_ACCENT_TEXT};
+    background: {LIGHT_CARD_SURFACE};
 }
 
 QLineEdit:disabled, QComboBox:disabled {
-    background: {LIGHT_HEX_F1F5F9};      /* заблокированное поле */
-    color: {LIGHT_HEX_CBD5E1};
-    border-color: {LIGHT_HEX_E2E8F0};
+    background: {LIGHT_PANEL_BG};      /* заблокированное поле */
+    color: {LIGHT_BORDER_SUBTLE};
+    border-color: {LIGHT_BORDER_DEFAULT};
 }
 
 QComboBox::drop-down {
     width: 26px;
-    border-left: 1px solid {LIGHT_HEX_E2E8F0};
+    border-left: 1px solid {LIGHT_BORDER_DEFAULT};
     background: transparent;
     border-radius: 0 7px 7px 0;
 }
 
 QComboBox::down-arrow {
     image: none;
-    border-left: 2px solid {LIGHT_HEX_94A3B8};  /* стрелка ComboBox */
-    border-bottom: 2px solid {LIGHT_HEX_94A3B8};
+    border-left: 2px solid {LIGHT_TEXT_MUTED};  /* стрелка ComboBox */
+    border-bottom: 2px solid {LIGHT_TEXT_MUTED};
     width: 6px;
     height: 6px;
     margin-top: -2px;
 }
 
 QComboBox QAbstractItemView {
-    background: {LIGHT_HEX_FFFFFF};
-    border: 1px solid {LIGHT_HEX_E2E8F0};
+    background: {LIGHT_CARD_SURFACE};
+    border: 1px solid {LIGHT_BORDER_DEFAULT};
     border-radius: 8px;
-    selection-background-color: {LIGHT_HEX_EEF2FF}; /* выбранный элемент */
-    selection-color: {LIGHT_HEX_1E293B};
+    selection-background-color: {LIGHT_INPUT_BG}; /* выбранный элемент */
+    selection-color: {LIGHT_TEXT_PRIMARY};
     padding: 4px;
-    color: {LIGHT_HEX_1E293B};
+    color: {LIGHT_TEXT_PRIMARY};
 }
 
 /* ── BUTTONS ──────────────────────────────────────────────────── */
 QPushButton {
-    background: {LIGHT_HEX_F8FAFC};
-    border: 1px solid {LIGHT_HEX_E2E8F0};
+    background: {LIGHT_APP_BG};
+    border: 1px solid {LIGHT_BORDER_DEFAULT};
     border-radius: 7px;
-    color: {LIGHT_HEX_475569};
+    color: {LIGHT_TEXT_SECONDARY};
     font-size: 12px;
     font-weight: 600;
     padding: 6px 12px;
@@ -441,67 +441,67 @@ QPushButton#BtnApply {
 }
 
 QPushButton:hover {
-    background: {LIGHT_HEX_F0F4FF};
-    border-color: {LIGHT_HEX_C7D2FE};
-    color: {LIGHT_HEX_1E293B};
+    background: {LIGHT_PROFILE_CARD_BG};
+    border-color: {LIGHT_CARD_BORDER};
+    color: {LIGHT_TEXT_PRIMARY};
 }
 
 QPushButton:pressed {
-    background: {LIGHT_HEX_E0E7FF};
+    background: {LIGHT_STATE_ACTIVE_BG};
 }
 
 QPushButton[role="action"] {
-    background: {LIGHT_HEX_F8FAFC};      /* action кнопки — Save, Копировать, Импорт, Экспорт */
-    border-color: {LIGHT_HEX_E2E8F0};
-    color: {LIGHT_HEX_475569};
+    background: {LIGHT_APP_BG};      /* action кнопки — Save, Копировать, Импорт, Экспорт */
+    border-color: {LIGHT_BORDER_DEFAULT};
+    color: {LIGHT_TEXT_SECONDARY};
     font-size: 12px;
 }
 
 QPushButton[role="action"]:hover {
-    background: {LIGHT_HEX_F0F4FF};
-    border-color: {LIGHT_HEX_C7D2FE};
-    color: {LIGHT_HEX_1E293B};
+    background: {LIGHT_PROFILE_CARD_BG};
+    border-color: {LIGHT_CARD_BORDER};
+    color: {LIGHT_TEXT_PRIMARY};
 }
 
 QPushButton[role="primary"] {
-    background: {LIGHT_HEX_E8EAF6};
-    border: 1px solid {LIGHT_HEX_C5CAE9};
-    color: {LIGHT_HEX_3730A3};
+    background: {LIGHT_WIFI_TABLE_BG};
+    border: 1px solid {LIGHT_CONTROL_BORDER};
+    color: {LIGHT_ACCENT_DEEP};
     font-weight: 700;
     font-size: 12px;
 }
 
 QPushButton[role="primary"]:hover {
-    background: {LIGHT_HEX_D1D5F0};
-    border-color: {LIGHT_HEX_9FA8DA};
+    background: {LIGHT_STATE_HOVER_BG};
+    border-color: {LIGHT_SCROLL_HANDLE};
 }
 
 QPushButton[role="primary"]:pressed {
-    background: {LIGHT_HEX_C5CAE9};
+    background: {LIGHT_CONTROL_BORDER};
 }
 
 QPushButton[role="delete"] {
-    background: {LIGHT_HEX_FEF2F2};      /* Delete — слабо-красный фон в покое */
-    border: 1px solid {LIGHT_HEX_FECACA};
-    color: {LIGHT_HEX_DC2626};
+    background: {LIGHT_ERROR_BG};      /* Delete — слабо-красный фон в покое */
+    border: 1px solid {LIGHT_ERROR_BORDER};
+    color: {LIGHT_STATUS_ERROR};
     font-weight: 600;
     font-size: 12px;
 }
 
 QPushButton[role="delete"]:hover {
-    background: {LIGHT_HEX_FEE2E2};
-    border-color: {LIGHT_HEX_FCA5A5};
-    color: {LIGHT_HEX_B91C1C};
+    background: {LIGHT_ERROR_BG_HOVER};
+    border-color: {LIGHT_ERROR_TEXT};
+    color: {LIGHT_STATUS_ERROR_STRONG};
 }
 
 QPushButton[role="delete"]:pressed {
-    background: {LIGHT_HEX_FECACA};
+    background: {LIGHT_ERROR_BORDER};
 }
 
 QPushButton:disabled {
-    background: {LIGHT_HEX_F1F5F9};
-    border-color: {LIGHT_HEX_E2E8F0};
-    color: {LIGHT_HEX_94A3B8};
+    background: {LIGHT_PANEL_BG};
+    border-color: {LIGHT_BORDER_DEFAULT};
+    color: {LIGHT_TEXT_MUTED};
 }
 
 /* ── SCROLLBARS ───────────────────────────────────────────────── */
@@ -534,28 +534,28 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
 QLabel#Placeholder {
     font-size: 18px;
     font-weight: 300;
-    color: {LIGHT_HEX_CBD5E1};           /* текст-заглушка на пустых страницах */
+    color: {LIGHT_BORDER_SUBTLE};           /* текст-заглушка на пустых страницах */
 }
 
 /* ── DIALOGS (QMessageBox, QDialog, QFileDialog) ──────────────── */
 QDialog {
-    background: {LIGHT_HEX_FFFFFF};
-    color: {LIGHT_HEX_1E293B};
+    background: {LIGHT_CARD_SURFACE};
+    color: {LIGHT_TEXT_PRIMARY};
 }
 
 QDialog QLabel {
-    color: {LIGHT_HEX_1E293B};
+    color: {LIGHT_TEXT_PRIMARY};
     font-size: 13px;
     background: transparent;
 }
 
 QMessageBox {
-    background: {LIGHT_HEX_FFFFFF};
-    color: {LIGHT_HEX_1E293B};
+    background: {LIGHT_CARD_SURFACE};
+    color: {LIGHT_TEXT_PRIMARY};
 }
 
 QMessageBox QLabel {
-    color: {LIGHT_HEX_1E293B};
+    color: {LIGHT_TEXT_PRIMARY};
     font-size: 13px;
     background: transparent;
 }
@@ -581,34 +581,34 @@ QTableWidget#WifiProfileTable::item {
     padding: 4px 8px;
     border: none;
     background: transparent;
-    color: {LIGHT_HEX_334155};
+    color: {LIGHT_TEXT_STRONG};
 }
 
 QTableWidget#WifiNetworkTable::item:selected,
 QTableWidget#WifiProfileTable::item:selected {
-    background: {LIGHT_HEX_EEF2FF};
-    color: {LIGHT_HEX_1E293B};
+    background: {LIGHT_INPUT_BG};
+    color: {LIGHT_TEXT_PRIMARY};
     border-radius: 6px;
 }
 
 QHeaderView::section {
     background: transparent;
-    color: {LIGHT_HEX_94A3B8};
+    color: {LIGHT_TEXT_MUTED};
     font-size: 11px;
     font-weight: 600;
     padding: 4px 8px;
     border: none;
-    border-bottom: 1px solid {LIGHT_HEX_E2E8F0};
+    border-bottom: 1px solid {LIGHT_BORDER_DEFAULT};
 }
 
 QFrame#WifiStatusBar {
-    border-bottom: 1px solid {LIGHT_HEX_E2E8F0};
+    border-bottom: 1px solid {LIGHT_BORDER_DEFAULT};
     background: transparent;
 }
 
 QLabel#WifiStatusLabel {
     font-size: 13px;
-    color: {LIGHT_HEX_475569};
+    color: {LIGHT_TEXT_SECONDARY};
 }
 
 QLabel#WifiFeedback {
@@ -618,7 +618,7 @@ QLabel#WifiFeedback {
 
 QCheckBox {
     font-size: 13px;
-    color: {LIGHT_HEX_475569};
+    color: {LIGHT_TEXT_SECONDARY};
     spacing: 6px;
 }
 
@@ -626,17 +626,17 @@ QCheckBox::indicator {
     width: 16px;
     height: 16px;
     border-radius: 4px;
-    border: 1px solid {LIGHT_HEX_CBD5E1};
-    background: {LIGHT_HEX_F8FAFC};
+    border: 1px solid {LIGHT_BORDER_SUBTLE};
+    background: {LIGHT_APP_BG};
 }
 
 QCheckBox::indicator:checked {
-    background: {LIGHT_HEX_6366F1};
-    border-color: {LIGHT_HEX_6366F1};
+    background: {LIGHT_ACCENT_HOVER};
+    border-color: {LIGHT_ACCENT_HOVER};
 }
 
 QFrame#WifiTopPanel {
-    border-bottom: 1px solid {LIGHT_HEX_E2E8F0};
+    border-bottom: 1px solid {LIGHT_BORDER_DEFAULT};
 }
 
 QFrame#WifiBottomPanel {
@@ -655,7 +655,7 @@ QTabWidget#WifiTabs::pane {
 
 QTabWidget#WifiTabs > QTabBar::tab {
     background: transparent;
-    color: {LIGHT_HEX_94A3B8};
+    color: {LIGHT_TEXT_MUTED};
     font-size: 13px;
     font-weight: 500;
     padding: 10px 20px;
@@ -665,17 +665,17 @@ QTabWidget#WifiTabs > QTabBar::tab {
 }
 
 QTabWidget#WifiTabs > QTabBar::tab:selected {
-    color: {LIGHT_HEX_6366F1};
-    border-bottom: 2px solid {LIGHT_HEX_6366F1};
+    color: {LIGHT_ACCENT_HOVER};
+    border-bottom: 2px solid {LIGHT_ACCENT_HOVER};
 }
 
 QTabWidget#WifiTabs > QTabBar::tab:hover:!selected {
-    color: {LIGHT_HEX_475569};
-    border-bottom: 2px solid {LIGHT_HEX_CBD5E1};
+    color: {LIGHT_TEXT_SECONDARY};
+    border-bottom: 2px solid {LIGHT_BORDER_SUBTLE};
 }
 
 QFrame#WifiProfileToolbar {
-    border-bottom: 1px solid {LIGHT_HEX_E2E8F0};
+    border-bottom: 1px solid {LIGHT_BORDER_DEFAULT};
     background: transparent;
 }
 
@@ -686,14 +686,14 @@ QFrame#WifiProfileToolbar QPushButton {
 
 QLabel#WifiStatusDetails {
     font-size: 11px;
-    color: {LIGHT_HEX_64748B};
+    color: {LIGHT_TEXT_FAINT};
     padding-left: 22px;
     background: transparent;
 }
 
 QMenu {
-    background: {LIGHT_HEX_FFFFFF};
-    border: 1px solid {LIGHT_HEX_E2E8F0};
+    background: {LIGHT_CARD_SURFACE};
+    border: 1px solid {LIGHT_BORDER_DEFAULT};
     border-radius: 8px;
     padding: 4px;
 }
@@ -701,14 +701,14 @@ QMenu::item {
     padding: 6px 16px;
     border-radius: 4px;
     font-size: 13px;
-    color: {LIGHT_HEX_1E293B};
+    color: {LIGHT_TEXT_PRIMARY};
 }
-QMenu::item:selected { background: {LIGHT_HEX_EEF2FF}; color: {LIGHT_HEX_4F46E5}; }
-QMenu::separator { height: 1px; background: {LIGHT_HEX_E2E8F0}; margin: 3px 8px; }
+QMenu::item:selected { background: {LIGHT_INPUT_BG}; color: {LIGHT_ACCENT}; }
+QMenu::separator { height: 1px; background: {LIGHT_BORDER_DEFAULT}; margin: 3px 8px; }
 
 /* ── TOOLS PAGE ───────────────────────────────────────────────── */
 QFrame#ToolsSidebar {
-    border-right: 1px solid {LIGHT_HEX_E2E8F0};
+    border-right: 1px solid {LIGHT_BORDER_DEFAULT};
     background: transparent;
 }
 
@@ -718,10 +718,10 @@ QFrame#ToolNavItem {
     border-radius: 0;
 }
 QFrame#ToolNavItem:hover {
-    background: {LIGHT_HEX_F1F5F9};
+    background: {LIGHT_PANEL_BG};
 }
 QFrame#ToolNavItem[active="true"] {
-    background: {LIGHT_HEX_EEF2FF};
+    background: {LIGHT_INPUT_BG};
 }
 
 QFrame#ToolNavBar {
@@ -729,38 +729,38 @@ QFrame#ToolNavBar {
     border-radius: 0 2px 2px 0;
 }
 QFrame#ToolNavBar[active="true"] {
-    background: {LIGHT_HEX_4F46E5};
+    background: {LIGHT_ACCENT};
 }
 
 QLabel#ToolNavIcon {
-    color: {LIGHT_HEX_94A3B8};
+    color: {LIGHT_TEXT_MUTED};
     font-size: 13px;
 }
 QLabel#ToolNavIcon[active="true"] {
-    color: {LIGHT_HEX_4F46E5};
+    color: {LIGHT_ACCENT};
 }
 
 QLabel#ToolNavText {
-    color: {LIGHT_HEX_475569};
+    color: {LIGHT_TEXT_SECONDARY};
     font-size: 12px;
     padding-right: 4px;
 }
 QLabel#ToolNavText[active="true"] {
-    color: {LIGHT_HEX_4F46E5};
+    color: {LIGHT_ACCENT};
     font-weight: 600;
 }
 
 QLabel#ToolGroupLabel {
     font-size: 13px;
     font-weight: 700;
-    color: {LIGHT_HEX_94A3B8};
+    color: {LIGHT_TEXT_MUTED};
     padding-left: 14px;
     padding-top: 2px;
     padding-bottom: 2px;
 }
 
 QFrame#ToolDivider {
-    background: {LIGHT_HEX_E2E8F0};
+    background: {LIGHT_BORDER_DEFAULT};
     max-height: 1px;
     margin: 0 10px;
 }
@@ -768,204 +768,201 @@ QFrame#ToolDivider {
 QLabel#ToolPanelTitle {
     font-size: 15px;
     font-weight: 500;
-    color: {LIGHT_HEX_1E293B};
+    color: {LIGHT_TEXT_PRIMARY};
 }
 
 /* Subnet Calculator */
 QLabel#SubnetLabel {
     font-size: 12px;
-    color: {LIGHT_HEX_64748B};
+    color: {LIGHT_TEXT_FAINT};
     min-width: 140px;
 }
 QLabel#SubnetValue {
     font-size: 12px;
     font-weight: 600;
-    color: {LIGHT_HEX_1E293B};
+    color: {LIGHT_TEXT_PRIMARY};
 }
 
 /* Speed Test cards */
 QFrame#SpeedCard {
-    background: {LIGHT_HEX_F1F5F9};
-    border: 1px solid {LIGHT_HEX_E2E8F0};
+    background: {LIGHT_PANEL_BG};
+    border: 1px solid {LIGHT_BORDER_DEFAULT};
     border-radius: 10px;
 }
 QLabel#SpeedCardTitle {
     font-size: 11px;
-    color: {LIGHT_HEX_64748B};
+    color: {LIGHT_TEXT_FAINT};
 }
 QLabel#SpeedCardValue {
     font-size: 24px;
     font-weight: 700;
-    color: {LIGHT_HEX_1E293B};
+    color: {LIGHT_TEXT_PRIMARY};
 }
 QLabel#SpeedCardUnit {
     font-size: 11px;
-    color: {LIGHT_HEX_94A3B8};
+    color: {LIGHT_TEXT_MUTED};
 }
 
 QTextEdit#ToolOutput {
-    background: {LIGHT_HEX_FFFFFF};
-    border: 1px solid {LIGHT_HEX_E2E8F0};
+    background: {LIGHT_CARD_SURFACE};
+    border: 1px solid {LIGHT_BORDER_DEFAULT};
     border-radius: 8px;
-    color: {LIGHT_HEX_1E293B};
-    selection-background-color: {LIGHT_HEX_6366F1};
-    selection-color: {LIGHT_HEX_FFFFFF};
+    color: {LIGHT_TEXT_PRIMARY};
+    selection-background-color: {LIGHT_ACCENT_HOVER};
+    selection-color: {LIGHT_TEXT_ON_ACCENT};
     padding: 6px;
     margin-top: 10px;
 }
 
 /* Netstat / Routes / DNS Cache shared tree */
 QTreeWidget#NetstatTable,
-QTreeWidget#ToolTree {
-    background: {LIGHT_HEX_FFFFFF};
-    border: 1px solid {LIGHT_HEX_E2E8F0};
+QTreeWidget#ToolTree,
+QTreeWidget#IpconfigTree {
+    background: {LIGHT_CARD_SURFACE};
+    border: 1px solid {LIGHT_BORDER_DEFAULT};
     border-radius: 8px;
     outline: none;
 }
 QTreeWidget#NetstatTable::item,
-QTreeWidget#ToolTree::item {
+QTreeWidget#ToolTree::item,
+QTreeWidget#IpconfigTree::item {
     padding: 3px 6px;
-    color: {LIGHT_HEX_1E293B};
+    color: {LIGHT_TEXT_PRIMARY};
 }
 QTreeWidget#NetstatTable::item:hover,
-QTreeWidget#ToolTree::item:hover {
-    background: {LIGHT_HEX_F1F5F9};
+QTreeWidget#ToolTree::item:hover,
+QTreeWidget#IpconfigTree::item:hover {
+    background: {LIGHT_PANEL_BG};
+    color: {LIGHT_TEXT_PRIMARY};
 }
 QTreeWidget#NetstatTable::item:selected,
 QTreeWidget#NetstatTable::item:selected:active,
 QTreeWidget#NetstatTable::item:selected:!active,
 QTreeWidget#ToolTree::item:selected,
 QTreeWidget#ToolTree::item:selected:active,
-QTreeWidget#ToolTree::item:selected:!active {
-    background: {LIGHT_HEX_6366F1};
-    color: {LIGHT_HEX_FFFFFF};
+QTreeWidget#ToolTree::item:selected:!active,
+QTreeWidget#IpconfigTree::item:selected,
+QTreeWidget#IpconfigTree::item:selected:active,
+QTreeWidget#IpconfigTree::item:selected:!active {
+    background: {LIGHT_ACCENT_HOVER};
+    color: {LIGHT_TEXT_ON_ACCENT};
 }
 QTreeWidget#NetstatTable QHeaderView::section,
-QTreeWidget#ToolTree QHeaderView::section {
-    background: {LIGHT_HEX_EEF2FF};
-    color: {LIGHT_HEX_4F46E5};
+QTreeWidget#ToolTree QHeaderView::section,
+QTreeWidget#IpconfigTree QHeaderView::section {
+    background: {LIGHT_INPUT_BG};
+    color: {LIGHT_ACCENT};
     font-size: 11px;
     font-weight: 700;
     padding: 4px 6px;
     border: none;
-    border-bottom: 1px solid {LIGHT_HEX_C7D2FE};
+    border-bottom: 1px solid {LIGHT_CARD_BORDER};
 }
 
 QTableWidget#NetstatTable {
-    background: {LIGHT_HEX_FFFFFF};
-    border: 1px solid {LIGHT_HEX_E2E8F0};
+    background: {LIGHT_CARD_SURFACE};
+    border: 1px solid {LIGHT_BORDER_DEFAULT};
     border-radius: 8px;
     outline: none;
-    gridline-color: {LIGHT_HEX_E2E8F0};
+    gridline-color: {LIGHT_BORDER_DEFAULT};
 }
 QTableWidget#NetstatTable::item {
     padding: 3px 6px;
-    color: {LIGHT_HEX_1E293B};
+    color: {LIGHT_TEXT_PRIMARY};
     border: none;
 }
 QTableWidget#NetstatTable::item:hover {
-    background: {LIGHT_HEX_F1F5F9};
+    background: {LIGHT_PANEL_BG};
 }
 QTableWidget#NetstatTable::item:selected,
 QTableWidget#NetstatTable::item:selected:active,
 QTableWidget#NetstatTable::item:selected:!active {
-    background: {LIGHT_HEX_6366F1};
-    color: {LIGHT_HEX_FFFFFF};
+    background: {LIGHT_ACCENT_HOVER};
+    color: {LIGHT_TEXT_ON_ACCENT};
 }
 QTableWidget#NetstatTable QHeaderView::section {
-    background: {LIGHT_HEX_EEF2FF};
-    color: {LIGHT_HEX_4F46E5};
+    background: {LIGHT_INPUT_BG};
+    color: {LIGHT_ACCENT};
     font-size: 11px;
     font-weight: 700;
     padding: 4px 6px;
     border: none;
-    border-bottom: 1px solid {LIGHT_HEX_C7D2FE};
-    border-right: 1px solid {LIGHT_HEX_C7D2FE};
+    border-bottom: 1px solid {LIGHT_CARD_BORDER};
+    border-right: 1px solid {LIGHT_CARD_BORDER};
 }
 QTableWidget#NetstatTable QHeaderView::section:last {
     border-right: none;
 }
 
 QTreeWidget#IpconfigTree {
-    background: {LIGHT_HEX_FFFFFF};
-    border: 1px solid {LIGHT_HEX_E2E8F0};
+    background: {LIGHT_CARD_SURFACE};
+    border: 1px solid {LIGHT_BORDER_DEFAULT};
     border-radius: 8px;
-    alternate-background-color: {LIGHT_HEX_F1F5F9};
+    alternate-background-color: {LIGHT_PANEL_BG};
     margin-top: 10px;
     outline: none;
 }
 QTreeWidget#IpconfigTree::item {
     padding: 3px 6px;
     border: none;
-    color: {LIGHT_HEX_1E293B};
-}
-QTreeWidget#IpconfigTree::item:hover {
-    background: transparent;
-}
-QTreeWidget#IpconfigTree::item:hover:!selected {
-    background: transparent;
-    color: {LIGHT_HEX_1E293B};
-}
-QTreeWidget#IpconfigTree::item:selected,
-QTreeWidget#IpconfigTree::item:selected:hover {
-    background: {LIGHT_RGBA_99_102_241_0_12};
-    color: {LIGHT_HEX_4F46E5};
+    color: {LIGHT_TEXT_PRIMARY};
 }
 QTreeWidget#IpconfigTree::branch {
     background: transparent;
     border: none;
 }
-QTreeWidget#IpconfigTree::branch:hover,
+QTreeWidget#IpconfigTree::branch:hover {
+    background: {LIGHT_STATE_ACTIVE_BG};
+    border: none;
+}
 QTreeWidget#IpconfigTree::branch:selected,
 QTreeWidget#IpconfigTree::branch:selected:active,
 QTreeWidget#IpconfigTree::branch:hover:selected {
-    background: transparent;
+    background: {LIGHT_ACCENT_HOVER};
     border: none;
 }
 QTreeWidget#IpconfigTree::branch:has-children:!has-siblings:closed,
 QTreeWidget#IpconfigTree::branch:has-children:has-siblings:closed {
     image: url({ASSETS}/arrow-right.svg);
-    background: transparent;
 }
 QTreeWidget#IpconfigTree::branch:has-children:!has-siblings:open,
 QTreeWidget#IpconfigTree::branch:has-children:has-siblings:open {
     image: url({ASSETS}/arrow-down.svg);
-    background: transparent;
 }
 QTreeWidget#IpconfigTree QHeaderView::section {
-    background: {LIGHT_HEX_EEF2FF};
+    background: {LIGHT_INPUT_BG};
     border: none;
-    border-bottom: 1px solid {LIGHT_HEX_E2E8F0};
-    border-right: 1px solid {LIGHT_HEX_E2E8F0};
+    border-bottom: 1px solid {LIGHT_BORDER_DEFAULT};
+    border-right: 1px solid {LIGHT_BORDER_DEFAULT};
     padding: 4px 8px;
     font-weight: 600;
-    color: {LIGHT_HEX_475569};
+    color: {LIGHT_TEXT_SECONDARY};
 }
 
 QLabel#ToolStatus {
     font-size: 12px;
-    color: {LIGHT_HEX_64748B};
+    color: {LIGHT_TEXT_FAINT};
 }
 
 QLineEdit#ToolInput {
-    background: {LIGHT_HEX_F8FAFC};
-    border: 1px solid {LIGHT_HEX_E2E8F0};
+    background: {LIGHT_APP_BG};
+    border: 1px solid {LIGHT_BORDER_DEFAULT};
     border-radius: 6px;
-    color: {LIGHT_HEX_1E293B};
+    color: {LIGHT_TEXT_PRIMARY};
     padding: 0 8px;
     font-size: 13px;
 }
 
 QLineEdit#ToolInput:focus {
-    border-color: {LIGHT_HEX_6366F1};
-    background: {LIGHT_HEX_FAFAFE};
+    border-color: {LIGHT_ACCENT_HOVER};
+    background: {LIGHT_PAGE_CANVAS};
 }
 
 QSpinBox#ToolSpinBox {
-    background: {LIGHT_HEX_F8FAFC};
-    border: 1px solid {LIGHT_HEX_E2E8F0};
+    background: {LIGHT_APP_BG};
+    border: 1px solid {LIGHT_BORDER_DEFAULT};
     border-radius: 6px;
-    color: {LIGHT_HEX_1E293B};
+    color: {LIGHT_TEXT_PRIMARY};
     padding: 0 4px;
     font-size: 13px;
 }
@@ -981,25 +978,25 @@ QPushButton#ToolBtn:pressed {
 }
 
 QPushButton#ToolBtn[role="primary"]:pressed {
-    background: {LIGHT_HEX_4338CA};
-    border-color: {LIGHT_HEX_3730A3};
+    background: {LIGHT_ACCENT_PRESSED};
+    border-color: {LIGHT_ACCENT_DEEP};
 }
 
 QPushButton#ToolBtn[role="action"]:pressed {
-    background: {LIGHT_HEX_CBD5E1};
+    background: {LIGHT_BORDER_SUBTLE};
 }
 
 QPushButton#ToolNavBtn:pressed {
     padding-top: 2px;
-    background: {LIGHT_HEX_DDE2F0};
+    background: {LIGHT_SECTION_DIVIDER};
 }
 
 /* DNS type combo */
 QComboBox#ToolCombo {
-    background: {LIGHT_HEX_F8FAFC};
-    border: 1px solid {LIGHT_HEX_E2E8F0};
+    background: {LIGHT_APP_BG};
+    border: 1px solid {LIGHT_BORDER_DEFAULT};
     border-radius: 6px;
-    color: {LIGHT_HEX_1E293B};
+    color: {LIGHT_TEXT_PRIMARY};
     padding: 0 8px;
     font-size: 13px;
     min-height: 28px;
@@ -1012,19 +1009,19 @@ QComboBox#ToolCombo::drop-down {
 }
 
 QComboBox#ToolCombo:focus {
-    border-color: {LIGHT_HEX_6366F1};
+    border-color: {LIGHT_ACCENT_HOVER};
 }
 
 QSpinBox#ToolSpinBox:disabled {
-    color: {LIGHT_HEX_94A3B8};
-    background: {LIGHT_HEX_F1F5F9};
+    color: {LIGHT_TEXT_MUTED};
+    background: {LIGHT_PANEL_BG};
 }
 
 QSpinBox#SettingsSpinBox {
-    background: {LIGHT_HEX_F8FAFC};
-    border: 1px solid {LIGHT_HEX_E2E8F0};
+    background: {LIGHT_APP_BG};
+    border: 1px solid {LIGHT_BORDER_DEFAULT};
     border-radius: 7px;
-    color: {LIGHT_HEX_1E293B};
+    color: {LIGHT_TEXT_PRIMARY};
     font-size: 13px;
     padding: 0 8px;
     min-height: 0;
@@ -1039,26 +1036,26 @@ QSpinBox#SettingsSpinBox::down-button {
 /* Subnet Calculator / Калькулятор подсетей */
 QFrame#SubnetInputCard,
 QFrame#SubnetResultCard {
-    background: {LIGHT_HEX_FFFFFF};
-    border: 1px solid {LIGHT_HEX_E2E8F0};
+    background: {LIGHT_CARD_SURFACE};
+    border: 1px solid {LIGHT_BORDER_DEFAULT};
     border-radius: 10px;
 }
 QLabel#SubnetInputLabel {
-    color: {LIGHT_HEX_475569};
+    color: {LIGHT_TEXT_SECONDARY};
     font-size: 12px;
     font-weight: 600;
 }
 QLabel#SubnetResultsTitle {
-    color: {LIGHT_HEX_1E293B};
+    color: {LIGHT_TEXT_PRIMARY};
     font-size: 13px;
     font-weight: 700;
 }
 QLabel#SubnetCardTitle {
-    color: {LIGHT_HEX_4F46E5};
+    color: {LIGHT_ACCENT};
     font-size: 11px;
     font-weight: 700;
     padding-bottom: 5px;
-    border-bottom: 1px solid {LIGHT_HEX_E2E8F0};
+    border-bottom: 1px solid {LIGHT_BORDER_DEFAULT};
 }
 QFrame#SubnetResultCard QLabel#SubnetLabel {
     min-width: 150px;
@@ -1066,62 +1063,62 @@ QFrame#SubnetResultCard QLabel#SubnetLabel {
 /* TCP Port Scanner / Сканер TCP-портов */
 QFrame#PortScanInputCard,
 QFrame#PortScanResultCard {
-    background: {LIGHT_HEX_FFFFFF};
-    border: 1px solid {LIGHT_HEX_E2E8F0};
+    background: {LIGHT_CARD_SURFACE};
+    border: 1px solid {LIGHT_BORDER_DEFAULT};
     border-radius: 10px;
 }
 QLabel#PortScanInputLabel {
-    background: {LIGHT_HEX_FFFFFF};
-    color: {LIGHT_HEX_475569};
+    background: {LIGHT_CARD_SURFACE};
+    color: {LIGHT_TEXT_SECONDARY};
     font-size: 12px;
     font-weight: 600;
 }
 QLabel#PortScanProgressText {
-    color: {LIGHT_HEX_64748B};
+    color: {LIGHT_TEXT_FAINT};
     font-size: 12px;
 }
 QProgressBar#PortScanProgress {
-    background: {LIGHT_HEX_E2E8F0};
+    background: {LIGHT_BORDER_DEFAULT};
     border: none;
     border-radius: 3px;
 }
 QProgressBar#PortScanProgress::chunk {
-    background: {LIGHT_HEX_6366F1};
+    background: {LIGHT_ACCENT_HOVER};
     border-radius: 3px;
 }
 QTableWidget#PortScanTable {
-    background: {LIGHT_HEX_FFFFFF};
-    alternate-background-color: {LIGHT_HEX_F8FAFC};
-    color: {LIGHT_HEX_1E293B};
+    background: {LIGHT_CARD_SURFACE};
+    alternate-background-color: {LIGHT_APP_BG};
+    color: {LIGHT_TEXT_PRIMARY};
     border: none;
     border-radius: 10px;
 }
 QTableWidget#PortScanTable::item {
     padding: 7px 10px;
-    border-bottom: 1px solid {LIGHT_HEX_E2E8F0};
+    border-bottom: 1px solid {LIGHT_BORDER_DEFAULT};
 }
 QTableWidget#PortScanTable::item:selected {
-    background: {LIGHT_HEX_E0E7FF};
-    color: {LIGHT_HEX_1E293B};
+    background: {LIGHT_STATE_ACTIVE_BG};
+    color: {LIGHT_TEXT_PRIMARY};
 }
 QTableWidget#PortScanTable QHeaderView::section {
-    background: {LIGHT_HEX_EEF2FF};
-    color: {LIGHT_HEX_4F46E5};
+    background: {LIGHT_INPUT_BG};
+    color: {LIGHT_ACCENT};
     border: none;
-    border-bottom: 1px solid {LIGHT_HEX_C7D2FE};
+    border-bottom: 1px solid {LIGHT_CARD_BORDER};
     padding: 8px 10px;
     font-weight: 700;
 }
 /* Windows DNS Cache / Кэш DNS Windows */
 QFrame#DnsCacheToolbarCard,
 QFrame#DnsCacheResultCard {
-    background: {LIGHT_HEX_FFFFFF};
-    border: 1px solid {LIGHT_HEX_E2E8F0};
+    background: {LIGHT_CARD_SURFACE};
+    border: 1px solid {LIGHT_BORDER_DEFAULT};
     border-radius: 10px;
 }
 QLabel#DnsCacheToolbarLabel {
-    background: {LIGHT_HEX_FFFFFF};
-    color: {LIGHT_HEX_475569};
+    background: {LIGHT_CARD_SURFACE};
+    color: {LIGHT_TEXT_SECONDARY};
     font-size: 12px;
     font-weight: 600;
 }
@@ -1130,30 +1127,30 @@ QWidget#DnsCacheControlsBar {
     border: none;
 }
 QLabel#DnsCacheSummaryPill {
-    background: {LIGHT_HEX_EEF2FF};
-    color: {LIGHT_HEX_4F46E5};
-    border: 1px solid {LIGHT_HEX_C7D2FE};
+    background: {LIGHT_INPUT_BG};
+    color: {LIGHT_ACCENT};
+    border: 1px solid {LIGHT_CARD_BORDER};
     border-radius: 10px;
     padding: 3px 10px;
     font-size: 11px;
     font-weight: 600;
 }
 QTreeWidget#DnsCacheTable {
-    background: {LIGHT_HEX_FFFFFF};
-    alternate-background-color: {LIGHT_HEX_F8FAFC};
-    color: {LIGHT_HEX_1E293B};
+    background: {LIGHT_CARD_SURFACE};
+    alternate-background-color: {LIGHT_APP_BG};
+    color: {LIGHT_TEXT_PRIMARY};
     border: none;
     border-radius: 10px;
 }
 QTreeWidget#DnsCacheTable::item {
     padding: 7px 10px;
-    border-bottom: 1px solid {LIGHT_HEX_E2E8F0};
+    border-bottom: 1px solid {LIGHT_BORDER_DEFAULT};
 }
 QTreeWidget#DnsCacheTable QHeaderView::section {
-    background: {LIGHT_HEX_EEF2FF};
-    color: {LIGHT_HEX_4F46E5};
+    background: {LIGHT_INPUT_BG};
+    color: {LIGHT_ACCENT};
     border: none;
-    border-bottom: 1px solid {LIGHT_HEX_C7D2FE};
+    border-bottom: 1px solid {LIGHT_CARD_BORDER};
     padding: 8px 10px;
     font-weight: 700;
 }

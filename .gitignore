@@ -98,7 +98,7 @@ installer/
 # Keep the published Inno Setup installer in Git; ignore other installer artifacts.
 !installer/
 installer/*
-!installer/NetConneXion_Setup_v2.0.0.exe
+!installer/NetConneXion_Setup_v2.0.1.exe
 
 # ── Прочее ────────────────────────────────────────────────────
 nul

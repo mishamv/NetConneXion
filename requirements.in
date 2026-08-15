@@ -1,0 +1,11 @@
+# Unified dependency input for local development, CI, and release builds.
+# Regenerate the lockfile with:
+#   python -m piptools compile requirements.in --output-file requirements.lock
+
+-r requirements.txt
+-r requirements-dev.txt
+-c requirements-ci.txt
+
+# Release build tooling
+pyinstaller==6.19.0
+pillow==12.2.0

@@ -7,14 +7,11 @@ import json
 import threading
 
 from PySide6.QtCore import QObject, Qt, Signal
-from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QAbstractItemView,
     QComboBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
-    QStyleFactory,
     QTreeWidgetItem,
     QVBoxLayout,
     QWidget,
@@ -29,7 +26,6 @@ from quickip.ui_qt.tool_panels.components import (
     set_tool_status,
 )
 from quickip.ui_qt.tool_panels.layout import configure_tool_root
-from quickip.ui_qt.palette import semantic_color
 from quickip.ui_qt.widgets.copyable_views import (
     CopyableTree,
     tree_selection_stylesheet,

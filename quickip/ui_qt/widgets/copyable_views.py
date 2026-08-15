@@ -39,10 +39,10 @@ def tree_selection_stylesheet(dark: bool) -> str:
         selected = color("dark", "DARK_CUSTOM_TREE_SELECTED")
         selected_text = color("dark", "DARK_CUSTOM_TREE_SELECTED_TEXT")
     else:
-        hover = color("light", "LIGHT_HEX_E0E7FF")
-        hover_text = color("light", "LIGHT_HEX_1E293B")
-        selected = color("light", "LIGHT_HEX_6366F1")
-        selected_text = color("light", "LIGHT_HEX_FFFFFF")
+        hover = color("light", "LIGHT_STATE_ACTIVE_BG")
+        hover_text = color("light", "LIGHT_TEXT_PRIMARY")
+        selected = color("light", "LIGHT_ACCENT_HOVER")
+        selected_text = color("light", "LIGHT_TEXT_ON_ACCENT")
 
     return f"""
 QTreeWidget::item:hover {{

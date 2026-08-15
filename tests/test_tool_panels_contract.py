@@ -7,8 +7,10 @@ import os
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import pytest
+from PySide6.QtCore import QModelIndex
 from PySide6.QtWidgets import QApplication, QLabel
 
+from quickip.ui_qt.palette import color
 from quickip.ui_qt.tool_panels.adapters import IpconfigPanel
 from quickip.ui_qt.tool_panels.basic import DnsPanel, PingPanel, TraceroutePanel
 from quickip.ui_qt.tool_panels.dns_cache import DnsCachePanel
@@ -750,6 +752,34 @@ def test_dns_cache_toolbar_has_stable_visual_order(qt_app) -> None:
         < positions["_btn_flush"].x()
     )
     panel.close()
+    panel.deleteLater()
+
+
+def test_adapters_populate_full_width_group_headings(qt_app: QApplication) -> None:
+    panel = IpconfigPanel()
+
+    panel._populate([
+        ("Ethernet", [("IPv4", "192.0.2.10"), ("Gateway", "192.0.2.1")]),
+        ("Wi-Fi", [("IPv4", "198.51.100.10")]),
+    ])
+
+    assert panel._tree.topLevelItemCount() == 2
+    assert panel._tree.topLevelItem(0).childCount() == 2
+    assert panel._tree.isFirstColumnSpanned(0, QModelIndex())
+    assert panel._tree.isFirstColumnSpanned(1, QModelIndex())
+    panel.deleteLater()
+
+
+def test_adapters_refreshes_tree_style_when_theme_changes(qt_app: QApplication) -> None:
+    panel = IpconfigPanel(dark=True)
+    dark_style = panel._tree.styleSheet()
+
+    panel.refresh_theme(False)
+    light_style = panel._tree.styleSheet()
+
+    assert light_style != dark_style
+    assert color("light", "LIGHT_TEXT_PRIMARY") in light_style
+    assert color("light", "LIGHT_TEXT_ON_ACCENT") in light_style
     panel.deleteLater()
 
 

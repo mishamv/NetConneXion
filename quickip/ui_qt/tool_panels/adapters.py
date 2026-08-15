@@ -6,7 +6,7 @@ import base64
 import threading
 from pathlib import Path
 
-from PySide6.QtCore import QObject, Qt, Signal, QSize
+from PySide6.QtCore import QModelIndex, QObject, Qt, Signal, QSize
 from PySide6.QtGui import QFont, QIcon
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -261,8 +261,14 @@ class IpconfigPanel(QWidget):
         # RU: Название адаптера — заголовок группы на всю ширину таблицы.
         # EN: Render every adapter name as a full-width group heading.
         for row in range(self._tree.topLevelItemCount()):
-            self._tree.setFirstColumnSpanned(row, True)
+            self._tree.setFirstColumnSpanned(row, QModelIndex(), True)
         self._tree.setUpdatesEnabled(True)
 
     def refresh_theme(self, dark: bool) -> None:
         self._dark = dark
+        configure_tool_tree(
+            self._tree,
+            dark=dark,
+            object_name="IpconfigTree",
+            root_decorated=True,
+        )

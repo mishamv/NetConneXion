@@ -772,32 +772,40 @@ QLabel#ToolPanelTitle {
 
 /* Netstat / tree tables */
 QTreeWidget#NetstatTable,
-QTreeWidget#ToolTree {
+QTreeWidget#ToolTree,
+QTreeWidget#IpconfigTree {
     background: transparent;
     border: none;
     border-radius: 8px;
     outline: none;
 }
 QTreeWidget#NetstatTable::item,
-QTreeWidget#ToolTree::item {
+QTreeWidget#ToolTree::item,
+QTreeWidget#IpconfigTree::item {
     color: {DARK_TEXT_SECONDARY};
     padding: 3px 6px;
 }
 QTreeWidget#NetstatTable::item:hover,
-QTreeWidget#ToolTree::item:hover {
+QTreeWidget#ToolTree::item:hover,
+QTreeWidget#IpconfigTree::item:hover {
     background: {DARK_HOVER_OVERLAY};
+    color: {DARK_TEXT_SECONDARY};
 }
 QTreeWidget#NetstatTable::item:selected,
 QTreeWidget#NetstatTable::item:selected:active,
 QTreeWidget#NetstatTable::item:selected:!active,
 QTreeWidget#ToolTree::item:selected,
 QTreeWidget#ToolTree::item:selected:active,
-QTreeWidget#ToolTree::item:selected:!active {
+QTreeWidget#ToolTree::item:selected:!active,
+QTreeWidget#IpconfigTree::item:selected,
+QTreeWidget#IpconfigTree::item:selected:active,
+QTreeWidget#IpconfigTree::item:selected:!active {
     background: {DARK_STATE_ACTIVE_BG};
     color: {DARK_TEXT_PRIMARY};
 }
 QTreeWidget#NetstatTable QHeaderView::section,
-QTreeWidget#ToolTree QHeaderView::section {
+QTreeWidget#ToolTree QHeaderView::section,
+QTreeWidget#IpconfigTree QHeaderView::section {
     background: {DARK_BUTTON_HOVER_BG};
     color: {DARK_ACCENT_TEXT};
     font-size: 12px;
@@ -853,38 +861,27 @@ QTreeWidget#IpconfigTree::item {
     color: {DARK_TEXT_PRIMARY};
     border: none;
 }
-QTreeWidget#IpconfigTree::item:hover {
-    background: transparent;
-}
-QTreeWidget#IpconfigTree::item:hover:!selected {
-    background: transparent;
-    color: {DARK_TEXT_PRIMARY};
-}
-QTreeWidget#IpconfigTree::item:selected,
-QTreeWidget#IpconfigTree::item:selected:hover {
-    background: {DARK_STATE_ACTIVE_BG};
-    color: {DARK_ACCENT_TEXT};
-}
 QTreeWidget#IpconfigTree::branch {
     background: transparent;
     border: none;
 }
-QTreeWidget#IpconfigTree::branch:hover,
+QTreeWidget#IpconfigTree::branch:hover {
+    background: {DARK_HOVER_OVERLAY};
+    border: none;
+}
 QTreeWidget#IpconfigTree::branch:selected,
 QTreeWidget#IpconfigTree::branch:selected:active,
 QTreeWidget#IpconfigTree::branch:hover:selected {
-    background: transparent;
+    background: {DARK_STATE_ACTIVE_BG};
     border: none;
 }
 QTreeWidget#IpconfigTree::branch:has-children:!has-siblings:closed,
 QTreeWidget#IpconfigTree::branch:has-children:has-siblings:closed {
     image: url({ASSETS}/arrow-right-dark.svg);
-    background: transparent;
 }
 QTreeWidget#IpconfigTree::branch:has-children:!has-siblings:open,
 QTreeWidget#IpconfigTree::branch:has-children:has-siblings:open {
     image: url({ASSETS}/arrow-down-dark.svg);
-    background: transparent;
 }
 QTreeWidget#IpconfigTree QHeaderView::section {
     background: {DARK_BUTTON_HOVER_BG};

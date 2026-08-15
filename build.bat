@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 setlocal
 
 :: Ensure we are always in the project root, regardless of how the bat was launched
@@ -9,64 +10,64 @@ echo  NetConneXion v2.0 -- PyInstaller build
 echo ============================================
 echo.
 
-:: Активируем venv
-call .venv\Scripts\activate.bat
-
-:: Проверяем pyinstaller
-python -m PyInstaller --version >nul 2>&1
-if errorlevel 1 (
-    echo [INFO] PyInstaller not found, installing...
-    pip install pyinstaller
+:: Use the project-local interpreter directly. Activation scripts may contain
+:: stale absolute paths when a workspace has been moved or copied.
+set "PYTHON=%CD%\.venv\Scripts\python.exe"
+if not exist "%PYTHON%" (
+    echo [ERROR] Project virtual environment not found: %PYTHON%
+    if not defined CI pause
+    exit /b 1
 )
 
-:: Проверяем pywin32
-python -c "import win32crypt" >nul 2>&1
-if errorlevel 1 (
-    echo [INFO] pywin32 not found, installing...
-    pip install pywin32
-    python Scripts\pywin32_postinstall.py -install 2>nul
+if not exist "%CD%\requirements.lock" (
+    echo [ERROR] Dependency lockfile not found: %CD%\requirements.lock
+    if not defined CI pause
+    exit /b 1
 )
 
-:: Проверяем openpyxl
-python -c "import openpyxl" >nul 2>&1
+:: Synchronize every build with the reviewed dependency lockfile.
+echo [INFO] Installing locked dependencies...
+"%PYTHON%" -m pip install --requirement "%CD%\requirements.lock"
 if errorlevel 1 (
-    echo [INFO] openpyxl not found, installing...
-    pip install "openpyxl>=3.1"
+    echo [ERROR] Locked dependency installation failed.
+    if not defined CI pause
+    exit /b 1
 )
 
-:: Проверяем pillow (для иконки)
-python -c "import PIL" >nul 2>&1
+"%PYTHON%" -m pip check
 if errorlevel 1 (
-    echo [INFO] pillow not found, installing...
-    pip install pillow
+    echo [ERROR] Installed dependencies are inconsistent.
+    if not defined CI pause
+    exit /b 1
 )
 
-:: Завершаем процесс если запущен.
-:: NetConneXion.exe запускается с UAC (admin), поэтому taskkill требует прав admin.
-:: Если скрипт уже запущен от admin — используем taskkill напрямую.
-:: Если нет — поднимаем только taskkill через PowerShell RunAs.
+:: Stop a running application before replacing its executable.
+:: Use the current elevated token when available; otherwise elevate taskkill only.
 echo [INFO] Terminating running instance (if any)...
-net session >nul 2>&1
+tasklist /FI "IMAGENAME eq NetConneXion.exe" /NH | find /I "NetConneXion.exe" >nul
 if not errorlevel 1 (
-    taskkill /f /t /im NetConneXion.exe >nul 2>&1
-) else (
-    powershell -NoProfile -Command "Start-Process taskkill -ArgumentList '/f /t /im NetConneXion.exe' -Verb RunAs -Wait -WindowStyle Hidden" >nul 2>&1
+    net session >nul 2>&1
+    if not errorlevel 1 (
+        taskkill /f /t /im NetConneXion.exe >nul 2>&1
+    ) else (
+        powershell -NoProfile -Command "Start-Process taskkill -ArgumentList '/f /t /im NetConneXion.exe' -Verb RunAs -Wait -WindowStyle Hidden" >nul 2>&1
+    )
+    timeout /t 2 /nobreak >nul
 )
-timeout /t 2 /nobreak >nul
 
-:: Очищаем предыдущую сборку
+:: Clean previous build output.
 echo [INFO] Cleaning previous build...
 if exist build\NetConneXion rmdir /s /q build\NetConneXion
 if exist dist\NetConneXion  rmdir /s /q dist\NetConneXion
 
-:: Сборка
+:: Build the application.
 echo [INFO] Building...
-python -m PyInstaller NetConneXion.spec --clean
+"%PYTHON%" -m PyInstaller NetConneXion.spec --clean -y
 
 if errorlevel 1 (
     echo.
     echo [ERROR] Build failed!
-    pause
+    if not defined CI pause
     exit /b 1
 )
 
@@ -74,9 +75,9 @@ echo.
 echo [OK] Build complete: dist\NetConneXion\NetConneXion.exe
 echo.
 
-:: Проверяем размер
+:: Report executable size.
 for %%F in (dist\NetConneXion\NetConneXion.exe) do (
     echo EXE size: %%~zF bytes
 )
 
-pause
+if not defined CI pause

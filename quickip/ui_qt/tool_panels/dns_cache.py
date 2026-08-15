@@ -7,7 +7,6 @@ import threading
 from dataclasses import dataclass
 
 from PySide6.QtCore import QObject, Qt, Signal
-from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QComboBox,
     QFrame,
@@ -16,7 +15,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMessageBox,
-    QPushButton,
     QTreeWidgetItem,
     QVBoxLayout,
     QWidget,

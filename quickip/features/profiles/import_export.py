@@ -79,6 +79,9 @@ class ImportExportService:
         Returns:
             ImportReport with counts and conflict details.
         """
+        if strategy not in {"skip", "rename", "replace"}:
+            raise ValueError(f"Unknown import strategy: {strategy!r}")
+
         raw_profiles = self._load_file(path)
         if selected_names is not None:
             raw_profiles = [p for p in raw_profiles if p.name in selected_names]
@@ -155,8 +158,15 @@ class ImportExportService:
 
         payload = json.loads(src.read_text(encoding="utf-8"))
         if isinstance(payload, list):
+            # Legacy exports were plain lists and remain supported.
             profile_list = payload
         elif isinstance(payload, dict):
+            schema_version = payload.get("schema_version")
+            if schema_version != EXPORT_SCHEMA_VERSION:
+                raise ValueError(
+                    "Unsupported import schema version: "
+                    f"{schema_version!r}; expected {EXPORT_SCHEMA_VERSION}."
+                )
             profile_list = payload.get("profiles", [])
         else:
             raise ValueError("Unrecognised import file format")
@@ -189,11 +199,22 @@ class ImportExportService:
             raise ValueError("Profile name is empty.")
         if len(profile.name) > 30:
             raise ValueError(f"Profile name too long: {profile.name!r}")
+        if any(ord(char) < 32 for char in profile.name):
+            raise ValueError("Profile name contains control characters.")
 
         # Адаптер — те же правила что в NetshClient._validate_adapter_name
         forbidden = set('"\'&|;<>(){}$`\\\n\r\t')
+        if not profile.adapter or not profile.adapter.strip():
+            raise ValueError("Adapter name is empty.")
+        if len(profile.adapter) > 64:
+            raise ValueError("Adapter name is too long.")
         if forbidden.intersection(profile.adapter or ""):
             raise ValueError(f"Adapter name contains forbidden characters: {profile.adapter!r}")
+
+        if not isinstance(profile.tags, list) or not all(
+            isinstance(tag, str) for tag in profile.tags
+        ):
+            raise ValueError("Profile tags must be a list of strings.")
 
         # IP-поля — проверяем только если статический режим
         def _check_ip(value: str, field: str) -> None:

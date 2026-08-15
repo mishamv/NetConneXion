@@ -21,6 +21,6 @@ class BackdropWidget(QWidget):
     def paintEvent(self, _event) -> None:  # noqa: N802
         painter = QPainter(self)
         if self._theme_mode == "light":
-            painter.fillRect(self.rect(), QColor(color("light", "LIGHT_HEX_F1F5F9")))
+            painter.fillRect(self.rect(), QColor(color("light", "LIGHT_PANEL_BG")))
         else:
             painter.fillRect(self.rect(), QColor(color("dark", "DARK_CUSTOM_BACKDROP")))

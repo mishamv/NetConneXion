@@ -16,12 +16,12 @@ VSVersionInfo(
         [
           StringStruct(u'CompanyName',      u''),
           StringStruct(u'FileDescription',  u'NetConneXion — Network Profile Manager'),
-          StringStruct(u'FileVersion',      u'2.0.0.0'),
+          StringStruct(u'FileVersion',      u'2.0.1.0'),
           StringStruct(u'InternalName',     u'NetConneXion'),
           StringStruct(u'LegalCopyright',   u''),
           StringStruct(u'OriginalFilename', u'NetConneXion.exe'),
           StringStruct(u'ProductName',      u'NetConneXion'),
-          StringStruct(u'ProductVersion',   u'2.0.0.0'),
+          StringStruct(u'ProductVersion',   u'2.0.1.0'),
         ]
       )
     ]),
