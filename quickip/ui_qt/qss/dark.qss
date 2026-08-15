@@ -843,7 +843,8 @@ QTableWidget#NetstatTable QHeaderView::section:last {
 }
 
 QTreeWidget#IpconfigTree {
-    background: transparent;
+    background: {DARK_RESULT_SURFACE};
+    alternate-background-color: {DARK_RESULT_SURFACE};
     border: none;
     margin-top: 10px;
     outline: none;

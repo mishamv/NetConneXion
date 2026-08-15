@@ -12,8 +12,6 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
     QLabel,
-    QPushButton,
-    QStyleFactory,
     QTreeWidgetItem,
     QVBoxLayout,
     QWidget,
@@ -158,9 +156,17 @@ class IpconfigPanel(QWidget):
         )
         self._tree.setColumnCount(2)
         self._tree.setHeaderLabels([_t("tools_ipconfig_col_param"), _t("tools_ipconfig_col_value")])
-        self._tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
-        self._tree.header().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        self._tree.header().setDefaultSectionSize(220)
+        # RU: В двухколоночной таблице обе секции занимают равную долю ширины.
+        # EN: Keep both sections of the two-column table equally wide.
+        header = self._tree.header()
+        header.setStretchLastSection(False)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        # RU: Для иерархии адаптеров зебра мешает группировке и в Windows
+        # может брать светлый цвет из системной палитры.
+        # EN: Zebra rows obscure adapter grouping and may inherit a light
+        # system-palette color on Windows.
+        self._tree.setAlternatingRowColors(False)
         self._tree.setIndentation(20)
         self._tree.setIconSize(QSize(16, 16))
         root.addWidget(self._tree, 1)
@@ -252,8 +258,11 @@ class IpconfigPanel(QWidget):
                 center_tree_item(child)
             tops.append(top)
         self._tree.addTopLevelItems(tops)
+        # RU: Название адаптера — заголовок группы на всю ширину таблицы.
+        # EN: Render every adapter name as a full-width group heading.
+        for row in range(self._tree.topLevelItemCount()):
+            self._tree.setFirstColumnSpanned(row, True)
         self._tree.setUpdatesEnabled(True)
-        self._tree.resizeColumnToContents(0)
 
     def refresh_theme(self, dark: bool) -> None:
         self._dark = dark
