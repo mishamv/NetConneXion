@@ -8,6 +8,7 @@ import pytest
 
 from quickip.ui_qt.palette import color
 from quickip.ui_qt.theme import load_qss
+from quickip.ui_qt.widgets.copyable_views import tree_selection_stylesheet
 
 
 _UNRESOLVED_COLOR_TOKEN = re.compile(r"\{(?:LIGHT|DARK)_[A-Z0-9_]+\}")
@@ -75,3 +76,11 @@ def test_adapter_tree_overrides_global_selection_text(
     assert matches
     expected_text = color(theme_mode, selection_text_token)
     assert any(f"selection-color: {expected_text};" in body for body in matches)
+
+
+def test_light_copyable_tree_inline_selection_has_readable_text() -> None:
+    stylesheet = tree_selection_stylesheet(dark=False)
+
+    assert color("light", "LIGHT_RGBA_99_102_241_0_12") in stylesheet
+    assert color("light", "LIGHT_ACCENT") in stylesheet
+    assert color("light", "LIGHT_TEXT_ON_ACCENT") not in stylesheet

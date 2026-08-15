@@ -41,8 +41,8 @@ def tree_selection_stylesheet(dark: bool) -> str:
     else:
         hover = color("light", "LIGHT_STATE_ACTIVE_BG")
         hover_text = color("light", "LIGHT_TEXT_PRIMARY")
-        selected = color("light", "LIGHT_ACCENT_HOVER")
-        selected_text = color("light", "LIGHT_TEXT_ON_ACCENT")
+        selected = color("light", "LIGHT_RGBA_99_102_241_0_12")
+        selected_text = color("light", "LIGHT_ACCENT")
 
     return f"""
 QTreeWidget::item:hover {{
